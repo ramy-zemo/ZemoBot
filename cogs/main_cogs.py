@@ -42,7 +42,8 @@ class Basic(commands.Cog):
 
     @commands.command()
     async def mafia(self, ctx, *args):
-        users_to_play = [self.bot.get_user(int(str(x).strip("<>!@"))) for x in args]
+        guild = ctx.message.guild
+        users_to_play = [guild.get_member(int(str(x).strip("<>!@"))) for x in args]
         accepted_User = []
 
         for x in users_to_play:
@@ -77,6 +78,8 @@ class Basic(commands.Cog):
 
         game_id = ''.join(random.choice(string.ascii_letters) for x in range(6)).upper()
 
+        await ctx.send(f"Spiel: {game_id} wird gestartet.")
+
         mafia_count = ceil(len(accepted_User) / 5)
         mafias = []
         to_select = accepted_User.copy()
@@ -89,13 +92,21 @@ class Basic(commands.Cog):
         print("Not Mafia: ", to_select)
         print("Mafias: ", mafias)
 
-        guild = ctx.message.guild
+        mafia_role = await guild.create_role(name=f"mafia{game_id}")
+        await guild.create_role(name=f"person{game_id}")
 
-        for count, x in enumerate(range(len(mafias))):
-            await guild.create_text_channel(f'mafia{count + 1}')
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            mafia_role: discord.PermissionOverwrite(read_messages=True)
+        }
+
+        mafia_channel = await guild.create_text_channel(f'mafia {game_id}', overwrites=overwrites)
+
+        for x in mafias:
+            await x.add_roles(mafia_role)
 
         for count, x in enumerate(range(len(to_select))):
-            await guild.create_text_channel(f'person{count + 1}')
+            await guild.create_text_channel(f'person{count + 1} {game_id}')
 
         f = """
         
@@ -123,6 +134,17 @@ class Basic(commands.Cog):
 
         print(play_all)
         """
+
+    @commands.command()
+    async def ar(self, ctx, *args):
+
+        guild = ctx.message.guild
+
+        mafias = [guild.get_member(int(str(x).strip("<>!@"))) for x in args]
+        mafia_role = await guild.create_role(name="penis")
+
+        for x in mafias:
+            await x.add_roles(mafia_role)
 
 
 def setup(bot):
