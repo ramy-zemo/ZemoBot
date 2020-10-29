@@ -2,6 +2,7 @@ from discord.ext import commands
 import discord
 import time
 import asyncio
+from math import ceil
 
 
 class Basic(commands.Cog):
@@ -61,17 +62,19 @@ class Basic(commands.Cog):
 
             except asyncio.TimeoutError:
                 await x.send('Du warst leider zu langsam')
+                
             else:
                 if reaction.emoji == '👍':
                     invite = True
-                    x.send("Einladung erfolgreich angenommen!")
+                    await x.send("Einladung erfolgreich angenommen!")
                 if reaction.emoji == '👎':
-                    x.send("Einladung erfolgreich abgelehnt!")
+                    await x.send("Einladung erfolgreich abgelehnt!")
 
             if invite:
                 accepted_User.append(x)
 
-        print(accepted_User)
+        mafia_count = ceil(len(accepted_User) / 5)
+        print(mafia_count)
 
         f = """
         
