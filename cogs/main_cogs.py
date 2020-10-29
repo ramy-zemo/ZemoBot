@@ -54,13 +54,13 @@ class Basic(commands.Cog):
                 await request.add_reaction(emoji)
 
             def check(reaction, user):
-                return user == ctx.message.author and str(reaction.emoji) in ['👍', '👎']
+                return str(reaction.emoji) in ['👍', '👎']
 
             try:
-                reaction, user = await self.bot.wait_for('reaction_add', timeout=10.0, check=check)
+                reaction, user = await self.bot.wait_for('reaction_add', timeout=15.0, check=check)
 
             except asyncio.TimeoutError:
-                await x.send('Timeout')
+                await x.send('Du warst leider zu langsam')
             else:
                 if reaction.emoji == '👍':
                     invite = True
