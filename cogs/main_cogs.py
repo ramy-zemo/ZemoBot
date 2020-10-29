@@ -93,7 +93,6 @@ class Basic(commands.Cog):
         print("Mafias: ", mafias)
 
         mafia_role = await guild.create_role(name=f"mafia{game_id}")
-        await guild.create_role(name=f"person{game_id}")
 
         overwrites = {
             guild.default_role: discord.PermissionOverwrite(read_messages=False),
@@ -106,7 +105,20 @@ class Basic(commands.Cog):
             await x.add_roles(mafia_role)
 
         for count, x in enumerate(range(len(to_select))):
-            await guild.create_text_channel(f'person{count + 1} {game_id}')
+            pp_role = await guild.create_role(name=f"person{count + 1}{game_id}")
+
+            overwrites = {
+                guild.default_role: discord.PermissionOverwrite(read_messages=False),
+                pp_role: discord.PermissionOverwrite(read_messages=True)
+            }
+
+            await guild.create_text_channel(f'person{count + 1} {game_id}', overwrites=overwrites)
+
+            user = random.choice(to_select)
+            await user.add_roles(pp_role)
+            to_select.remove(user)
+
+        await ctx.send("Ihr habt nun 5 Minuten Zeit bis zur ersten Abstimmung! " + ' '.join([x.mention for x in accepted_User]))
 
         f = """
         
@@ -137,15 +149,7 @@ class Basic(commands.Cog):
 
     @commands.command()
     async def ar(self, ctx, *args):
-
-        guild = ctx.message.guild
-
-        mafias = [guild.get_member(int(str(x).strip("<>!@"))) for x in args]
-        mafia_role = await guild.create_role(name="penis")
-
-        for x in mafias:
-            await x.add_roles(mafia_role)
-
+        pass
 
 def setup(bot):
     bot.add_cog(Basic(bot))
