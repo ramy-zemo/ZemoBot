@@ -1,5 +1,7 @@
 from discord.ext import commands
 import discord
+import time
+import asyncio
 
 
 class Basic(commands.Cog):
@@ -29,11 +31,71 @@ class Basic(commands.Cog):
 
     @commands.command()
     async def amo(self, ctx, *args):
-        for m in ctx.guild.members:
-            if m != ctx.message.author:
-                for role in m.roles:
-                    if "AMO" == role.name:
-                        await m.send("{}".format(" ".join(args)))
+        y = [mem for mem in [m for m in ctx.guild.members if m != ctx.message.author] if
+             "AMO" in [x.name for x in mem.roles]]
+
+        for x in y:
+            await x.send("{}".format(" ".join(args)))
+
+    @commands.command()
+    async def mafia(self, ctx, *args):
+        users_to_play = [self.bot.get_user(int(str(x).strip("<>!@"))) for x in args]
+        accepted_User = []
+
+        for x in users_to_play:
+            request = await x.send(f"Du wurdest von {ctx.message.author} eingeladen Mafia zu spielen. Möchtest du mitspielen?")
+
+            for emoji in ('👍', '👎'):
+                await request.add_reaction(emoji)
+
+            invite = False
+
+            for emoji in ('👍', '👎'):
+                await request.add_reaction(emoji)
+
+            def check(reaction, user):
+                return user == ctx.message.author and str(reaction.emoji) in ['👍', '👎']
+
+            try:
+                reaction, user = await self.bot.wait_for('reaction_add', timeout=10.0, check=check)
+
+            except asyncio.TimeoutError:
+                await x.send('Timeout')
+            else:
+                if reaction.emoji == '👍':
+                    invite = True
+
+            if invite:
+                accepted_User.append(x)
+
+        print(accepted_User)
+
+        f = """
+        
+        first_message = await ctx.send("Hallo, wer möchte mitspielen?")
+
+        author = ctx.message.author
+        author_voice_channel = ctx.message.author.voice.channel
+
+        play_all = False
+
+        for emoji in ('👍', '👎'):
+            await first_message.add_reaction(emoji)
+
+        def check(reaction, user):
+            return user == author and str(reaction.emoji) in ['👍', '👎']
+
+        try:
+            reaction, user = await self.bot.wait_for('reaction_add', timeout=10.0, check=check)
+
+        except asyncio.TimeoutError:
+            await ctx.send('👎')
+        else:
+            if reaction.emoji == '👍':
+                play_all = True
+
+        print(play_all)
+        """
 
 
 def setup(bot):
