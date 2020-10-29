@@ -64,6 +64,9 @@ class Basic(commands.Cog):
             else:
                 if reaction.emoji == '👍':
                     invite = True
+                    x.send("Einladung erfolgreich angenommen!")
+                if reaction.emoji == '👎':
+                    x.send("Einladung erfolgreich abgelehnt!")
 
             if invite:
                 accepted_User.append(x)
