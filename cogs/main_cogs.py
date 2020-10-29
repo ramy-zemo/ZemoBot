@@ -3,6 +3,8 @@ import discord
 import time
 import asyncio
 from math import ceil
+import random
+import string
 
 
 class Basic(commands.Cog):
@@ -73,8 +75,27 @@ class Basic(commands.Cog):
             if invite:
                 accepted_User.append(x)
 
+        game_id = ''.join(random.choice(string.ascii_letters) for x in range(6)).upper()
+
         mafia_count = ceil(len(accepted_User) / 5)
-        print(mafia_count)
+        mafias = []
+        to_select = accepted_User.copy()
+
+        for x in range(mafia_count):
+            f = random.choice(to_select)
+            mafias.append(f)
+            to_select.remove(f)
+
+        print("Not Mafia: ", to_select)
+        print("Mafias: ", mafias)
+
+        guild = ctx.message.guild
+
+        for count, x in enumerate(range(len(mafias))):
+            await guild.create_text_channel(f'mafia{count + 1}')
+
+        for count, x in enumerate(range(len(to_select))):
+            await guild.create_text_channel(f'person{count + 1}')
 
         f = """
         
