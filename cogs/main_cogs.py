@@ -21,8 +21,8 @@ class Basic(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, ctx):
-        channel = discord.utils.get(ctx.guild.channels, name="angeliwiese")
-        
+        channel = discord.utils.get(ctx.guild.channels, name="willkommen")
+
         if channel is not None:
             await channel.send('Selam {}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!'.format(ctx))
 
