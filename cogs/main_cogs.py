@@ -21,11 +21,9 @@ class Basic(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        channel = member.guild.system_channel
+        channel = discord.utils.get(ctx.guild.channels, name="angeliwiese")
         if channel is not None:
-            await channel.send(
-                'Selam {}, willkommen in der Familie!\n',
-                'Hast du Ärger, gehst du Cafe Al Bustan, gehst du zu Arafat!'.format(member))
+            await channel.send('Selam {}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Bustan, gehst du zu Arafat!'.format(member))
 
     @commands.command()
     async def trashtalk(self, ctx, *args):
@@ -201,6 +199,11 @@ class Basic(commands.Cog):
     @commands.command()
     async def show_roles(self, ctx, *args):
         print([x for x in ctx.guild.roles])
+
+    @commands.command()
+    async def channel_id(self, ctx, *args):
+        channel = discord.utils.get(ctx.guild.channels, name="angeliwiese")
+        print(channel.id)
 
 def setup(bot):
     bot.add_cog(Basic(bot))
