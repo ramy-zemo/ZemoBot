@@ -28,9 +28,12 @@ class Basic(commands.Cog):
                 'Hast du Ärger, gehst du Cafe Al Bustan, gehst du zu Arafat!'.format(member))
 
     @commands.command()
-    async def trashtalk(self, ctx, user: discord.User):
-        for t in self.text:
-            await user.send(t)
+    async def trashtalk(self, ctx, *args):
+        users_to_tt = [ctx.message.guild.get_member(int(str(x).strip("<>!@"))) for x in args]
+
+        for user in users_to_tt:
+            for t in self.text:
+                await user.send(t)
 
     @commands.command()
     async def amo(self, ctx, *args):
