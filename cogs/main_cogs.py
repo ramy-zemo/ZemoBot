@@ -44,10 +44,18 @@ class Basic(commands.Cog):
     async def mafia(self, ctx, *args):
         guild = ctx.message.guild
         users_to_play = [guild.get_member(int(str(x).strip("<>!@"))) for x in args]
-        accepted_User = []
+        roles_before_game = {}
+
+        if ctx.message.author not in users_to_play:
+            users_to_play.append(ctx.message.author)
+
+        accepted_user = []
+
+        bot_sent_messages = []
 
         for x in users_to_play:
             request = await x.send(f"Du wurdest von {ctx.message.author} eingeladen Mafia zu spielen. Möchtest du mitspielen?")
+            bot_sent_messages.append(request)
 
             for emoji in ('👍', '👎'):
                 await request.add_reaction(emoji)
@@ -64,25 +72,48 @@ class Basic(commands.Cog):
                 reaction, user = await self.bot.wait_for('reaction_add', timeout=15.0, check=check)
 
             except asyncio.TimeoutError:
-                await x.send('Du warst leider zu langsam')
+                bot_sent_messages.append(await x.send('Du warst leider zu langsam'))
                 
             else:
                 if reaction.emoji == '👍':
                     invite = True
-                    await x.send("Einladung erfolgreich angenommen!")
+                    bot_sent_messages.append(await x.send("Einladung erfolgreich angenommen!"))
+
                 if reaction.emoji == '👎':
-                    await x.send("Einladung erfolgreich abgelehnt!")
+                    bot_sent_messages.append(await x.send("Einladung erfolgreich abgelehnt!"))
 
             if invite:
-                accepted_User.append(x)
+                accepted_user.append(x)
+
+        for x in bot_sent_messages:
+            await x.delete()
+
+        game_id = ''.join(random.choice(string.ascii_letters) for x in range(6)).upper()
+        await ctx.send(f"Spiel: {game_id} wird gestartet.")
+
+        # Eigentlichen Rollen entfernen
+        not_allowed = [481248489238429727, 710895965761962104]
+
+        for x in users_to_play:
+            real_role = []
+
+            for f in x.roles:
+                if f.id not in not_allowed:
+                    real_role.append(f)
+
+            roles_before_game[x] = real_role
+
+            await x.remove_roles(*real_role)
+
+        if len(accepted_user) < 3:
+            await ctx.send(f"Spiel: {game_id} konnte nicht gestartet werden, da zu wenige Spieler vorhanden sind.")
+            return
 
         game_id = ''.join(random.choice(string.ascii_letters) for x in range(6)).upper()
 
-        await ctx.send(f"Spiel: {game_id} wird gestartet.")
-
-        mafia_count = ceil(len(accepted_User) / 5)
+        mafia_count = ceil(len(accepted_user) / 5)
         mafias = []
-        to_select = accepted_User.copy()
+        to_select = accepted_user.copy()
 
         for x in range(mafia_count):
             f = random.choice(to_select)
@@ -92,7 +123,7 @@ class Basic(commands.Cog):
         print("Not Mafia: ", to_select)
         print("Mafias: ", mafias)
 
-        mafia_role = await guild.create_role(name=f"mafia{game_id}")
+        mafia_role = await guild.create_role(name=''.join(random.choice(string.ascii_letters) for x in range(8)).upper())
 
         overwrites = {
             guild.default_role: discord.PermissionOverwrite(read_messages=False),
@@ -105,7 +136,8 @@ class Basic(commands.Cog):
             await x.add_roles(mafia_role)
 
         for count, x in enumerate(range(len(to_select))):
-            pp_role = await guild.create_role(name=f"person{count + 1}{game_id}")
+
+            pp_role = await guild.create_role(name=''.join(random.choice(string.ascii_letters) for x in range(8)).upper())
 
             overwrites = {
                 guild.default_role: discord.PermissionOverwrite(read_messages=False),
@@ -118,38 +150,54 @@ class Basic(commands.Cog):
             await user.add_roles(pp_role)
             to_select.remove(user)
 
-        await ctx.send("Ihr habt nun 5 Minuten Zeit bis zur ersten Abstimmung! " + ' '.join([x.mention for x in accepted_User]))
+        await ctx.send("Spiel erfolgreich gestartet.")
+        await ctx.send("Ihr habt nun 5 Minuten Zeit bis zur ersten Abstimmung! " + ' '.join([x.mention for x in accepted_user]))
 
-        f = """
-        
-        first_message = await ctx.send("Hallo, wer möchte mitspielen?")
 
-        author = ctx.message.author
-        author_voice_channel = ctx.message.author.voice.channel
 
-        play_all = False
 
-        for emoji in ('👍', '👎'):
-            await first_message.add_reaction(emoji)
+        await ctx.send("Spiel beendet")
 
-        def check(reaction, user):
-            return user == author and str(reaction.emoji) in ['👍', '👎']
-
-        try:
-            reaction, user = await self.bot.wait_for('reaction_add', timeout=10.0, check=check)
-
-        except asyncio.TimeoutError:
-            await ctx.send('👎')
-        else:
-            if reaction.emoji == '👍':
-                play_all = True
-
-        print(play_all)
-        """
+        for x in users_to_play:
+            await x.add_roles(*old_roles[x])
 
     @commands.command()
     async def ar(self, ctx, *args):
-        pass
+        old_roles = {}
+
+        users_to_play = [ctx.message.guild.get_member(int(str(x).strip("<>!@"))) for x in args]
+        not_allowed = [481248489238429727, 710895965761962104]
+
+        for x in users_to_play:
+            real_role = []
+
+            for f in x.roles:
+                if f.id not in not_allowed:
+                    real_role.append(f)
+
+
+            old_roles[x] = real_role
+
+            await x.remove_roles(*real_role)
+            await ctx.send("Gelöscht, 10 Sekunden warten und dann Back nigga")
+            time.sleep(10)
+
+        for x in users_to_play:
+            await x.add_roles(*old_roles[x])
+
+    @commands.command()
+    async def delete_unwanted(self, ctx, *args):
+        not_allowed = [481248489238429727, 710895965761962104, 768176239495610398, 768172546860253194, 770040428496945173, 768172546104229899, 768176269916635176, 770331799246995508]
+
+        for x in ctx.guild.roles:
+            if x.id not in not_allowed:
+                await x.delete()
+
+        await ctx.send("Ungewolte Rollen wurden Gelöscht.")
+
+    @commands.command()
+    async def show_roles(self, ctx, *args):
+        print([x for x in ctx.guild.roles])
 
 def setup(bot):
     bot.add_cog(Basic(bot))
