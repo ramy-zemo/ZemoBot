@@ -24,7 +24,7 @@ class Basic(commands.Cog):
         channel = discord.utils.get(ctx.guild.channels, name="willkommen")
 
         if channel is not None:
-            await channel.send('Selam {}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!'.format(ctx))
+            await channel.send('Selam {}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!'.format(str(ctx)[:str(ctx).index("#")]))
 
     @commands.command()
     async def trashtalk(self, ctx, *args):
