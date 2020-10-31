@@ -148,6 +148,9 @@ class Basic(commands.Cog):
             game_category = await ctx.guild.create_category(f"MafiaGame {game_id}")
             bot_created_channels.append(game_category)
 
+            game_voice = await ctx.guild.create_voice_channel(f"MafiaGame {game_id}", category=game_category)
+            game_voice.append(game_category)
+
             mafia_role = await guild.create_role(name=''.join(random.choice(string.ascii_letters) for x in range(8)).upper())
 
             overwrites = {
@@ -155,7 +158,7 @@ class Basic(commands.Cog):
                 mafia_role: discord.PermissionOverwrite(read_messages=True)
             }
 
-            mafia_channel = await guild.create_text_channel(f'mafia {game_id}', overwrites=overwrites)
+            mafia_channel = await guild.create_text_channel(f'mafia {game_id}', overwrites=overwrites, category=game_category)
             bot_created_channels.append(mafia_channel)
 
             for mafia in mafias:
@@ -171,7 +174,7 @@ class Basic(commands.Cog):
                     pp_role: discord.PermissionOverwrite(read_messages=True)
                 }
 
-                bot_created_channels.append(await guild.create_text_channel(f'person{count + 1} {game_id}', overwrites=overwrites))
+                bot_created_channels.append(await guild.create_text_channel(f'person{count + 1} {game_id}', overwrites=overwrites, category=game_category))
 
                 new_roles[x] = pp_role
                 user = random.choice(to_select)
@@ -181,7 +184,10 @@ class Basic(commands.Cog):
             await ctx.send("Spiel erfolgreich gestartet.")
             await ctx.send("Ihr habt nun 5 Minuten Zeit bis zur ersten Abstimmung! " + ' '.join([x.mention for x in accepted_user]))
 
-            time.sleep(30)
+            time.sleep(300)
+
+            users_in_game = accepted_user.copy()
+            users_in_game_mentions = [x.mention for x in users_in_game]
 
             for x in users_to_play:
                 await x.add_roles(*roles_before_game[x])
@@ -272,6 +278,14 @@ class Basic(commands.Cog):
 
             else:
                 await ctx.send(f"{raus[0]} wird raus geworfen")
+
+    @commands.command()
+    async def test(self, ctx, *args):
+        game_id = "RAMO"
+
+        game_category = await ctx.guild.create_category(f"MafiaGame {game_id}")
+
+        game_voice = await ctx.guild.create_voice_channel(f"MafiaGame {game_id}", category=game_category)
 
 def setup(bot):
     bot.add_cog(Basic(bot))
