@@ -47,6 +47,7 @@ class Basic(commands.Cog):
         guild = ctx.message.guild
         users_to_play = [guild.get_member(int(str(x).strip("<>!@"))) for x in args]
         roles_before_game = {}
+        new_roles = {}
 
         if ctx.message.author not in users_to_play:
             users_to_play.append(ctx.message.author)
@@ -93,7 +94,7 @@ class Basic(commands.Cog):
         game_id = ''.join(random.choice(string.ascii_letters) for x in range(6)).upper()
         await ctx.send(f"Spiel: {game_id} wird gestartet.")
 
-        # Eigentlichen Rollen entfernen
+        # Alle Rollen entfernen
         not_allowed = [481248489238429727, 710895965761962104]
 
         for x in users_to_play:
@@ -136,6 +137,7 @@ class Basic(commands.Cog):
 
         for x in mafias:
             await x.add_roles(mafia_role)
+            new_roles[x] = mafia_role
 
         for count, x in enumerate(range(len(to_select))):
 
@@ -148,20 +150,35 @@ class Basic(commands.Cog):
 
             await guild.create_text_channel(f'person{count + 1} {game_id}', overwrites=overwrites)
 
+            new_roles[x] = pp_role
             user = random.choice(to_select)
             await user.add_roles(pp_role)
             to_select.remove(user)
 
         await ctx.send("Spiel erfolgreich gestartet.")
         await ctx.send("Ihr habt nun 5 Minuten Zeit bis zur ersten Abstimmung! " + ' '.join([x.mention for x in accepted_user]))
+        print(new_roles)
 
+        # Alle Rollen entfernen
+        not_allowed = [481248489238429727, 710895965761962104]
 
+        for x in users_to_play:
+            real_role = []
+
+            for f in x.roles:
+                if f.id not in not_allowed:
+                    real_role.append(f)
+
+            roles_before_game[x] = real_role
+
+            await x.remove_roles(*real_role)
+
+        # Eigentlichen Rollen hinzufügen
+        for x in users_to_play:
+            await x.add_roles(*roles_before_game[x])
 
 
         await ctx.send("Spiel beendet")
-
-        for x in users_to_play:
-            await x.add_roles(*old_roles[x])
 
     @commands.command()
     async def ar(self, ctx, *args):
@@ -188,7 +205,7 @@ class Basic(commands.Cog):
             await x.add_roles(*old_roles[x])
 
     @commands.command()
-    async def delete_unwanted(self, ctx, *args):
+    async def delete_unwanted_roles(self, ctx, *args):
         not_allowed = [481248489238429727, 710895965761962104, 768176239495610398, 768172546860253194, 770040428496945173, 768172546104229899, 768176269916635176, 770331799246995508]
 
         for x in ctx.guild.roles:
@@ -202,9 +219,30 @@ class Basic(commands.Cog):
         print([x for x in ctx.guild.roles])
 
     @commands.command()
-    async def channel_id(self, ctx, *args):
-        channel = discord.utils.get(ctx.guild.channels, name="angeliwiese")
-        print(channel.id)
+    async def delete_unwanted_channels(self, ctx, *args):
+        y = [
+            768172543273730058,
+            768175708799107192,
+            768176881735696384,
+            768177068630212648,
+            768177563633713242,
+            768177809801609275,
+            768177845264056359,
+            768177889891188757,
+            768179070751735818,
+            768179163919679548,
+            768179253883306035,
+            768179505595940874,
+            768179640765906964,
+            769921393281466408,
+            769921666779185173,
+            769921717887172608,
+            769922292297367603,
+            771868769983004682]
+
+        for x in ctx.guild.channels:
+            if x.id not in y:
+                await x.delete()
 
 def setup(bot):
     bot.add_cog(Basic(bot))
