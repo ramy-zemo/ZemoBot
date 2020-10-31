@@ -11,6 +11,7 @@ class Basic(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self._last_member = None
+        self.not_allowed = [481248489238429727, 710895965761962104]
 
         with open("trashtalk.txt", encoding="utf-8") as file:
             self.text = file.readlines()
@@ -48,6 +49,7 @@ class Basic(commands.Cog):
         users_to_play = [guild.get_member(int(str(x).strip("<>!@"))) for x in args]
         roles_before_game = {}
         new_roles = {}
+        running = True
 
         if ctx.message.author not in users_to_play:
             users_to_play.append(ctx.message.author)
@@ -94,104 +96,97 @@ class Basic(commands.Cog):
         game_id = ''.join(random.choice(string.ascii_letters) for x in range(6)).upper()
         await ctx.send(f"Spiel: {game_id} wird gestartet.")
 
-        # Alle Rollen entfernen
-        not_allowed = [481248489238429727, 710895965761962104]
-
-        for x in users_to_play:
-            real_role = []
-
-            for f in x.roles:
-                if f.id not in not_allowed:
-                    real_role.append(f)
-
-            roles_before_game[x] = real_role
-
-            await x.remove_roles(*real_role)
-
         if len(accepted_user) < 3:
             await ctx.send(f"Spiel: {game_id} konnte nicht gestartet werden, da zu wenige Spieler vorhanden sind.")
-            return
+            running = False
 
-        game_id = ''.join(random.choice(string.ascii_letters) for x in range(6)).upper()
+        if running:
+            # Alle Rollen entfernen
+            for x in users_to_play:
+                real_role = []
 
-        mafia_count = ceil(len(accepted_user) / 5)
-        mafias = []
-        to_select = accepted_user.copy()
+                for f in x.roles:
+                    if f.id not in self.not_allowed:
+                        real_role.append(f)
 
-        for x in range(mafia_count):
-            f = random.choice(to_select)
-            mafias.append(f)
-            to_select.remove(f)
+                roles_before_game[x] = real_role
 
-        print("Not Mafia: ", to_select)
-        print("Mafias: ", mafias)
+                await x.remove_roles(*real_role)
 
-        mafia_role = await guild.create_role(name=''.join(random.choice(string.ascii_letters) for x in range(8)).upper())
+                mafia_count = ceil(len(accepted_user) / 5)
+                mafias = []
+                to_select = accepted_user.copy()
 
-        overwrites = {
-            guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            mafia_role: discord.PermissionOverwrite(read_messages=True)
-        }
+                for x in range(mafia_count):
+                    f = random.choice(to_select)
+                    mafias.append(f)
+                    to_select.remove(f)
 
-        mafia_channel = await guild.create_text_channel(f'mafia {game_id}', overwrites=overwrites)
+                print("Not Mafia: ", to_select)
+                print("Mafias: ", mafias)
 
-        for x in mafias:
-            await x.add_roles(mafia_role)
-            new_roles[x] = mafia_role
+                mafia_role = await guild.create_role(name=''.join(random.choice(string.ascii_letters) for x in range(8)).upper())
 
-        for count, x in enumerate(range(len(to_select))):
+                overwrites = {
+                    guild.default_role: discord.PermissionOverwrite(read_messages=False),
+                    mafia_role: discord.PermissionOverwrite(read_messages=True)
+                }
 
-            pp_role = await guild.create_role(name=''.join(random.choice(string.ascii_letters) for x in range(8)).upper())
+                mafia_channel = await guild.create_text_channel(f'mafia {game_id}', overwrites=overwrites)
 
-            overwrites = {
-                guild.default_role: discord.PermissionOverwrite(read_messages=False),
-                pp_role: discord.PermissionOverwrite(read_messages=True)
-            }
+                for x in mafias:
+                    await x.add_roles(mafia_role)
+                    new_roles[x] = mafia_role
 
-            await guild.create_text_channel(f'person{count + 1} {game_id}', overwrites=overwrites)
+                for count, x in enumerate(range(len(to_select))):
 
-            new_roles[x] = pp_role
-            user = random.choice(to_select)
-            await user.add_roles(pp_role)
-            to_select.remove(user)
+                    pp_role = await guild.create_role(name=''.join(random.choice(string.ascii_letters) for x in range(8)).upper())
 
-        await ctx.send("Spiel erfolgreich gestartet.")
-        await ctx.send("Ihr habt nun 5 Minuten Zeit bis zur ersten Abstimmung! " + ' '.join([x.mention for x in accepted_user]))
-        print(new_roles)
+                    overwrites = {
+                        guild.default_role: discord.PermissionOverwrite(read_messages=False),
+                        pp_role: discord.PermissionOverwrite(read_messages=True)
+                    }
 
-        # Alle Rollen entfernen
-        not_allowed = [481248489238429727, 710895965761962104]
+                    await guild.create_text_channel(f'person{count + 1} {game_id}', overwrites=overwrites)
 
-        for x in users_to_play:
-            real_role = []
+                    new_roles[x] = pp_role
+                    user = random.choice(to_select)
+                    await user.add_roles(pp_role)
+                    to_select.remove(user)
 
-            for f in x.roles:
-                if f.id not in not_allowed:
-                    real_role.append(f)
+                await ctx.send("Spiel erfolgreich gestartet.")
+                await ctx.send("Ihr habt nun 5 Minuten Zeit bis zur ersten Abstimmung! " + ' '.join([x.mention for x in accepted_user]))
 
-            roles_before_game[x] = real_role
+                print(users_to_play)
+                print(len(users_to_play))
 
-            await x.remove_roles(*real_role)
+        else:
+            # Alle Rollen entfernen
+            for x in users_to_play:
+                real_role = []
+                for f in x.roles:
+                    if f.id not in self.not_allowed:
+                        real_role.append(f)
 
-        # Eigentlichen Rollen hinzufügen
-        for x in users_to_play:
-            await x.add_roles(*roles_before_game[x])
+                await x.remove_roles(*real_role)
 
+            # Eigentlichen Rollen hinzufügen
+            for x in users_to_play:
+                await x.add_roles(*roles_before_game[x])
 
-        await ctx.send("Spiel beendet")
+            await ctx.send("Spiel beendet")
 
     @commands.command()
     async def ar(self, ctx, *args):
         old_roles = {}
 
         users_to_play = [ctx.message.guild.get_member(int(str(x).strip("<>!@"))) for x in args]
-        not_allowed = [481248489238429727, 710895965761962104]
 
         for x in users_to_play:
             real_role = []
 
             for f in x.roles:
-                if f.id not in not_allowed:
+                if f.id not in self.not_allowed:
                     real_role.append(f)
 
 
@@ -206,10 +201,10 @@ class Basic(commands.Cog):
 
     @commands.command()
     async def delete_unwanted_roles(self, ctx, *args):
-        not_allowed = [481248489238429727, 710895965761962104, 768176239495610398, 768172546860253194, 770040428496945173, 768172546104229899, 768176269916635176, 770331799246995508]
+        self.not_allowed = [481248489238429727, 710895965761962104, 768176239495610398, 768172546860253194, 770040428496945173, 768172546104229899, 768176269916635176, 770331799246995508]
 
         for x in ctx.guild.roles:
-            if x.id not in not_allowed:
+            if x.id not in self.not_allowed:
                 await x.delete()
 
         await ctx.send("Ungewolte Rollen wurden Gelöscht.")
@@ -243,6 +238,8 @@ class Basic(commands.Cog):
         for x in ctx.guild.channels:
             if x.id not in y:
                 await x.delete()
+
+        await ctx.send("Ungewolte Channels wurden Gelöscht.")
 
 def setup(bot):
     bot.add_cog(Basic(bot))
