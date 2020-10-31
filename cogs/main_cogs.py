@@ -149,7 +149,7 @@ class Basic(commands.Cog):
             bot_created_channels.append(game_category)
 
             game_voice = await ctx.guild.create_voice_channel(f"MafiaGame {game_id}", category=game_category)
-            game_voice.append(game_category)
+            bot_created_channels.append(game_voice)
 
             mafia_role = await guild.create_role(name=''.join(random.choice(string.ascii_letters) for x in range(8)).upper())
 
