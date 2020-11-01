@@ -146,12 +146,13 @@ class Basic(commands.Cog):
             print("Not Mafia: ", to_select)
             print("Mafias: ", mafias)
 
-            game_voice = await ctx.guild.create_voice_channel(f"MafiaGame {game_id}", category=game_category)
-            bot_created_channels.append(game_voice)
 
-            #Create Game Channels and Roles
+            # Create Game Channels and Roles
             game_category = await ctx.guild.create_category(f"MafiaGame {game_id}", overwrites=overwrites_category)
             bot_created_channels.append(game_category)
+
+            game_voice = await ctx.guild.create_voice_channel(f"MafiaGame {game_id}", category=game_category)
+            bot_created_channels.append(game_voice)
 
             for count, x in enumerate(range(len(to_select))):
                 pp_role = await guild.create_role(name=''.join(random.choice(string.ascii_letters) for x in range(8)).upper())
@@ -186,9 +187,17 @@ class Basic(commands.Cog):
                 await mafia.add_roles(mafia_role)
                 new_roles[mafia] = mafia_role
 
-            game_category.set_permissions(overwrites=overwrites_mafia_channel)
+            # Change Category Permissions
+            overwrites_category = {
+                ctx.message.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            }
 
-            #Move players to Voice Channel
+            for role in bot_created_roles:
+                overwrites_category[role]: discord.PermissionOverwrite(read_messages=True)
+
+            await game_category.edit(overwrites=overwrites_category)
+
+            # Move players to Voice Channel
             users_in_game = accepted_user.copy()
             for user in users_in_game:
                 await user.edit(voice_channel=game_voice)
@@ -295,11 +304,11 @@ class Basic(commands.Cog):
     async def test(self, ctx, *args):
         mafia_channel = await ctx.message.guild.create_category(f'test')
 
-        overwrites_mafia_channel = {
+        overwrites_category = {
             ctx.message.guild.default_role: discord.PermissionOverwrite(read_messages=False),
         }
 
-        mafia_channel.update(overwrite=overwrites_mafia_channel)
+        await mafia_channel.edit(overwrites=overwrites_mafia_channel)
 
 def setup(bot):
     bot.add_cog(Basic(bot))
