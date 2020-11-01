@@ -12,7 +12,8 @@ class Basic(commands.Cog):
         self.bot = bot
         self._last_member = None
         self.not_allowed = [481248489238429727, 710895965761962104]
-        self.allowed_roles = [481248489238429727, 710895965761962104, 768176239495610398, 768172546860253194, 770040428496945173, 768172546104229899, 768176269916635176, 770331799246995508]
+        self.allowed_roles = [481248489238429727, 710895965761962104, 768176239495610398, 768172546860253194,
+                              770040428496945173, 768172546104229899, 768176269916635176, 770331799246995508]
         self.allowed_channels = [
             768172543273730058,
             768175708799107192,
@@ -45,7 +46,9 @@ class Basic(commands.Cog):
         channel = discord.utils.get(ctx.guild.channels, name="willkommen")
 
         if channel is not None:
-            await channel.send('Selam {}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!'.format(ctx.mention))
+            await channel.send(
+                'Selam {}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!'.format(
+                    ctx.mention))
 
     @commands.command()
     async def trashtalk(self, ctx, *args):
@@ -107,7 +110,7 @@ class Basic(commands.Cog):
 
             except asyncio.TimeoutError:
                 bot_sent_messages.append(await x.send('Du warst leider zu langsam'))
-                
+
             else:
                 if reaction.emoji == '👍':
                     invite = True
@@ -158,11 +161,16 @@ class Basic(commands.Cog):
             game_category = await ctx.guild.create_category(f"MafiaGame {game_id}")
             bot_created_channels.append(game_category)
 
-            game_voice = await ctx.guild.create_voice_channel(f"MafiaGame {game_id}", category=game_category)
+            overwrites_voice = {
+                guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            }
+
+            game_voice = await ctx.guild.create_voice_channel(f"MafiaGame {game_id}", category=game_category, overwrites=overwrites_voice)
             bot_created_channels.append(game_voice)
 
             for count, x in enumerate(range(len(to_select))):
-                pp_role = await guild.create_role(name=''.join(random.choice(string.ascii_letters) for x in range(8)).upper())
+                pp_role = await guild.create_role(
+                    name=''.join(random.choice(string.ascii_letters) for x in range(8)).upper())
                 bot_created_roles.append(pp_role)
 
                 overwrites_person = {
@@ -170,7 +178,9 @@ class Basic(commands.Cog):
                     pp_role: discord.PermissionOverwrite(read_messages=True)
                 }
 
-                bot_created_channels.append(await guild.create_text_channel(f'person{count + 1} {game_id}', overwrites=overwrites_person, category=game_category))
+                bot_created_channels.append(
+                    await guild.create_text_channel(f'person{count + 1} {game_id}', overwrites=overwrites_person,
+                                                    category=game_category))
 
                 new_roles[x] = pp_role
                 user = random.choice(to_select)
@@ -179,6 +189,7 @@ class Basic(commands.Cog):
 
             mafia_role = await guild.create_role(
                 name=''.join(random.choice(string.ascii_letters) for x in range(8)).upper())
+
             bot_created_roles.append(mafia_role)
 
             overwrites_mafia_channel = {
@@ -204,8 +215,19 @@ class Basic(commands.Cog):
 
             await game_category.edit(overwrites=overwrites_category)
 
+            # Change Voice Permissions
+            overwrites_voice = {
+                ctx.message.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            }
+
+            for role in bot_created_roles:
+                overwrites_voice[role]: discord.PermissionOverwrite(speak=True)
+
+            await game_voice.edit(overwrites=overwrites_voice)
+
             # Move players to Voice Channel
             users_in_game = accepted_user.copy()
+
             for user in users_in_game:
                 await user.edit(voice_channel=game_voice)
 
@@ -222,17 +244,61 @@ class Basic(commands.Cog):
 
             await ctx.send(embed=embed)
 
-            time.sleep(300)
+            # Game Body
+            users_to_play = accepted_user.copy()
 
-            users_in_game = accepted_user.copy()
-            users_in_game_mentions = [x.mention for x in users_in_game]
+            while True:
+                if len(users_to_play) > 1:
+                    time.sleep(30)
+                    users_to_play_mentions = [x.mention for x in users_in_game]
 
+                    print("Mention:\n", users_to_play_mentions)
+                    print(users_in_game)
+
+                    votes = []
+
+                    for x in range(1):
+                        for user in users_to_play:
+                            await ctx.send(f"{user.mention} für wen stimmst du?")
+
+                            def check_vote(m):
+                                print(m.content)
+                                print(m.author == user)
+                                print(m.content in users_to_play_mentions)
+                                print(m.content != user.mention)
+                                print(m.content == "skip")
+                                return (m.author == user and m.content in users_to_play_mentions and m.content != user.mention) or m.content == "skip"
+
+                            answer = await self.bot.wait_for("message", check=check_vote)
+                            votes.append(answer.content)
+
+                        raus = []
+
+                        for vote in votes:
+                            if votes.count(vote) > len(votes) / 2:
+                                raus.append(vote)
+
+                        print(raus)
+
+                        if raus == [] or "skip" in raus:
+                            await ctx.send("Es konnte keine mehrheit gebildet werden.")
+                            print(votes)
+
+                        else:
+                            print(raus[0])
+                            print(users_to_play)
+                            users_to_play.remove(raus[0])
+                            await ctx.send(f"{raus[0]} wird raus geworfen")
+                else:
+                    await ctx.send(f"{users_to_play[0]} hat gewonnen")
+                    break
+
+            # End
             for x in users_to_play:
                 await x.add_roles(*roles_before_game[x])
 
             await self.delete_unwanted_channels(ctx, False)
             await self.delete_unwanted_roles(ctx, False)
-
             await ctx.send("Spiel beendet")
 
         else:
@@ -250,7 +316,6 @@ class Basic(commands.Cog):
             for f in x.roles:
                 if f.id not in self.not_allowed:
                     real_role.append(f)
-
 
             old_roles[x] = real_role
 
@@ -290,6 +355,7 @@ class Basic(commands.Cog):
     async def vote(self, ctx, *args):
         users_to_play = [ctx.message.guild.get_member(int(str(x).strip("<>!@"))) for x in args]
         users_to_play_mentions = args
+
         votes = []
 
         for x in range(1):
@@ -297,7 +363,8 @@ class Basic(commands.Cog):
                 await ctx.send(f"{user.mention} für wen stimmst du?")
 
                 def check_vote(m):
-                    return (m.author == user and m.content in users_to_play_mentions and m.content != user.mention) or m.content == "skip"
+                    return (
+                                   m.author == user and m.content in users_to_play_mentions and m.content != user.mention) or m.content == "skip"
 
                 answer = await self.bot.wait_for("message", check=check_vote)
                 votes.append(answer.content)
@@ -319,7 +386,8 @@ class Basic(commands.Cog):
 
     @commands.command()
     async def test(self, ctx, *args):
-        return
+
+        game_voice = await ctx.guild.create_voice_channel(f"MafiaGame", overwrites=overwrites_voice)
 
     @commands.command()
     async def delete(self, ctx, *args):
@@ -329,9 +397,11 @@ class Basic(commands.Cog):
                               description=f"Du wurdest von {users_to_play[0].mention} eingeladen Mafia zu spielen. Möchtest du mitspielen?",
                               color=0x1acdee)
 
-        embed.set_author(name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+        embed.set_author(name="Zemo Bot",
+                         icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
         embed.set_footer(text="Reagiere auf diese Nachricht um die Einladung annzunehmen.")
         await ctx.send(embed=embed)
+
 
 def setup(bot):
     bot.add_cog(Basic(bot))
