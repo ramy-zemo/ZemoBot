@@ -80,7 +80,15 @@ class Basic(commands.Cog):
         bot_sent_messages = []
 
         for x in users_to_play:
-            request = await x.send(f"Du wurdest von {ctx.message.author} eingeladen Mafia zu spielen. Möchtest du mitspielen?")
+            embed = discord.Embed(title="Einladung:",
+                                  description=f"Du wurdest von {ctx.message.author.mention} eingeladen Mafia zu spielen. Möchtest du mitspielen?",
+                                  color=0x1acdee)
+
+            embed.set_author(name="Zemo Bot",
+                             icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+            embed.set_footer(text="Reagiere auf diese Nachricht um die Einladung annzunehmen.")
+            request = await x.send(embed=embed)
+
             bot_sent_messages.append(request)
 
             for emoji in ('👍', '👎'):
@@ -315,18 +323,14 @@ class Basic(commands.Cog):
 
     @commands.command()
     async def delete(self, ctx, *args):
-        accepted_user = [ctx.guild.get_member(int(str(x).strip("<>!@"))) for x in args]
+        users_to_play = [ctx.message.guild.get_member(int(str(x).strip("<>!@"))) for x in args]
 
-        embed = discord.Embed(title="Spiel erfolgreich gestartet.",
-                              description="Ihr habt nun 5 Minuten Zeit bis zur ersten Abstimmung.\nViel Glück!\n\n",
+        embed = discord.Embed(title="Einladung:",
+                              description=f"Du wurdest von {users_to_play[0].mention} eingeladen Mafia zu spielen. Möchtest du mitspielen?",
                               color=0x1acdee)
 
-        embed.set_author(name="Zemo Bot",
-                         icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
-
-        embed.add_field(name="Mitspieler:", value="\n" + ' '.join(
-            [x.mention for x in accepted_user]), inline=True)
-
+        embed.set_author(name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+        embed.set_footer(text="Reagiere auf diese Nachricht um die Einladung annzunehmen.")
         await ctx.send(embed=embed)
 
 def setup(bot):
