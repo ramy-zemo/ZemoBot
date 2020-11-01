@@ -1,7 +1,3 @@
-def pros(*args):
-    x = args
-    print(x[0])
-    print("Wie gehts?")
-
-pros(True)
-
+my_dict = {'one': 1, 'two': 2, 'three': 3}
+for x in my_dict:
+    print(x)
