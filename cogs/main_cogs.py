@@ -146,9 +146,8 @@ class Basic(commands.Cog):
             print("Not Mafia: ", to_select)
             print("Mafias: ", mafias)
 
-
             # Create Game Channels and Roles
-            game_category = await ctx.guild.create_category(f"MafiaGame {game_id}", overwrites=overwrites_category)
+            game_category = await ctx.guild.create_category(f"MafiaGame {game_id}")
             bot_created_channels.append(game_category)
 
             game_voice = await ctx.guild.create_voice_channel(f"MafiaGame {game_id}", category=game_category)
@@ -202,8 +201,18 @@ class Basic(commands.Cog):
             for user in users_in_game:
                 await user.edit(voice_channel=game_voice)
 
-            await ctx.send("Spiel erfolgreich gestartet.")
-            await ctx.send("Ihr habt nun 5 Minuten Zeit bis zur ersten Abstimmung! " + ' '.join([x.mention for x in accepted_user]))
+            # Start Game
+            embed = discord.Embed(title="Spiel erfolgreich gestartet.",
+                                  description="Ihr habt nun 5 Minuten Zeit bis zur ersten Abstimmung.\nViel Glück!\n\n",
+                                  color=0x1acdee)
+
+            embed.set_author(name="Zemo Bot",
+                             icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+
+            embed.add_field(name="Mitspieler:", value="\n" + ' '.join(
+                [x.mention for x in accepted_user]), inline=True)
+
+            await ctx.send(embed=embed)
 
             time.sleep(300)
 
@@ -302,13 +311,23 @@ class Basic(commands.Cog):
 
     @commands.command()
     async def test(self, ctx, *args):
-        mafia_channel = await ctx.message.guild.create_category(f'test')
+        return
 
-        overwrites_category = {
-            ctx.message.guild.default_role: discord.PermissionOverwrite(read_messages=False),
-        }
+    @commands.command()
+    async def delete(self, ctx, *args):
+        accepted_user = [ctx.guild.get_member(int(str(x).strip("<>!@"))) for x in args]
 
-        await mafia_channel.edit(overwrites=overwrites_mafia_channel)
+        embed = discord.Embed(title="Spiel erfolgreich gestartet.",
+                              description="Ihr habt nun 5 Minuten Zeit bis zur ersten Abstimmung.\nViel Glück!\n\n",
+                              color=0x1acdee)
+
+        embed.set_author(name="Zemo Bot",
+                         icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+
+        embed.add_field(name="Mitspieler:", value="\n" + ' '.join(
+            [x.mention for x in accepted_user]), inline=True)
+
+        await ctx.send(embed=embed)
 
 def setup(bot):
     bot.add_cog(Basic(bot))
