@@ -157,6 +157,9 @@ class Basic(commands.Cog):
             print("Not Mafia: ", to_select)
             print("Mafias: ", mafias)
 
+            vote_persons = to_select.copy()
+            vote_mafias = mafias.copy()
+
             # Create Game Channels and Roles
             game_category = await ctx.guild.create_category(f"MafiaGame {game_id}")
             bot_created_channels.append(game_category)
@@ -166,6 +169,7 @@ class Basic(commands.Cog):
             }
 
             game_voice = await ctx.guild.create_voice_channel(f"MafiaGame {game_id}", category=game_category, overwrites=overwrites_voice)
+
             bot_created_channels.append(game_voice)
 
             for count, x in enumerate(range(len(to_select))):
@@ -211,9 +215,10 @@ class Basic(commands.Cog):
             }
 
             for role in bot_created_roles:
-                overwrites_category[role]: discord.PermissionOverwrite(read_messages=True)
+                overwrites_category[role] = discord.PermissionOverwrite(read_messages=True)
+                overwrites_voice[role] = discord.PermissionOverwrite(use_voice_activation=True)
 
-            await game_category.edit(overwrites=overwrites_category)
+            await game_category.edit(sync_permissions=False, overwrites=overwrites_category)
 
             # Change Voice Permissions
             overwrites_voice = {
@@ -221,9 +226,11 @@ class Basic(commands.Cog):
             }
 
             for role in bot_created_roles:
-                overwrites_voice[role]: discord.PermissionOverwrite(speak=True)
+                overwrites_voice[role] = discord.PermissionOverwrite(speak=True)
+                overwrites_voice[role] = discord.PermissionOverwrite(use_voice_activation=True)
 
-            await game_voice.edit(overwrites=overwrites_voice)
+            print("229", overwrites_voice)
+            await game_voice.edit(sync_permissions=False, overwrites=overwrites_voice)
 
             # Move players to Voice Channel
             users_in_game = accepted_user.copy()
@@ -248,26 +255,35 @@ class Basic(commands.Cog):
             users_to_play = accepted_user.copy()
 
             while True:
-                if len(users_to_play) > 1:
-                    time.sleep(30)
-                    users_to_play_mentions = [x.mention for x in users_in_game]
-
-                    print("Mention:\n", users_to_play_mentions)
-                    print(users_in_game)
-
+                if len(vote_mafias) < len(vote_persons):
+                    time.sleep(300)
                     votes = []
-
                     for x in range(1):
                         for user in users_to_play:
                             await ctx.send(f"{user.mention} für wen stimmst du?")
 
                             def check_vote(m):
-                                print(m.content)
-                                print(m.author == user)
-                                print(m.content in users_to_play_mentions)
-                                print(m.content != user.mention)
-                                print(m.content == "skip")
-                                return (m.author == user and m.content in users_to_play_mentions and m.content != user.mention) or m.content == "skip"
+                                try:
+                                    user_input = guild.get_member(int(str(m.content).strip("<>!@")))
+                                    first_check = m.author == user
+                                    second_check = user_input in users_to_play
+                                    third_check = user_input != user.mention
+                                    forth_check = user_input == "skip"
+
+                                    if not first_check:
+                                        print("Netter Versuch! " + m.author.mention)
+
+                                    elif not second_check:
+                                        print(m.content, "steht leider nicht zur Verfügung.")
+
+                                    elif not third_check:
+                                        print("Du kannst nicht für dich selbst stimmen.", m.author.mention)
+
+                                    return (first_check and second_check and third_check) or forth_check
+
+                                except:
+                                    print("Du kannst nicht für dich selbst stimmen.", m.author.mention)
+                                    return False
 
                             answer = await self.bot.wait_for("message", check=check_vote)
                             votes.append(answer.content)
@@ -287,7 +303,15 @@ class Basic(commands.Cog):
                         else:
                             print(raus[0])
                             print(users_to_play)
-                            users_to_play.remove(raus[0])
+                            to_kick = guild.get_member(int(str(raus[0]).strip("<>!@")))
+                            users_to_play.remove(to_kick)
+                            if to_kick in vote_mafias:
+                                vote_mafias.remove(to_kick)
+                            elif to_kick in vote_persons:
+                                vote_persons.remove(to_kick)
+                            else:
+                                print("Error 297")
+
                             await ctx.send(f"{raus[0]} wird raus geworfen")
                 else:
                     await ctx.send(f"{users_to_play[0]} hat gewonnen")
@@ -321,7 +345,6 @@ class Basic(commands.Cog):
 
             await x.remove_roles(*real_role)
             await ctx.send("Gelöscht, 10 Sekunden warten und dann Back nigga")
-            time.sleep(10)
 
         for x in users_to_play:
             await x.add_roles(*old_roles[x])
@@ -386,8 +409,16 @@ class Basic(commands.Cog):
 
     @commands.command()
     async def test(self, ctx, *args):
+        game_category = await ctx.guild.create_category(f"MafiaGame")
 
-        game_voice = await ctx.guild.create_voice_channel(f"MafiaGame", overwrites=overwrites_voice)
+        overwrites_category = {
+            ctx.message.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+        }
+
+        for role in bot_created_roles:
+            overwrites_category[role]: discord.PermissionOverwrite(read_messages=True)
+
+        await game_category.edit(sync_permissions=False, overwrites=overwrites_category)
 
     @commands.command()
     async def delete(self, ctx, *args):
