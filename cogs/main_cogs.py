@@ -1,9 +1,9 @@
 from discord.ext import commands
 import discord
-import time
 import asyncio
 from math import ceil
 import random
+import sqlite3
 import string
 
 
@@ -33,6 +33,8 @@ class Basic(commands.Cog):
             769921717887172608,
             769922292297367603,
             771868769983004682]
+        self.conn = sqlite3.connect("mafia_stats.s3db")
+        self.cur = self.conn.cursor()
 
         with open("trashtalk.txt", encoding="utf-8") as file:
             self.text = file.readlines()
@@ -74,13 +76,14 @@ class Basic(commands.Cog):
         new_roles = {}
         running = True
 
-        if ctx.message.author not in users_to_play:
-            users_to_play.append(ctx.message.author)
-
         accepted_user = []
         bot_created_channels = []
         bot_created_roles = []
         bot_sent_messages = []
+
+        # Add game starting Person to Player
+        if ctx.message.author not in users_to_play:
+            accepted_user.append(ctx.message.author)
 
         for x in users_to_play:
             embed = discord.Embed(title="Einladung:",
@@ -122,6 +125,7 @@ class Basic(commands.Cog):
             if invite:
                 accepted_user.append(x)
 
+        # Delete all Bot sent messages
         for msg in bot_sent_messages:
             await msg.delete()
 
@@ -134,7 +138,7 @@ class Basic(commands.Cog):
 
         if running:
             # Alle Rollen entfernen
-            for x in users_to_play:
+            for x in accepted_user:
                 real_role = []
 
                 for f in x.roles:
@@ -233,10 +237,16 @@ class Basic(commands.Cog):
             await game_voice.edit(sync_permissions=False, overwrites=overwrites_voice)
 
             # Move players to Voice Channel
-            users_in_game = accepted_user.copy()
-
-            for user in users_in_game:
-                await user.edit(voice_channel=game_voice)
+            while True:
+                try:
+                    users_in_game = accepted_user.copy()
+                    for user in users_in_game:
+                        await user.edit(voice_channel=game_voice)
+                    break
+                except discord.errors.HTTPException:
+                    await ctx.send("Alle mitspieler müssen mit einem Sprachkanal verbunden sein."
+                                   "\nVersuche in 10 Sekunden erneut.")
+                    await asyncio.sleep(10)
 
             # Start Game
             embed = discord.Embed(title="Spiel erfolgreich gestartet.",
@@ -256,68 +266,68 @@ class Basic(commands.Cog):
 
             while True:
                 if len(vote_mafias) < len(vote_persons):
-                    time.sleep(300)
+                    #await asyncio.sleep(300)
                     votes = []
-                    for x in range(1):
-                        for user in users_to_play:
-                            await ctx.send(f"{user.mention} für wen stimmst du?")
+                    # Get all User Votes
+                    for user in users_to_play:
+                        await ctx.send(f"{user.mention} für wen stimmst du?")
 
-                            def check_vote(m):
-                                try:
-                                    user_input = guild.get_member(int(str(m.content).strip("<>!@")))
-                                    first_check = m.author == user
-                                    second_check = user_input in users_to_play
-                                    third_check = user_input != user.mention
-                                    forth_check = user_input == "skip"
+                        def check_vote(m):
+                            try:
+                                user_input = guild.get_member(int(str(m.content).strip("<>!@")))
+                                # Right Person is voting
+                                first_check = m.author == user
+                                # Voted Person is still "alive"
+                                second_check = user_input in users_to_play
+                                # Skip vote
+                                forth_check = user_input == "skip"
 
-                                    if not first_check:
-                                        print("Netter Versuch! " + m.author.mention)
+                                return (first_check and second_check) or forth_check
+                            except:
+                                return False
 
-                                    elif not second_check:
-                                        print(m.content, "steht leider nicht zur Verfügung.")
+                        answer = await self.bot.wait_for("message", check=check_vote)
+                        votes.append(answer.content)
 
-                                    elif not third_check:
-                                        print("Du kannst nicht für dich selbst stimmen.", m.author.mention)
+                    raus = []
 
-                                    return (first_check and second_check and third_check) or forth_check
+                    for vote in votes:
+                        if votes.count(vote) > len(votes) / 2:
+                            raus.append(vote)
 
-                                except:
-                                    print("Du kannst nicht für dich selbst stimmen.", m.author.mention)
-                                    return False
+                    # Dont kick anyone
+                    if raus == [] or "skip" in raus:
+                        await ctx.send("Es konnte keine mehrheit gebildet werden.")
+                        await ctx.send("5 Minuten bis zur nächsten Abstimmung.")
 
-                            answer = await self.bot.wait_for("message", check=check_vote)
-                            votes.append(answer.content)
+                        print(votes)
 
-                        raus = []
+                    else:
+                        # Kick Person and notify Users
+                        print(raus[0])
+                        print(users_to_play)
+                        to_kick = guild.get_member(int(str(raus[0]).strip("<>!@")))
+                        users_to_play.remove(to_kick)
 
-                        for vote in votes:
-                            if votes.count(vote) > len(votes) / 2:
-                                raus.append(vote)
+                        await ctx.send(f"{raus[0]} wird raus geworfen")
 
-                        print(raus)
-
-                        if raus == [] or "skip" in raus:
-                            await ctx.send("Es konnte keine mehrheit gebildet werden.")
-                            print(votes)
-
+                        if to_kick in vote_mafias:
+                            vote_mafias.remove(to_kick)
+                            await ctx.send(f"{raus[0]} war ein Mafioso")
+                        elif to_kick in vote_persons:
+                            vote_persons.remove(to_kick)
+                            await ctx.send(f"{raus[0]} war ein Bürger")
                         else:
-                            print(raus[0])
-                            print(users_to_play)
-                            to_kick = guild.get_member(int(str(raus[0]).strip("<>!@")))
-                            users_to_play.remove(to_kick)
-                            if to_kick in vote_mafias:
-                                vote_mafias.remove(to_kick)
-                            elif to_kick in vote_persons:
-                                vote_persons.remove(to_kick)
-                            else:
-                                print("Error 297")
+                            print("Error 297")
 
-                            await ctx.send(f"{raus[0]} wird raus geworfen")
+                        await ctx.send("5 Minuten bis zur nächsten Abstimmung.")
+
                 else:
                     await ctx.send(f"{users_to_play[0]} hat gewonnen")
                     break
 
             # End
+            # Add old roles
             for x in users_to_play:
                 await x.add_roles(*roles_before_game[x])
 
@@ -386,8 +396,7 @@ class Basic(commands.Cog):
                 await ctx.send(f"{user.mention} für wen stimmst du?")
 
                 def check_vote(m):
-                    return (
-                                   m.author == user and m.content in users_to_play_mentions and m.content != user.mention) or m.content == "skip"
+                    return (m.author == user and m.content in users_to_play_mentions and m.content != user.mention) or m.content == "skip"
 
                 answer = await self.bot.wait_for("message", check=check_vote)
                 votes.append(answer.content)
@@ -409,16 +418,7 @@ class Basic(commands.Cog):
 
     @commands.command()
     async def test(self, ctx, *args):
-        game_category = await ctx.guild.create_category(f"MafiaGame")
-
-        overwrites_category = {
-            ctx.message.guild.default_role: discord.PermissionOverwrite(read_messages=False),
-        }
-
-        for role in bot_created_roles:
-            overwrites_category[role]: discord.PermissionOverwrite(read_messages=True)
-
-        await game_category.edit(sync_permissions=False, overwrites=overwrites_category)
+        return
 
     @commands.command()
     async def delete(self, ctx, *args):
