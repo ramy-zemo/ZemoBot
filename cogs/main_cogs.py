@@ -2,8 +2,9 @@ from discord.ext import commands
 import discord
 import asyncio
 from math import ceil
+from datetime import date
 import random
-import sqlite3
+import mysql.connector
 import string
 
 
@@ -33,8 +34,21 @@ class Basic(commands.Cog):
             769921717887172608,
             769922292297367603,
             771868769983004682]
-        self.conn = sqlite3.connect("mafia_stats.s3db")
-        self.cur = self.conn.cursor()
+
+        self.conn_tt = mysql.connector.connect(user='ni215803_1sql1', password='6865af7e',
+                              host='ni215803-1.web16.nitrado.hosting',
+                              database='ni215803_1sql1')
+        self.cur_tt = self.conn_tt.cursor()
+
+        self.conn_mf = mysql.connector.connect(user='ni215803_1sql3', password='b46149bd',
+                              host='ni215803-1.web16.nitrado.hosting',
+                              database='ni215803_1sql3')
+        self.cur_mf = self.conn_mf.cursor()
+
+        self.conn_mf = mysql.connector.connect(user='ni215803_1sql4', password='95d935e9',
+                              host='ni215803-1.web16.nitrado.hosting',
+                              database='ni215803_1sql4')
+        self.cur_mf = self.conn_mf.cursor()
 
         with open("trashtalk.txt", encoding="utf-8") as file:
             self.text = file.readlines()
@@ -53,12 +67,64 @@ class Basic(commands.Cog):
                     ctx.mention))
 
     @commands.command()
-    async def trashtalk(self, ctx, *args):
-        users_to_tt = [ctx.message.guild.get_member(int(str(x).strip("<>!@"))) for x in args]
+    async def help(self, ctx, *args):
+        embed = discord.Embed(title="Help", color=0x1acdee)
+        embed.set_author(name="Zemo Bot", icon_url = "https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+        embed.add_field(name="ZemoBot Commands",
+                        value="$trashtalk (Mention) - Trashtalk people\n\n$trashtalk_stats - Show your Discord Trashtalk Stats\n\n$trashtalk_reset (Mention) - Reset your Trashtalk Stats\n\n$mafia (mention) - Start Mafia Game\n\n$ping - Check if bot is alive",
+                        inline=False)
+        await ctx.send(embed=embed)
 
-        for user in users_to_tt:
-            for t in self.text:
-                await user.send(t)
+    @commands.command()
+    async def trashtalk(self, ctx, *args):
+        self.cur_tt.execute('CREATE TABLE IF NOT EXISTS TrashTalk{} ( datum TEXT, von TEXT, an TEXT)'.format(
+            str(ctx.message.author.id)))
+        self.conn_tt.commit()
+
+        datum = str(date.today())
+
+        sql = f"SELECT * FROM TrashTalk{str(ctx.message.author.id)}"
+
+        self.cur_tt.execute(sql)
+
+        result = self.cur_tt.fetchall()
+        daten = [x[0] for x in result if x[0] == datum]
+
+        if len(daten) < 10:
+            users_to_tt = [ctx.message.guild.get_member(int(str(x).strip("<>!@"))) for x in args]
+            for user in users_to_tt:
+                sql = "INSERT INTO TrashTalk{} (datum, von, an) VALUES (%s, %s, %s)".format(str(ctx.message.author.id))
+                val_1 = (datum, str(ctx.message.author), str(user))
+
+                self.cur_tt.execute(sql,val_1)
+                self.conn_tt.commit()
+
+                for t in self.text:
+                    await user.send(t)
+        else:
+            await ctx.send(f"{ctx.message.author.mention} du hast dein Trash Limit für heute erreicht.")
+
+    @commands.command()
+    async def trashtalk_stats(self, ctx, *args):
+        datum = str(date.today())
+
+        sql = f"SELECT * FROM TrashTalk{str(ctx.message.author.id)}"
+
+        self.cur_tt.execute(sql)
+
+        result = self.cur_tt.fetchall()
+        daten = [x[0] for x in result if x[0] == datum]
+
+        await ctx.send(f"All time: {len(result)}, Today: {len(daten)}")
+
+    @commands.command()
+    async def trashtalk_reset(self, ctx, *args):
+        try:
+            self.cur_tt.execute(f"DELETE FROM TrashTalk{str(ctx.message.author.id)}")
+            self.conn_tt.commit()
+            await ctx.send(f"Trashtalk für {ctx.message.author.mention} erfolgreich zurückgesetzt.")
+        except:
+            await ctx.send(f"Nutzer {ctx.message.author.mention} nicht gefunden.")
 
     @commands.command()
     async def amo(self, ctx, *args):
@@ -80,6 +146,7 @@ class Basic(commands.Cog):
         bot_created_channels = []
         bot_created_roles = []
         bot_sent_messages = []
+
 
         # Add game starting Person to Player
         if ctx.message.author not in users_to_play:
@@ -171,7 +238,6 @@ class Basic(commands.Cog):
             overwrites_voice = {
                 guild.default_role: discord.PermissionOverwrite(read_messages=False),
             }
-
             game_voice = await ctx.guild.create_voice_channel(f"MafiaGame {game_id}", category=game_category, overwrites=overwrites_voice)
 
             bot_created_channels.append(game_voice)
@@ -209,6 +275,17 @@ class Basic(commands.Cog):
                                                             category=game_category)
             bot_created_channels.append(mafia_channel)
 
+            overwrites_text = {
+                guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            }
+
+            for rl in bot_created_roles:
+                overwrites_text[rl] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
+
+            print(overwrites_text)
+            game_text_channel = await guild.create_text_channel(f'Gamechat', category=game_category, overwrites=overwrites_text)
+            bot_created_channels.append(game_text_channel)
+
             for mafia in mafias:
                 await mafia.add_roles(mafia_role)
                 new_roles[mafia] = mafia_role
@@ -220,7 +297,7 @@ class Basic(commands.Cog):
 
             for role in bot_created_roles:
                 overwrites_category[role] = discord.PermissionOverwrite(read_messages=True)
-                overwrites_voice[role] = discord.PermissionOverwrite(use_voice_activation=True)
+                overwrites_category[role] = discord.PermissionOverwrite(use_voice_activation=True)
 
             await game_category.edit(sync_permissions=False, overwrites=overwrites_category)
 
@@ -244,7 +321,7 @@ class Basic(commands.Cog):
                         await user.edit(voice_channel=game_voice)
                     break
                 except discord.errors.HTTPException:
-                    await ctx.send("Alle mitspieler müssen mit einem Sprachkanal verbunden sein."
+                    await game_text_channel.send("Alle mitspieler müssen mit einem Sprachkanal verbunden sein."
                                    "\nVersuche in 10 Sekunden erneut.")
                     await asyncio.sleep(10)
 
@@ -259,7 +336,7 @@ class Basic(commands.Cog):
             embed.add_field(name="Mitspieler:", value="\n" + ' '.join(
                 [x.mention for x in accepted_user]), inline=True)
 
-            await ctx.send(embed=embed)
+            await game_text_channel.send(embed=embed)
 
             # Game Body
             users_to_play = accepted_user.copy()
@@ -270,7 +347,7 @@ class Basic(commands.Cog):
                     votes = []
                     # Get all User Votes
                     for user in users_to_play:
-                        await ctx.send(f"{user.mention} für wen stimmst du?")
+                        await game_text_channel.send(f"{user.mention} für wen stimmst du?")
 
                         def check_vote(m):
                             try:
@@ -297,39 +374,42 @@ class Basic(commands.Cog):
 
                     # Dont kick anyone
                     if raus == [] or "skip" in raus:
-                        await ctx.send("Es konnte keine mehrheit gebildet werden.")
-                        await ctx.send("5 Minuten bis zur nächsten Abstimmung.")
+                        await game_text_channel.send("Es konnte keine mehrheit gebildet werden.")
+                        await game_text_channel.send("5 Minuten bis zur nächsten Abstimmung.")
 
                         print(votes)
 
                     else:
                         # Kick Person and notify Users
-                        print(raus[0])
-                        print(users_to_play)
+                        print("Jetzt kommt einmal Raus und einmal Users to Play")
+
                         to_kick = guild.get_member(int(str(raus[0]).strip("<>!@")))
                         users_to_play.remove(to_kick)
 
-                        await ctx.send(f"{raus[0]} wird raus geworfen")
+                        await game_text_channel.send(f"{raus[0]} wird raus geworfen")
 
                         if to_kick in vote_mafias:
                             vote_mafias.remove(to_kick)
-                            await ctx.send(f"{raus[0]} war ein Mafioso")
+                            await game_text_channel.send(f"{raus[0]} war ein Mafioso")
                         elif to_kick in vote_persons:
                             vote_persons.remove(to_kick)
-                            await ctx.send(f"{raus[0]} war ein Bürger")
+                            await game_text_channel.send(f"{raus[0]} war ein Bürger")
                         else:
                             print("Error 297")
 
-                        await ctx.send("5 Minuten bis zur nächsten Abstimmung.")
+                        await to_kick.edit(mute=True)
+
+                        await game_text_channel.send("5 Minuten bis zur nächsten Abstimmung.")
 
                 else:
-                    await ctx.send(f"{users_to_play[0]} hat gewonnen")
+                    await game_text_channel.send(f"{users_to_play[0]} hat gewonnen")
                     break
 
             # End
-            # Add old roles
+            # Add old roles & unmute Users
             for x in users_to_play:
                 await x.add_roles(*roles_before_game[x])
+                await x.edit(mute=False)
 
             await self.delete_unwanted_channels(ctx, False)
             await self.delete_unwanted_roles(ctx, False)
@@ -382,7 +462,7 @@ class Basic(commands.Cog):
 
     @commands.command()
     async def ping(self, ctx):
-        await ctx.send("Pong")
+        await ctx.send(f'Pong!  :ping_pong:  In {round(self.bot.latency * 1000)}ms')
 
     @commands.command()
     async def vote(self, ctx, *args):
@@ -417,11 +497,7 @@ class Basic(commands.Cog):
                 await ctx.send(f"{raus[0]} wird raus geworfen")
 
     @commands.command()
-    async def test(self, ctx, *args):
-        return
-
-    @commands.command()
-    async def delete(self, ctx, *args):
+    async def embed(self, ctx, *args):
         users_to_play = [ctx.message.guild.get_member(int(str(x).strip("<>!@"))) for x in args]
 
         embed = discord.Embed(title="Einladung:",
@@ -433,6 +509,10 @@ class Basic(commands.Cog):
         embed.set_footer(text="Reagiere auf diese Nachricht um die Einladung annzunehmen.")
         await ctx.send(embed=embed)
 
+    @commands.command()
+    async def delete(self, ctx, *args):
+        await self.delete_unwanted_roles(ctx)
+        await self.delete_unwanted_channels(ctx)
 
 def setup(bot):
     bot.add_cog(Basic(bot))
