@@ -1,2 +1,2 @@
 # ZemoBot
-Nice Bot in progress
+Nice Discord Bot in progress
