@@ -45,11 +45,6 @@ class Basic(commands.Cog):
                               database='ni215803_1sql3')
         self.cur_mf = self.conn_mf.cursor()
 
-        self.conn_mf = mysql.connector.connect(user='ni215803_1sql4', password='95d935e9',
-                              host='ni215803-1.web16.nitrado.hosting',
-                              database='ni215803_1sql4')
-        self.cur_mf = self.conn_mf.cursor()
-
         with open("trashtalk.txt", encoding="utf-8") as file:
             self.text = file.readlines()
 
@@ -66,13 +61,44 @@ class Basic(commands.Cog):
                 'Selam {}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!'.format(
                     ctx.mention))
 
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.author == self.bot.user:
+            return
+
+        datum = str(date.today())
+
+        self.cur_mf.execute('CREATE TABLE IF NOT EXISTS Messages{} ( datum TEXT, von TEXT, nachricht TEXT)'.format(str(message.author.id)))
+        self.conn_mf.commit()
+
+        sql = "INSERT INTO Messages{} (datum, von, nachricht) VALUES (%s, %s, %s)".format(str(message.author.id))
+        val_1 = (datum, str(message.author), str(message.content))
+
+        self.cur_mf.execute(sql, val_1)
+        self.conn_mf.commit()
+
+    @commands.command()
+    async def stats(self, ctx, *args):
+        self.cur_mf.execute(f"SELECT * FROM Messages{str(ctx.message.author.id)}")
+
+        result = self.cur_mf.fetchall()
+        anzahl = len(result)
+
+        embed = discord.Embed(title=" Statistiken", color=0x1acdee)
+        embed.add_field(name="Nachrichten", value=f"Du hast bisher {anzahl} Nachrichten versendet.", inline=False)
+        await ctx.send(embed=embed)
+
     @commands.command()
     async def help(self, ctx, *args):
-        embed = discord.Embed(title="Help", color=0x1acdee)
-        embed.set_author(name="Zemo Bot", icon_url = "https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
-        embed.add_field(name="ZemoBot Commands",
-                        value="$trashtalk (Mention) - Trashtalk people\n\n$trashtalk_stats - Show your Discord Trashtalk Stats\n\n$trashtalk_reset (Mention) - Reset your Trashtalk Stats\n\n$mafia (mention) - Start Mafia Game\n\n$ping - Check if bot is alive",
-                        inline=False)
+        embed = discord.Embed(title="Help", description="List of available commands", color=0x1acdee)
+        embed.set_author(
+            name="Zemo Bot", icon_url = "https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+        embed.add_field(name="$trashtalk (Mention)", value="Trashtalk people", inline=False)
+        embed.add_field(name="$trashtalk_stats", value="Show your Discord Trashtalk Stats", inline=False)
+        embed.add_field(name="$trashtalk_reset (Mention)", value="Reset your Trashtalk Stats", inline=False)
+        embed.add_field(name="$mafia (mention)", value="Start Mafia Game", inline=False)
+        embed.add_field(name="$ping", value="Check if bot is alive", inline=False)
+        embed.add_field(name="$stats", value="Get your statistics", inline=False)
         await ctx.send(embed=embed)
 
     @commands.command()
@@ -343,7 +369,7 @@ class Basic(commands.Cog):
 
             while True:
                 if len(vote_mafias) < len(vote_persons):
-                    #await asyncio.sleep(300)
+                    await asyncio.sleep(300)
                     votes = []
                     # Get all User Votes
                     for user in users_to_play:
@@ -357,11 +383,12 @@ class Basic(commands.Cog):
                                 # Voted Person is still "alive"
                                 second_check = user_input in users_to_play
                                 # Skip vote
-                                forth_check = user_input == "skip"
-
-                                return (first_check and second_check) or forth_check
+                                return first_check and second_check
                             except:
-                                return False
+                                if m.content.lower() == "skip":
+                                    return True
+                                else:
+                                    return False
 
                         answer = await self.bot.wait_for("message", check=check_vote)
                         votes.append(answer.content)
@@ -403,11 +430,12 @@ class Basic(commands.Cog):
 
                 else:
                     await game_text_channel.send(f"{users_to_play[0]} hat gewonnen")
+                    await asyncio.sleep(60)
                     break
 
             # End
             # Add old roles & unmute Users
-            for x in users_to_play:
+            for x in accepted_user:
                 await x.add_roles(*roles_before_game[x])
                 await x.edit(mute=False)
 
