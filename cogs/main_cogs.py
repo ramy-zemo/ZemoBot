@@ -3,6 +3,7 @@ import discord
 import asyncio
 from math import ceil
 from datetime import date
+from time import sleep
 import random
 import mysql.connector
 import string
@@ -166,6 +167,7 @@ class Basic(commands.Cog):
     async def mafia(self, ctx, *args):
         guild = ctx.message.guild
         users_to_play = [guild.get_member(int(str(x).strip("<>!@"))) for x in args]
+
         non_removable_roles = [discord.utils.get(ctx.message.guild.roles, name="Server Booster"),
                                discord.utils.get(ctx.message.guild.roles, name="@everyone")]
 
@@ -181,7 +183,7 @@ class Basic(commands.Cog):
             accepted_user.append(ctx.message.author)
 
         # Invite Users
-        for user in users_to_play:
+        for member in users_to_play:
             embed = discord.Embed(title="Einladung:",
                                   description=f"Du wurdest von {ctx.message.author.mention} eingeladen Mafia zu spielen. Möchtest du mitspielen?",
                                   color=0x1acdee)
@@ -189,7 +191,7 @@ class Basic(commands.Cog):
             embed.set_author(name="Zemo Bot",
                              icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
             embed.set_footer(text="Reagiere auf diese Nachricht um die Einladung annzunehmen.")
-            request = await user.send(embed=embed)
+            request = await member.send(embed=embed)
 
             bot_sent_messages.append(request)
 
@@ -208,18 +210,18 @@ class Basic(commands.Cog):
                 reaction, user = await self.bot.wait_for('reaction_add', timeout=15.0, check=check)
 
             except asyncio.TimeoutError:
-                bot_sent_messages.append(await user.send('Du warst leider zu langsam'))
+                bot_sent_messages.append(await member.send('Du warst leider zu langsam'))
 
             else:
                 if reaction.emoji == '👍':
                     invite = True
-                    bot_sent_messages.append(await user.send("Einladung erfolgreich angenommen!"))
+                    bot_sent_messages.append(await member.send("Einladung erfolgreich angenommen!"))
 
                 if reaction.emoji == '👎':
-                    bot_sent_messages.append(await user.send("Einladung erfolgreich abgelehnt!"))
+                    bot_sent_messages.append(await member.send("Einladung erfolgreich abgelehnt!"))
 
             if invite:
-                accepted_user.append(user)
+                accepted_user.append(member)
 
         # Define Game ID
         game_id = ''.join(random.choice(string.ascii_letters) for x in range(6)).upper()
@@ -308,7 +310,6 @@ class Basic(commands.Cog):
         for rl in bot_created_roles:
             overwrites_text[rl] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
 
-        print(overwrites_text)
         game_text_channel = await guild.create_text_channel(f'Gamechat', category=game_category,
                                                             overwrites=overwrites_text)
         bot_created_channels.append(game_text_channel)
@@ -323,40 +324,37 @@ class Basic(commands.Cog):
         }
 
         for role in bot_created_roles:
-            overwrites_category[role] = discord.PermissionOverwrite(read_messages=True)
-            overwrites_category[role] = discord.PermissionOverwrite(use_voice_activation=True)
+            overwrites_category[role] = discord.PermissionOverwrite(read_messages=True, use_voice_activation=True)
 
         await game_category.edit(sync_permissions=False, overwrites=overwrites_category)
 
         # Change Voice Permissions
         overwrites_voice = {
-            ctx.message.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            guild.default_role: discord.PermissionOverwrite(read_messages=False),
         }
 
         for role in bot_created_roles:
-            overwrites_voice[role] = discord.PermissionOverwrite(speak=True)
-            overwrites_voice[role] = discord.PermissionOverwrite(use_voice_activation=True)
+            overwrites_voice[role] = discord.PermissionOverwrite(speak=True, use_voice_activation=True, read_messages=True)
 
         await game_voice.edit(sync_permissions=False, overwrites=overwrites_voice)
 
         # Move players to Voice Channel
         while True:
             try:
-                users_in_game = accepted_user.copy()
-                for user in users_in_game:
+                for user in accepted_user:
                     await user.edit(voice_channel=game_voice)
                 break
             except discord.errors.HTTPException:
                 await game_text_channel.send("Alle mitspieler müssen mit einem Sprachkanal verbunden sein.\n"
-                                             "Versuche in 10 Sekunden erneut.")
-                await asyncio.sleep(10)
+                                             "Versuche in 15 Sekunden erneut.")
+                await asyncio.sleep(15)
 
-            # Notify users
-            for user in vote_mafias:
-                bot_sent_messages.append(await user.send("Gratuliere, du bist ein Mafia mitglied."))
+        # Notify users
+        for user in vote_mafias:
+            bot_sent_messages.append(await user.send("Gratuliere, du bist ein Mafia mitglied."))
 
-            for user in vote_persons:
-                bot_sent_messages.append(await user.send("Gratuliere, du bist ein normaler Bürger."))
+        for user in vote_persons:
+            bot_sent_messages.append(await user.send("Gratuliere, du bist ein normaler Bürger."))
 
         # Start Game
         embed = discord.Embed(title="Spiel erfolgreich gestartet.",
@@ -377,7 +375,7 @@ class Basic(commands.Cog):
         while True:
             # Check if Game is still running
             if len(vote_mafias) < len(vote_persons) and len(vote_mafias) != 0:
-                await asyncio.sleep(300)
+                sleep(3)
                 votes = []
                 # Get all User Votes
                 for user in users_to_play:
@@ -388,10 +386,14 @@ class Basic(commands.Cog):
                             user_input = guild.get_member(int(str(m.content).strip("<>!@")))
                             # Right Person is voting
                             first_check = m.author == user
+
                             # Voted Person is still "alive"
                             second_check = user_input in users_to_play
+
+                            # Check the channel
+                            third_check = m.channel == game_text_channel
                             # Skip vote
-                            return first_check and second_check
+                            return first_check and second_check and third_check
                         except:
                             if m.content.lower() == "skip":
                                 return True
@@ -435,27 +437,26 @@ class Basic(commands.Cog):
 
             else:
                 # Game is not running
-                if users_to_play[0] in vote_mafias:
-                    await game_text_channel.send(f"{users_to_play[0]} hat gewonnen")
+                if len(vote_mafias) >= len(vote_persons):
+                    await game_text_channel.send("Die Mafiosi haben gewonnen")
+
                 else:
                     await game_text_channel.send(f"Die Bürger haben gewonnen.")
+
+                # Add old roles & unmute Users
+                for x in accepted_user:
+                    await x.add_roles(*roles_before_game[x])
+                    await x.edit(mute=False)
+
                 await asyncio.sleep(60)
-                break
 
-            # End
+                # Delete all Bot sent messages
+                for msg in bot_sent_messages:
+                    await msg.delete()
 
-            # Delete all Bot sent messages
-            for msg in bot_sent_messages:
-                await msg.delete()
-
-            # Add old roles & unmute Users
-            for x in accepted_user:
-                await x.add_roles(*roles_before_game[x])
-                await x.edit(mute=False)
-
-            await self.delete_unwanted_channels(ctx, False)
-            await self.delete_unwanted_roles(ctx, False)
-            await ctx.send("Spiel beendet")
+                await self.delete_unwanted_channels(ctx, False)
+                await self.delete_unwanted_roles(ctx, False)
+                await ctx.send(f"Spiel {game_id} beendet")
 
     @commands.command()
     async def ar(self, ctx, *args):
