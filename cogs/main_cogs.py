@@ -163,7 +163,7 @@ class Basic(commands.Cog):
             await x.send("{}".format(" ".join(args)))
 
     @commands.command()
-    async def mafia_cancel(self, ctx, *args):
+    async def testo(self, ctx, *args):
         return
 
     @commands.command()
@@ -174,10 +174,11 @@ class Basic(commands.Cog):
         non_removable_roles = [discord.utils.get(ctx.message.guild.roles, name="Server Booster"),
                                discord.utils.get(ctx.message.guild.roles, name="@everyone")]
 
-        self.roles_before_game = {}
-        self.bot_created_channels = []
-        self.bot_created_roles = []
-        self.bot_sent_messages = []
+        roles_before_game = {}
+        channels_before_game = {}
+        bot_created_channels = []
+        bot_created_roles = []
+        bot_sent_messages = []
         new_roles = {}
         accepted_user = []
 
@@ -196,7 +197,7 @@ class Basic(commands.Cog):
             embed.set_footer(text="Reagiere auf diese Nachricht um die Einladung annzunehmen.")
             request = await member.send(embed=embed)
 
-            self.bot_sent_messages.append(request)
+            bot_sent_messages.append(request)
 
             for emoji in ('👍', '👎'):
                 await request.add_reaction(emoji)
@@ -218,7 +219,7 @@ class Basic(commands.Cog):
                                       color=0x1acdee)
                 embed.set_author(name="Zemo Bot",
                                  icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
-                self.bot_sent_messages.append(await member.send(embed=embed))
+                bot_sent_messages.append(await member.send(embed=embed))
 
             else:
                 if reaction.emoji == '👍':
@@ -230,7 +231,7 @@ class Basic(commands.Cog):
 
                     embed.set_author(name="Zemo Bot",
                                      icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
-                    self.bot_sent_messages.append(await member.send(embed=embed))
+                    bot_sent_messages.append(await member.send(embed=embed))
 
                 if reaction.emoji == '👎':
                     embed = discord.Embed(title="Einladung",
@@ -239,7 +240,7 @@ class Basic(commands.Cog):
 
                     embed.set_author(name="Zemo Bot",
                                      icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
-                    self.bot_sent_messages.append(await member.send(embed=embed))
+                    bot_sent_messages.append(await member.send(embed=embed))
 
             if invite:
                 accepted_user.append(member)
@@ -256,10 +257,14 @@ class Basic(commands.Cog):
             embed.set_author(name="Zemo Bot",
                              icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
 
-            return self.bot_sent_messages.append(await ctx.send(embed=embed))
+            return bot_sent_messages.append(await ctx.send(embed=embed))
 
         # Send Game Start Notification
         await ctx.send(f"Spiel: {game_id} wird gestartet.")
+
+        # Save old Voice Channels
+        for x in accepted_user:
+            channels_before_game[x] = x.voice.channel
 
         # Delete old Roles and save them
         for x in accepted_user:
@@ -269,7 +274,7 @@ class Basic(commands.Cog):
                 if f not in non_removable_roles:
                     real_role.append(f)
 
-            self.roles_before_game[x] = real_role
+            roles_before_game[x] = real_role
 
             await x.remove_roles(*real_role)
 
@@ -287,7 +292,7 @@ class Basic(commands.Cog):
 
         # Create Game Channels and Roles
         game_category = await ctx.guild.create_category(f"MafiaGame {game_id}")
-        self.bot_created_channels.append(game_category)
+        bot_created_channels.append(game_category)
 
         overwrites_voice = {
             guild.default_role: discord.PermissionOverwrite(read_messages=False),
@@ -295,19 +300,19 @@ class Basic(commands.Cog):
         game_voice = await ctx.guild.create_voice_channel(f"MafiaGame {game_id}", category=game_category,
                                                           overwrites=overwrites_voice)
 
-        self.bot_created_channels.append(game_voice)
+        bot_created_channels.append(game_voice)
 
         for count, x in enumerate(range(len(to_select))):
             pp_role = await guild.create_role(
                 name=''.join(random.choice(string.ascii_letters) for x in range(8)).upper())
-            self.bot_created_roles.append(pp_role)
+            bot_created_roles.append(pp_role)
 
             overwrites_person = {
                 guild.default_role: discord.PermissionOverwrite(read_messages=False),
                 pp_role: discord.PermissionOverwrite(read_messages=True)
             }
 
-            self.bot_created_channels.append(
+            bot_created_channels.append(
                 await guild.create_text_channel(f'person {game_id}', overwrites=overwrites_person,
                                                 category=game_category))
 
@@ -319,7 +324,7 @@ class Basic(commands.Cog):
         mafia_role = await guild.create_role(
             name=''.join(random.choice(string.ascii_letters) for x in range(8)).upper())
 
-        self.bot_created_roles.append(mafia_role)
+        bot_created_roles.append(mafia_role)
 
         overwrites_mafia_channel = {
             guild.default_role: discord.PermissionOverwrite(read_messages=False),
@@ -328,18 +333,18 @@ class Basic(commands.Cog):
 
         mafia_channel = await guild.create_text_channel(f'mafia {game_id}', overwrites=overwrites_mafia_channel,
                                                         category=game_category)
-        self.bot_created_channels.append(mafia_channel)
+        bot_created_channels.append(mafia_channel)
 
         overwrites_text = {
             guild.default_role: discord.PermissionOverwrite(read_messages=False),
         }
 
-        for rl in self.bot_created_roles:
+        for rl in bot_created_roles:
             overwrites_text[rl] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
 
         game_text_channel = await guild.create_text_channel(f'Gamechat', category=game_category,
                                                             overwrites=overwrites_text)
-        self.bot_created_channels.append(game_text_channel)
+        bot_created_channels.append(game_text_channel)
 
         for mafia in mafias:
             await mafia.add_roles(mafia_role)
@@ -350,7 +355,7 @@ class Basic(commands.Cog):
             ctx.message.guild.default_role: discord.PermissionOverwrite(read_messages=False),
         }
 
-        for role in self.bot_created_roles:
+        for role in bot_created_roles:
             overwrites_category[role] = discord.PermissionOverwrite(read_messages=True, use_voice_activation=True)
 
         await game_category.edit(sync_permissions=False, overwrites=overwrites_category)
@@ -360,7 +365,7 @@ class Basic(commands.Cog):
             guild.default_role: discord.PermissionOverwrite(read_messages=False),
         }
 
-        for role in self.bot_created_roles:
+        for role in bot_created_roles:
             overwrites_voice[role] = discord.PermissionOverwrite(speak=True, use_voice_activation=True, read_messages=True)
 
         await game_voice.edit(sync_permissions=False, overwrites=overwrites_voice)
@@ -378,10 +383,10 @@ class Basic(commands.Cog):
 
         # Notify users
         for user in vote_mafias:
-            self.bot_sent_messages.append(await user.send("Gratuliere, du bist ein Mafia mitglied."))
+            bot_sent_messages.append(await user.send("Gratuliere, du bist ein Mafia mitglied."))
 
         for user in vote_persons:
-            self.bot_sent_messages.append(await user.send("Gratuliere, du bist ein normaler Bürger."))
+            bot_sent_messages.append(await user.send("Gratuliere, du bist ein normaler Bürger."))
 
         # Start Game
         embed = discord.Embed(title="Spiel erfolgreich gestartet.",
@@ -470,20 +475,22 @@ class Basic(commands.Cog):
                 else:
                     await game_text_channel.send(f"Die Bürger haben gewonnen.")
 
-                # Add old roles & unmute Users
+                # Add old roles & unmute Users & move Players back to old Voice Channel
                 for x in accepted_user:
-                    await x.add_roles(*self.roles_before_game[x])
+                    await x.add_roles(*roles_before_game[x])
                     await x.edit(mute=False)
+                    await x.edit(voice_channel=channels_before_game[x])
 
                 await asyncio.sleep(60)
 
                 # Delete all Bot sent messages
-                for msg in self.bot_sent_messages:
+                for msg in bot_sent_messages:
                     await msg.delete()
 
                 await self.delete_unwanted_channels(ctx, False)
                 await self.delete_unwanted_roles(ctx, False)
                 await ctx.send(f"Spiel {game_id} beendet")
+                break
 
     @commands.command()
     async def ar(self, ctx, *args):
