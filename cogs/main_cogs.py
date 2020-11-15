@@ -13,6 +13,7 @@ class Basic(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self._last_member = None
+        self.timeout_roles = [768172546860253194]
         self.allowed_roles = [481248489238429727, 710895965761962104, 768176239495610398, 768172546860253194,
                               770040428496945173, 768172546104229899, 768176269916635176, 770331799246995508]
         self.allowed_channels = [
@@ -52,8 +53,13 @@ class Basic(commands.Cog):
     async def on_ready(self):
         print("Bot {} läuft!".format(self.bot.user))
 
+
     @commands.Cog.listener()
     async def on_member_join(self, ctx):
+        role = discord.utils.get(ctx.guild.roles, name="KANKA")
+
+        await ctx.add_roles(role)
+
         channel = discord.utils.get(ctx.guild.channels, name="willkommen")
 
         if channel is not None:
@@ -101,7 +107,95 @@ class Basic(commands.Cog):
         embed.add_field(name="$mafia (mention)", value="Start Mafia Game", inline=True)
         embed.add_field(name="$ping", value="Check if bot is alive", inline=True)
         embed.add_field(name="$stats", value="Get your statistics", inline=True)
+        embed.add_field(name="$auszeit (mention) (seconds)", value="Timeout Users", inline=True)
         await ctx.send(embed=embed)
+
+    @commands.command()
+    async def auszeit(self, ctx, *args):
+        self.non_removable_roles = [discord.utils.get(ctx.message.guild.roles, name="Server Booster"),
+                                    discord.utils.get(ctx.message.guild.roles, name="@everyone")]
+        author_roles = ctx.message.author.roles
+        timeout_roles = [discord.utils.get(ctx.message.guild.roles, id=x) for x in self.timeout_roles]
+        voice_before_game = []
+
+        if any([True for x in author_roles if x in timeout_roles]):
+            users_to_timeout = ctx.message.guild.get_member(int(str(args[0]).strip("<>!@")))
+            seconds_to_kick = int(args[1])
+
+            if seconds_to_kick < 30:
+                return await ctx.send("Eine Auszeit muss zumindest 30 Sekunden dauern.")
+
+            self.auszeit_category = 769921393281466408
+            banned_role = await ctx.message.guild.create_role(name="banned")
+            await banned_role.edit(colour=0xff0000)
+
+            overwrites_auszeit = {
+                ctx.message.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+                banned_role: discord.PermissionOverwrite(read_messages=True, read_message_history=True)
+            }
+
+            auszeit_channel = await ctx.message.guild.create_text_channel('auszeit', category=self.bot.get_channel(self.auszeit_category), overwrites=overwrites_auszeit)
+
+            overwrites_voice = {
+                ctx.message.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+                banned_role: discord.PermissionOverwrite(read_messages=True)
+            }
+
+            voice_channel = await ctx.message.guild.create_voice_channel('auszeit', category=self.bot.get_channel(
+                self.auszeit_category), overwrites=overwrites_auszeit)
+
+            # Check if User is in Voice channel
+            in_voice = bool(ctx.message.author.voice)
+            if in_voice:
+                voice_before_game.append(ctx.message.author.voice.channel)
+                await users_to_timeout.edit(voice_channel=voice_channel)
+
+            # Delete old Roles and save them
+            roles_before = {}
+            real_role = []
+
+            for f in users_to_timeout.roles:
+                if f not in self.non_removable_roles:
+                    real_role.append(f)
+
+            roles_before[users_to_timeout] = real_role
+
+            await users_to_timeout.remove_roles(*real_role)
+            await users_to_timeout.add_roles(discord.utils.get(ctx.message.guild.roles, name="banned"))
+
+            await asyncio.sleep(5)
+
+            await auszeit_channel.send("https://www.youtube.com/watch?v=NPvFkXVi5mM")
+
+            embed = discord.Embed(title="Auszeit", color=0xff0000)
+            embed.set_author(
+                name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+            embed.add_field(name="Deine Auszeit", value="Digga wie gehts auf der Stillen Treppe?", inline=False)
+            embed.set_footer(text="Piss dich digga")
+            await auszeit_channel.send(embed=embed)
+            await auszeit_channel.send("Digga willkommen auf der Stillen Treppe." + users_to_timeout.mention)
+
+            await asyncio.sleep(seconds_to_kick)
+
+            await users_to_timeout.remove_roles(banned_role)
+            await users_to_timeout.add_roles(*roles_before[users_to_timeout])
+
+            if in_voice:
+                await users_to_timeout.edit(voice_channel=voice_before_game[0])
+
+            await auszeit_channel.delete()
+            await voice_channel.delete()
+
+    @commands.command()
+    async def voice_check(self, ctx, *args):
+        await ctx.message.author.edit(voice_channel=None)
+
+    @commands.command()
+    async def kill(self, ctx, *args):
+        users_to_kill = [ctx.message.guild.get_member(int(str(x).strip("<>!@"))) for x in args]
+
+        while True:
+            await users_to_kill[0].send("Du Hurensohn")
 
     @commands.command()
     async def trashtalk(self, ctx, *args):
@@ -170,9 +264,8 @@ class Basic(commands.Cog):
     async def mafia(self, ctx, *args):
         guild = ctx.message.guild
         users_to_play = [guild.get_member(int(str(x).strip("<>!@"))) for x in args]
-
-        non_removable_roles = [discord.utils.get(ctx.message.guild.roles, name="Server Booster"),
-                               discord.utils.get(ctx.message.guild.roles, name="@everyone")]
+        self.non_removable_roles = [discord.utils.get(ctx.message.guild.roles, name="Server Booster"),
+                                    discord.utils.get(ctx.message.guild.roles, name="@everyone")]
 
         roles_before_game = {}
         channels_before_game = {}
@@ -271,7 +364,7 @@ class Basic(commands.Cog):
             real_role = []
 
             for f in x.roles:
-                if f not in non_removable_roles:
+                if f not in self.non_removable_roles:
                     real_role.append(f)
 
             roles_before_game[x] = real_role
@@ -366,7 +459,7 @@ class Basic(commands.Cog):
         }
 
         for role in bot_created_roles:
-            overwrites_voice[role] = discord.PermissionOverwrite(speak=True, use_voice_activation=True, read_messages=True)
+            overwrites_voice[role] = discord.PermissionOverwrite(speak=True, use_voice_activation=True, read_messages=True, )
 
         await game_voice.edit(sync_permissions=False, overwrites=overwrites_voice)
 
@@ -407,7 +500,7 @@ class Basic(commands.Cog):
         while True:
             # Check if Game is still running
             if len(vote_mafias) < len(vote_persons) and len(vote_mafias) != 0:
-                sleep(3)
+                await asyncio.sleep(300)
                 votes = []
                 # Get all User Votes
                 for user in users_to_play:
