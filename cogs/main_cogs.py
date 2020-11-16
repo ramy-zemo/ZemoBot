@@ -5,7 +5,7 @@ from math import ceil
 from datetime import date
 from time import sleep
 import random
-import mysql.connector
+import sqlite3
 import string
 
 
@@ -36,14 +36,10 @@ class Basic(commands.Cog):
             769922292297367603,
             771868769983004682]
 
-        self.conn_tt = mysql.connector.connect(user='ni215803_1sql1', password='6865af7e',
-                              host='ni215803-1.web16.nitrado.hosting',
-                              database='ni215803_1sql1')
+        self.conn_tt = sqlite3.connect("trash_talk.db")
         self.cur_tt = self.conn_tt.cursor()
 
-        self.conn_ms = mysql.connector.connect(user='ni215803_1sql3', password='b46149bd',
-                              host='ni215803-1.web16.nitrado.hosting',
-                              database='ni215803_1sql3')
+        self.conn_ms = sqlite3.connect("message_stats.db")
         self.cur_ms = self.conn_ms.cursor()
 
         with open("trashtalk.txt", encoding="utf-8") as file:
@@ -77,7 +73,7 @@ class Basic(commands.Cog):
         self.cur_ms.execute('CREATE TABLE IF NOT EXISTS Messages{} ( datum TEXT, von TEXT, nachricht TEXT)'.format(str(message.author.id)))
         self.conn_ms.commit()
 
-        sql = "INSERT INTO Messages{} (datum, von, nachricht) VALUES (%s, %s, %s)".format(str(message.author.id))
+        sql = "INSERT INTO Messages{} (datum, von, nachricht) VALUES (?, ?, ?)".format(str(message.author.id))
         val_1 = (datum, str(message.author), str(message.content))
 
         self.cur_ms.execute(sql, val_1)
@@ -215,7 +211,7 @@ class Basic(commands.Cog):
         if len(daten) < 10:
             users_to_tt = [ctx.message.guild.get_member(int(str(x).strip("<>!@"))) for x in args]
             for user in users_to_tt:
-                sql = "INSERT INTO TrashTalk{} (datum, von, an) VALUES (%s, %s, %s)".format(str(ctx.message.author.id))
+                sql = "INSERT INTO TrashTalk{} (datum, von, an) VALUES (?, ?, ?)".format(str(ctx.message.author.id))
                 val_1 = (datum, str(ctx.message.author), str(user))
 
                 self.cur_tt.execute(sql,val_1)
