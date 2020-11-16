@@ -141,8 +141,9 @@ class Basic(commands.Cog):
                 self.auszeit_category), overwrites=overwrites_auszeit)
 
             # Check if User is in Voice channel
-            in_voice = bool(ctx.message.author.voice)
-            if in_voice:
+            in_voice = users_to_timeout.voice
+            print(in_voice)
+            if in_voice is not None:
                 voice_before_game.append(ctx.message.author.voice.channel)
                 await users_to_timeout.edit(voice_channel=voice_channel)
 
@@ -176,7 +177,7 @@ class Basic(commands.Cog):
             await users_to_timeout.remove_roles(banned_role)
             await users_to_timeout.add_roles(*roles_before[users_to_timeout])
 
-            if in_voice:
+            if in_voice is not None:
                 await users_to_timeout.edit(voice_channel=voice_before_game[0])
 
             await auszeit_channel.delete()
@@ -225,15 +226,17 @@ class Basic(commands.Cog):
     @commands.command()
     async def trashtalk_stats(self, ctx, *args):
         datum = str(date.today())
+        try:
+            sql = f"SELECT * FROM TrashTalk{str(ctx.message.author.id)}"
 
-        sql = f"SELECT * FROM TrashTalk{str(ctx.message.author.id)}"
+            self.cur_tt.execute(sql)
 
-        self.cur_tt.execute(sql)
+            result = self.cur_tt.fetchall()
+            daten = [x[0] for x in result if x[0] == datum]
 
-        result = self.cur_tt.fetchall()
-        daten = [x[0] for x in result if x[0] == datum]
-
-        await ctx.send(f"All time: {len(result)}, Today: {len(daten)}")
+            await ctx.send(f"All time: {len(result)}, Today: {len(daten)}")
+        except sqlite3.OperationalError:
+            await ctx.send("Bisher sind keine Daten vorhanden.")
 
     @commands.command()
     async def trashtalk_reset(self, ctx, *args):
