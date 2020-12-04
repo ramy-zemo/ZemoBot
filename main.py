@@ -12,6 +12,5 @@ for filename in os.listdir("cogs"):
     if filename.endswith(".py") and filename != "__init__.py":
         bot.load_extension(f"cogs.{filename[:-3]}")
 
-bot.run("Nzc2NjI5MzY5NDQ3MjUyMDE4.X63qdg.8epuM_5idluDwRaxpOfYwkGYvKU")
-
+bot.run("Nzc2NjI5MzY5NDQ3MjUyMDE4.X63qdg.GI7N6pQV_yFFpiJXCUO4VhA0BK4")
 
