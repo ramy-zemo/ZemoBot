@@ -48,6 +48,9 @@ class info(commands.Cog):
         embed.add_field(name="$invite", value="List of your successful invites.", inline=False)
         embed.add_field(name="$w2g (url)", value="Create watch2gether room with provided Link.", inline=False)
         embed.add_field(name="$info", value="Get your Userinformation.", inline=False)
+        embed.add_field(name="$trump", value="Get a random Trump Quote.", inline=False)
+        embed.add_field(name="$trump_img", value="Get a random Trump Quote.", inline=False)
+        embed.add_field(name="$gen_meme (Top Text, Bottom Text)", value="Get a custom Meme.", inline=False)
         await ctx.send(embed=embed)
 
     @commands.command()
