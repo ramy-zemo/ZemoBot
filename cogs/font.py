@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 import html
 from discord.ext import commands
 import discord
-import sqlite3
 from random import choice
 
 class Font(commands.Cog):

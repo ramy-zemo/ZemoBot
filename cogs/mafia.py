@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-import requests
 from string import ascii_letters
 from random import choice
 import asyncio

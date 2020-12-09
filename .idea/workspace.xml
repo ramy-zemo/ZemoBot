@@ -11,20 +11,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a107b4d6-00c0-42e2-9ce4-dd06f569d211" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/ZemoBot.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitattributes" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/CORBEL.TTF" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Role IDs.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Royal.otf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/bg.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cogs/main_cogs.py" beforeDir="false" afterPath="$PROJECT_DIR$/cogs/main_cogs.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.db" beforeDir="false" afterPath="$PROJECT_DIR$/main.db" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/micross.ttf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pb.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/playground.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/playgroundtwo.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -233,6 +222,7 @@
       <workItem from="1607369280279" duration="62000" />
       <workItem from="1607459757560" duration="9670000" />
       <workItem from="1607496761872" duration="597000" />
+      <workItem from="1607532724578" duration="25000" />
     </task>
     <servers />
   </component>

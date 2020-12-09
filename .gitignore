@@ -1,3 +1,8 @@
 
 main.db
 main.py
+cogs/__pycache__/auszeit.cpython-37.pyc
+*.xml
+*.pyc
+*.xml
+.idea/workspace.xml

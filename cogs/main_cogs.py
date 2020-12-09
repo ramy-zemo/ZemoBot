@@ -1,15 +1,5 @@
 from discord.ext import commands
-import discord
-import asyncio
-from datetime import date
-import random
-import requests
 import sqlite3
-import string
-from time import perf_counter
-import json
-from bs4 import BeautifulSoup
-import html
 from .ranking import Ranking
 
 
