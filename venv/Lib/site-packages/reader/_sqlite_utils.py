@@ -1,0 +1,518 @@
+"""
+sqlite3 utilities. Contains no business logic.
+
+"""
+import functools
+import sqlite3
+import time
+import traceback
+from contextlib import closing
+from contextlib import contextmanager
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
+from typing import Callable
+from typing import cast
+from typing import Dict
+from typing import Iterator
+from typing import no_type_check
+from typing import Optional
+from typing import Sequence
+from typing import Tuple
+from typing import TYPE_CHECKING
+from typing import TypeVar
+
+from typing_extensions import Protocol
+
+
+SQLiteType = TypeVar('SQLiteType', None, int, float, str, bytes, datetime)
+
+
+@contextmanager
+def ddl_transaction(db: sqlite3.Connection) -> Iterator[sqlite3.Connection]:
+    """Automatically commit/rollback transactions containing DDL statements.
+
+    Usage:
+
+        with ddl_transaction(db):
+            db.execute(...)
+            db.execute(...)
+
+    Note: ddl_transaction() does not work with executescript().
+
+    Normally, one would expect to be able to use DDL statements in a
+    transaction like so:
+
+        with db:
+            db.execute(ddl_statement)
+            db.execute(other_statement)
+
+    Initially, this worked around https://bugs.python.org/issue10740;
+    the sqlite3 transaction handling would trigger an implicit commit
+    if the first execute() was a DDL statement, which prevented it from
+    being rolled back if there was an exception after it.
+
+    This was fixed in Python 3.6, but there are still some cases that behave
+    in the same way, e.g.:
+
+        db = sqlite3.connect(':memory:')
+        try:
+            with db:
+                db.execute("create table t (a, b);")
+                1 / 0
+        except ZeroDivisionError:
+            pass
+        # table t exists even if it shouldn't
+
+    https://docs.python.org/3.5/library/sqlite3.html#controlling-transactions
+
+    """
+    # initialy from https://github.com/lemon24/boomtime/blob/master/boomtime/db.py
+    isolation_level = db.isolation_level
+    try:
+        db.isolation_level = None
+        db.execute("BEGIN;")
+        yield db
+        db.execute("COMMIT;")
+    except Exception:
+        db.execute("ROLLBACK;")
+        raise
+    finally:
+        db.isolation_level = isolation_level
+
+
+@contextmanager
+def wrap_exceptions(
+    exc_type: Callable[[str], Exception], message: str = "unexpected error"
+) -> Iterator[None]:
+    """Wrap sqlite3 exceptions in a custom exception.
+
+    Only wraps exceptions that are unlikely to be programming errors (bugs),
+    can only be fixed by the user (e.g. access permission denied), and aren't
+    domain-related (those should have other custom exceptions).
+
+    This is an imprecise science, since the DB-API exceptions are somewhat
+    fuzzy in their meaning and we can't access the SQLite result code.
+
+    Full discussion at https://github.com/lemon24/reader/issues/21
+
+    """
+    try:
+        yield
+    except sqlite3.OperationalError as e:
+        raise exc_type(message) from e
+    except sqlite3.ProgrammingError as e:
+        if "cannot operate on a closed database" in str(e).lower():
+            raise exc_type("operation on closed database")
+        raise
+
+
+FuncType = Callable[..., Any]
+F = TypeVar('F', bound=FuncType)
+
+
+def wrap_exceptions_iter(exc_type: Callable[[str], Exception]) -> Callable[[F], F]:
+    """Like wrap_exceptions(), but for generators."""
+
+    def decorator(fn: F) -> F:
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):  # type: ignore
+            with wrap_exceptions(exc_type):
+                yield from fn(*args, **kwargs)
+
+        return cast(F, wrapper)
+
+    return decorator
+
+
+@contextmanager
+def foreign_keys_off(db: sqlite3.Connection) -> Iterator[sqlite3.Connection]:
+    """Disable foreign key checks temporarily.
+
+    This is useful when changing the schema in ways not supported by ALTER[1]
+    (e.g. changing column constraints, renaming/removing columns).
+
+    You should check for any foreign key constraint violations
+    (see foreign_key_check() below), preferably inside of a transaction.
+
+    Note: foreign_keys_off() must be used outside transactions, because[2]:
+
+    > It is not possible to enable or disable foreign key constraints
+    > in the middle of a multi-statement transaction [...]. Attempting
+    > to do so does not return an error; it simply has no effect.
+
+    [1]: https://sqlite.org/lang_altertable.html#otheralter
+    [2]: https://sqlite.org/foreignkeys.html#fk_enable
+
+    """
+    # TODO: this assert should fail with DBError
+    assert not db.in_transaction, "foreign_keys_off must be used outside transactions"
+
+    # TODO: this assignment should fail with DBError
+    (foreign_keys,) = db.execute("PRAGMA foreign_keys;").fetchone()
+
+    try:
+        db.execute("PRAGMA foreign_keys = OFF;")
+        yield db
+    finally:
+        db.execute(f"PRAGMA foreign_keys = {'ON' if foreign_keys else 'OFF'};")
+
+
+def foreign_key_check(db: sqlite3.Connection) -> None:
+    """Check foreign key constraint violations.
+
+    Raises:
+        IntegrityError: If there were any violations.
+
+    """
+    failed_checks = list(db.execute("PRAGMA foreign_key_check;"))
+    if not failed_checks:
+        return
+    # TODO: More details regarding what failed.
+    raise IntegrityError("FOREIGN KEY constraint failed")
+
+
+class DBError(Exception):
+
+    display_name = "database error"
+
+    def __str__(self) -> str:
+        return "{}: {}".format(self.display_name, super().__str__())
+
+
+class SchemaVersionError(DBError):
+    display_name = "schema version error"
+
+
+class IntegrityError(DBError):
+    display_name = "integrity error"
+
+
+class RequirementError(DBError):
+    display_name = "database requirement error"
+
+
+db_errors = [DBError, SchemaVersionError, RequirementError]
+
+
+class _DBFunction(Protocol):  # pragma: no cover
+    def __call__(self, db: sqlite3.Connection) -> None:
+        ...
+
+
+@dataclass
+class HeavyMigration:
+
+    # mypy will complain if we use Callable[[sqlite3.Connection], None].
+    # TODO: get rid of _DBFunction when https://github.com/python/mypy/issues/5485 is resolved?
+    create: _DBFunction
+    version: int
+    migrations: Dict[int, _DBFunction]
+
+    @staticmethod
+    def get_version(db: sqlite3.Connection) -> Optional[int]:
+        try:
+            # TODO: this assignment should fail with DBError
+            (version,) = db.execute("SELECT MAX(version) FROM version;").fetchone()
+        except sqlite3.OperationalError as e:
+            if "no such table" in str(e).lower():
+                return None
+            raise SchemaVersionError(f"cannot get current version: {e}") from e
+        assert isinstance(version, int)
+        return version
+
+    def migrate(self, db: sqlite3.Connection) -> None:
+        with foreign_keys_off(db), ddl_transaction(db):
+            version = self.get_version(db)
+
+            if version is None:
+                self.create(db)
+                db.execute("CREATE TABLE version (version INTEGER NOT NULL);")
+                db.execute("INSERT INTO version VALUES (?);", (self.version,))
+                return
+
+            if version == self.version:
+                return
+
+            if version > self.version:
+                raise SchemaVersionError(f"invalid version: {version}")
+
+            # version < self.version
+
+            for from_version in range(version, self.version):
+                to_version = from_version + 1
+                migration = self.migrations.get(from_version)
+                if migration is None:
+                    raise SchemaVersionError(
+                        f"no migration from {from_version} to {to_version}; "
+                        f"expected migrations for all versions "
+                        f"later than {version}"
+                    )
+
+                db.execute(
+                    "UPDATE version SET version = :to_version;",
+                    dict(to_version=to_version),
+                )
+                migration(db)
+
+                try:
+                    foreign_key_check(db)
+                except IntegrityError as e:
+                    raise IntegrityError(
+                        f"after migrating to version {to_version}: {e}"
+                    ) from None
+
+
+def require_version(db: sqlite3.Connection, version_info: Tuple[int, ...]) -> None:
+    with closing(db.cursor()) as cursor:
+        # TODO: this assignment should fail with DBError
+        ((version,),) = cursor.execute("SELECT sqlite_version();")
+
+    version_ints = tuple(int(i) for i in version.split('.'))
+
+    if version_info > version_ints:
+        raise RequirementError(
+            "at least SQLite version {} required, {} installed".format(
+                ".".join(str(i) for i in version_info),
+                ".".join(str(i) for i in sqlite3.sqlite_version_info),
+            )
+        )
+
+
+def require_compile_options(db: sqlite3.Connection, options: Sequence[str]) -> None:
+    with closing(db.cursor()) as cursor:
+        actual_options = [r[0] for r in cursor.execute("PRAGMA compile_options;")]
+    missing = set(options).difference(actual_options)
+    if missing:
+        raise RequirementError(
+            f"required SQLite compile options missing: {sorted(missing)}"
+        )
+
+
+def setup_db(
+    db: sqlite3.Connection,
+    *,
+    create: _DBFunction,
+    version: int,
+    migrations: Dict[int, _DBFunction],
+    minimum_sqlite_version: Tuple[int, ...],
+    required_sqlite_compile_options: Sequence[str] = (),
+    wal_enabled: Optional[bool] = None,
+) -> None:
+    require_version(db, minimum_sqlite_version)
+    require_compile_options(db, required_sqlite_compile_options)
+
+    with closing(db.cursor()) as cursor:
+        cursor.execute("PRAGMA foreign_keys = ON;")
+
+        # Can't do this in a transaction, so we just do it all the time.
+        #
+        # Also, every cursor up to here must be closed explictly, othewise
+        # we get an "cannot commit transaction - SQL statements in progress"
+        # on PyPy.
+        #
+        # https://github.com/lemon24/reader/issues/169
+        #
+        if wal_enabled is not None:
+            if wal_enabled:
+                cursor.execute("PRAGMA journal_mode = WAL;")
+            else:
+                cursor.execute("PRAGMA journal_mode = DELETE;")
+
+    migration = HeavyMigration(create, version, migrations)
+    migration.migrate(db)
+
+
+def rowcount_exactly_one(
+    cursor: sqlite3.Cursor, make_exc: Callable[[], Exception]
+) -> None:
+    if cursor.rowcount == 0:
+        raise make_exc()
+    assert cursor.rowcount == 1, "shouldn't have more than 1 row"
+
+
+# TODO: maybe move this to _sql_utils,
+# since DB can be anything with .execute(), but a Query is always required;
+# leaving here for now because _sql_utils.py has type checking disabled
+
+_T = TypeVar('_T')
+_U = TypeVar('_U')
+
+if TYPE_CHECKING:  # pragma: no cover
+    from ._sql_utils import Query
+
+
+def paginated_query(
+    db: sqlite3.Connection,
+    query: 'Query',
+    # FIXME: Any should be SQLiteType
+    context: Dict[str, Any],
+    value_factory: Callable[[Tuple[Any, ...]], _T],
+    chunk_size: Optional[int],
+    last: _U,
+) -> Iterator[Tuple[_T, _U]]:
+    # We need the cast to/from _U until we find a better way of typing last.
+
+    if chunk_size:
+        query.LIMIT(":chunk_size", last=last)
+        context['chunk_size'] = chunk_size
+        context.update(query.last_params(cast(Optional[Tuple[Any, ...]], last)))
+
+    rv = (
+        (value_factory(t), cast(_U, query.extract_last(t)))
+        for t in db.execute(str(query), context)
+    )
+
+    # Equivalent to using @returns_iter_list, except when we don't have
+    # a chunk_size (which disables pagination, but can block the database).
+    # TODO: If we don't expose chunk_size, why have this special case?
+    if chunk_size:
+        return iter(list(rv))
+
+    return rv
+
+
+# BEGIN DebugConnection
+
+# No type annotations or coverage for this;
+# its only used for debugging and not exposed publicly.
+
+
+@no_type_check
+def _make_debug_method_wrapper(method, stmt=False):  # pragma: no cover
+    @functools.wraps(method)
+    def wrapper(self, *args):
+        data = {
+            'method': method if isinstance(method, str) else method.__name__,
+            'start': time.time(),
+        }
+        if stmt:
+            data['stmt'] = args[0] if args else None
+
+        try:
+            tb = traceback.extract_stack()
+            frame = tb[-2]
+            data['caller'] = frame.filename, frame.name
+        except IndexError:
+            pass
+
+        try:
+            io_counters = self.connection._io_counters
+        except AttributeError:
+            io_counters = self._io_counters
+
+        if io_counters:
+            fields = ['read_count', 'write_count', 'read_bytes', 'write_bytes']
+            try:
+                import psutil  # type: ignore
+
+                process = psutil.Process()
+            except ImportError:
+                process = None
+            try:
+                start_io_counters = process.io_counters()
+            except AttributeError:
+                pass
+
+        start = time.perf_counter()
+        try:
+            if callable(method):
+                return method(self, *args)
+        except Exception as e:
+            data['exception'] = f"{type(e).__module__}.{type(e).__qualname__}: {e}"
+            raise
+        finally:
+            end = time.perf_counter()
+            data['duration'] = end - start
+
+            if io_counters:
+                try:
+                    end_io_counters = process.io_counters()
+                    data['io_counters'] = {
+                        f: getattr(end_io_counters, f) - getattr(start_io_counters, f)
+                        for f in fields
+                    }
+                except AttributeError:
+                    pass
+
+            self._log(data)
+
+    return wrapper
+
+
+@no_type_check
+def _make_debug_connection_cls():  # pragma: no cover
+    # we create the classes in a function to work around
+    # typing.no_type_check not supporting classes (yet);
+    # https://github.com/python/mypy/issues/607
+
+    class DebugCursor(sqlite3.Cursor):
+        def _log(self, data):
+            # can't rely on id(self) as it's likely to be reused
+            data['cursor'] = self._id
+            self.connection._log(data)
+
+        execute = _make_debug_method_wrapper(sqlite3.Cursor.execute, stmt=True)
+        executemany = _make_debug_method_wrapper(sqlite3.Cursor.executemany, stmt=True)
+        close = _make_debug_method_wrapper(sqlite3.Cursor.close)
+        __del__ = _make_debug_method_wrapper('__del__')
+
+    class DebugConnection(sqlite3.Connection):
+
+        """sqlite3 connection subclass for debugging stuff.
+
+        >>> debug = logging.getLogger('whatever').debug
+        >>> class MyDebugConnection(DebugConnection):
+        ...     _log_method = staticmethod(lambda data: debug(json.dumps(data)))
+        ...     _set_trace = True
+        ...
+        >>> db = sqlite3.connect('', factory=MyDebugConnection)
+
+        """
+
+        _set_trace = False
+        _io_counters = False
+
+        @staticmethod
+        def _log_method(data):
+            raise NotImplementedError
+
+        _cursor_factory = DebugCursor
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._next_cursor_id = 0
+            if self._set_trace:
+                trace_wrapper = _make_debug_method_wrapper('~trace', stmt=True)
+
+                def trace(stmt):
+                    return trace_wrapper(self, stmt)
+
+                self.set_trace_callback(trace)
+
+        def _log(self, data):
+            # less likely for this to be the same address
+            data['connection'] = id(self)
+            self._log_method(data)
+
+        def cursor(self, factory=None):
+            if factory:
+                raise NotImplementedError("cursor(factory=...) not supported")
+            cursor = super().cursor(factory=self._cursor_factory)
+            cursor._id = self._next_cursor_id
+            self._next_cursor_id += 1
+            return cursor
+
+        close = _make_debug_method_wrapper(sqlite3.Connection.close)
+        __enter__ = _make_debug_method_wrapper(sqlite3.Connection.__enter__)
+        __exit__ = _make_debug_method_wrapper(sqlite3.Connection.__exit__)
+        # the sqlite3 objects don't have a __del__
+        __del__ = _make_debug_method_wrapper('__del__')
+
+    return DebugConnection
+
+
+DebugConnection = _make_debug_connection_cls()
+
+
+# END DebugConnection

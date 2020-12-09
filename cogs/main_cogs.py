@@ -7,6 +7,8 @@ import random
 import requests
 import sqlite3
 import string
+from time import perf_counter
+import json
 from bs4 import BeautifulSoup
 import html
 from io import BytesIO
@@ -63,26 +65,86 @@ class Basic(commands.Cog):
         with open("trashtalk.txt") as file:
             self.text = file.readlines()
 
+        self.voice_track = {}
+
+    # Test On_Join
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        if not before.channel and after.channel:
+            self.voice_track[str(member)] = perf_counter()
+
+        elif before.channel and not after.channel:
+            try:
+                time = self.voice_track[str(member)] - perf_counter()
+
+                if round(time * -1) <= 60:
+                    return
+
+                await self.add_xp(member, member, round(round(time * -1) * 0.05))
+
+                self.cur_main.execute("SELECT * FROM VOICE WHERE user=?", ([str(member)]))
+
+                if self.cur_main.fetchall():
+                    self.cur_main.execute("UPDATE VOICE SET minutes = minutes + ? WHERE user=?", ([int(round(time * -1) / 60), str(member)]))
+                    self.conn_main.commit()
+                else:
+                    self.cur_main.execute("INSERT INTO VOICE (user, minutes) VALUES (? , ?)", ([str(member), int(round(time * -1) / 60)]))
+                    self.conn_main.commit()
+
+                print([[int(round(time * -1) / 60), str(member)]])
+
+            except KeyError:
+                print("Join Time unknowwn")
+
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         overwrites_main = {
            guild.default_role: discord.PermissionOverwrite(read_messages=True, read_message_history=True, send_messages=False)
         }
 
-        self.main_channel = await guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
+        # Check if Server is in Database
+        self.cur_main.execute("SELECT * FROM CHANNELS WHERE server=?", ([str(guild.id)]))
+        result = self.cur_main.fetchall()
+
+        if not result:
+            main_channel = await guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
+            sql = "INSERT INTO CHANNELS (server, channel) VALUES (?, ?)"
+            val_1 = (str(guild.id), str(main_channel.id))
+
+            self.cur_main.execute(sql, val_1)
+            self.conn_main.commit()
+
+        else:
+            channel_id = result[0][1]
+            channel = discord.utils.get(guild.channels, id=int(channel_id))
+
+            if channel:
+                print("Hinzugefügter Server schon in Datenbank")
+
+            else:
+                main_channel = await guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
+
+                sql = "UPDATE CHANNELS SET channel=? WHERE server=?"
+                val_1 = (str(main_channel.id), str(guild.id))
+
+                self.cur_main.execute(sql, val_1)
+                self.conn_main.commit()
 
     @commands.Cog.listener()
     async def on_ready(self):
         for guild in self.bot.guilds:
             self.invites[guild.id] = await guild.invites()
 
+        self.cur_main.execute('CREATE TABLE IF NOT EXISTS INVITES ( server TEXT, datum TEXT, von TEXT, an TEXT)')
+        self.cur_main.execute('CREATE TABLE IF NOT EXISTS LEVEL ( server TEXT, user TEXT, xp INT)')
+        self.cur_main.execute('CREATE TABLE IF NOT EXISTS MESSAGE ( server TEXT, datum TEXT, von TEXT, nachricht TEXT)')
+        self.cur_main.execute('CREATE TABLE IF NOT EXISTS TRASHTALK ( server TEXT, datum TEXT, von TEXT, an TEXT)')
+        self.cur_main.execute('CREATE TABLE IF NOT EXISTS CHANNELS ( server TEXT, channel TEXT)')
+        self.cur_main.execute('CREATE TABLE IF NOT EXISTS VOICE ( user TEXT, minutes INT)')
+        self.conn_main.commit()
+
         print("Bot {} läuft!".format(self.bot.user))
 
-        self.cur_main.execute('CREATE TABLE IF NOT EXISTS INVITES ( server TEXT, datum TEXT, von TEXT, an TEXT)')
-        self.conn_main.commit()
-
-        self.cur_main.execute('CREATE TABLE IF NOT EXISTS LEVEL ( server TEXT, user TEXT, xp INT)')
-        self.conn_main.commit()
 
     def find_invite_by_code(self, invite_list, code):
         for inv in invite_list:
@@ -123,7 +185,11 @@ class Basic(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, ctx):
-        self.invites[ctx.guild.id] = await ctx.guild.invites()
+        print(ctx)
+        try:
+            self.invites[ctx.guild.id] = await ctx.guild.invites()
+        except:
+            print("Error")
 
     @commands.Cog.listener()
     async def on_message(self, ctx):
@@ -133,10 +199,7 @@ class Basic(commands.Cog):
 
         datum = str(date.today())
 
-        self.cur_main.execute('CREATE TABLE IF NOT EXISTS Messages{} (server,  datum TEXT, von TEXT, nachricht TEXT)'.format(str(message.author.id)))
-        self.conn_main.commit()
-
-        sql = "INSERT INTO Messages{} (server, datum, von, nachricht) VALUES (?, ?, ?, ?)".format(str(message.author.id))
+        sql = "INSERT INTO MESSAGE (server, datum, von, nachricht) VALUES (?, ?, ?, ?)"
         val_1 = (ctx.guild.id, datum, str(message.author), str(message.content))
 
         self.cur_main.execute(sql, val_1)
@@ -148,17 +211,17 @@ class Basic(commands.Cog):
             await self.add_xp(ctx, message.author, 5)
 
     @commands.command()
-    async def pb(self, ctx):
-        await ctx.send(ctx.author.avatar_url)
-
-    @commands.command()
-    async def invites(self, ctx):
+    async def invite(self, ctx, *args):
         self.cur_main.execute("SELECT * FROM INVITES WHERE server=? AND von=?", tuple([ctx.guild.id, str(ctx.message.author)]))
 
-        embed = discord.Embed(title="Invites", description=f"Du hast bereits erfolgreich {len(self.cur_main.fetchall())} Personen eingeladen.", color=0x1acdee)
+        invites = len(self.cur_main.fetchall())
+        embed = discord.Embed(title="Invites", description=f"Du hast bereits erfolgreich {invites} Personen eingeladen.", color=0x1acdee)
         embed.set_author(name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
 
-        await ctx.send(embed=embed)
+        if args:
+            return invites
+        else:
+            await ctx.send(embed=embed)
 
     @commands.command()
     async def stats(self, ctx):
@@ -258,6 +321,7 @@ class Basic(commands.Cog):
 
         return level_person
 
+    @commands.is_owner()
     @commands.command()
     async def add_xp(self, ctx, user, xp):
         try:
@@ -290,7 +354,10 @@ class Basic(commands.Cog):
             self.conn_main.commit()
 
         if old_level != new_level:
-            await self.main_channel.send(f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
+            self.cur_main.execute("SELECT * FROM CHANNELS WHERE server=?", ([ctx.guild.id]))
+            channel_id = int(self.cur_main.fetchall()[0][1])
+            channel = discord.utils.get(ctx.guild.channels, id=channel_id)
+            await channel.send(f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
 
     async def get_xp(self, ctx, user):
         exp = self.cur_main.execute("SELECT * FROM LEVEL WHERE server=? AND user=?", ([str(ctx.guild.id), str(user)]))
@@ -302,6 +369,23 @@ class Basic(commands.Cog):
 
     async def get_lvl(self, ctx, user):
         return await self.xp_lvl(await self.get_xp(ctx, user))
+
+    @commands.command()
+    async def info(self, ctx, *args):
+
+        self.cur_main.execute("SELECT * from MESSAGE WHERE von=?", ([str(ctx.author)]))
+        messages = len(self.cur_main.fetchall())
+
+        self.cur_main.execute("SELECT minutes from VOICE WHERE user=?", ([str(ctx.author)]))
+        minutes = self.cur_main.fetchall()[0][0]
+
+        embed = discord.Embed(title="Info", description="Deine Nutzerinformationen:", color=0x1acdee)
+        embed.add_field(name="Nachrichten", value=f"Du hast bisher {messages} Nachrichten versendet.", inline=False)
+        embed.add_field(name="Invites", value=f"""Du hast bisher {await self.invite(ctx, "No Print")} Invites versendet.""", inline=False)
+        embed.add_field(name="Minuten", value=f"Du warst {minutes} Minuten mit einem Sprachchannel verbunden.", inline=False)
+        embed.add_field(name="Trashtalk", value=f"""Du hast bereits {await self.trashtalk_stats(ctx, "No Print")} mal Trashtalk versendet.""", inline=False)
+        embed.set_author(name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def help(self, ctx, *args):
@@ -320,7 +404,9 @@ class Basic(commands.Cog):
         embed.add_field(name="$meme", value="Return random meme", inline=False)
         embed.add_field(name="$font (*keyword) (font)", value="Returns ASCII Art, from provided Text.", inline=False)
         embed.add_field(name="$font_list", value="Get List of available Fonts.", inline=False)
-        embed.add_field(name="$invites", value="List of your successful invites.", inline=False)
+        embed.add_field(name="$invite", value="List of your successful invites.", inline=False)
+        embed.add_field(name="$w2g (url)", value="Create watch2gether room with provided Link.", inline=False)
+        embed.add_field(name="$info", value="Get your Userinformation.", inline=False)
         await ctx.send(embed=embed)
 
     @commands.command()
@@ -412,15 +498,11 @@ class Basic(commands.Cog):
 
     @commands.command()
     async def trashtalk(self, ctx, *args):
-        self.cur_main.execute('CREATE TABLE IF NOT EXISTS TrashTalk{} ( server TEXT, datum TEXT, von TEXT, an TEXT)'.format(
-            str(ctx.message.author.id)))
-        self.conn_main.commit()
-
         datum = str(date.today())
 
-        sql = f"SELECT * FROM TrashTalk{str(ctx.message.author.id)}"
+        sql = f"SELECT * FROM TrashTalk WHERE von=?"
 
-        self.cur_main.execute(sql)
+        self.cur_main.execute(sql, ([str(ctx.message.author)]))
 
         result = self.cur_main.fetchall()
         daten = [x[0] for x in result if x[0] == datum]
@@ -428,14 +510,17 @@ class Basic(commands.Cog):
         if len(daten) < 10:
             users_to_tt = [ctx.message.guild.get_member(int(str(x).strip("<>!@"))) for x in args]
             for user in users_to_tt:
-                sql = "INSERT INTO TrashTalk{} (server, datum, von, an) VALUES (?, ?, ?, ?)".format(str(ctx.message.author.id))
+                try:
+                    for t in self.text:
+                        await user.send(t)
+                except:
+                    return await ctx.send(f"Trashtalk an {user.mention} fehlgeschlagen.")
+
+                sql = "INSERT INTO TrashTalk (server, datum, von, an) VALUES (?, ?, ?, ?)"
                 val_1 = (str(ctx.guild.id), datum, str(ctx.message.author), str(user))
 
                 self.cur_main.execute(sql,val_1)
                 self.conn_main.commit()
-
-                for t in self.text:
-                    await user.send(t)
         else:
             await ctx.send(f"{ctx.message.author.mention} du hast dein Trash Limit für heute erreicht.")
 
@@ -453,17 +538,20 @@ class Basic(commands.Cog):
             await ctx.message.author.send("```\n" + ''.join(file.readlines()) + "\n```")
 
     @commands.command()
-    async def trashtalk_stats(self, ctx):
+    async def trashtalk_stats(self, ctx, *args):
         datum = str(date.today())
         try:
-            sql = f"SELECT * FROM TrashTalk{str(ctx.message.author.id)} WHERE server=?"
-            val = ([str(ctx.guild.id)])
+            sql = f"SELECT * FROM TrashTalk WHERE server=? AND von=?"
+            val = ([str(ctx.guild.id), str(ctx.message.author)])
             self.cur_main.execute(sql, val)
 
             result = self.cur_main.fetchall()
             daten = [x[1] for x in result if x[1] == datum]
 
-            await ctx.send(f"All time: {len(result)}, Today: {len(daten)}")
+            if args:
+                return len(result)
+            else:
+                await ctx.send(f"All time: {len(result)}, Today: {len(daten)}")
 
         except sqlite3.OperationalError:
             await ctx.send("Bisher sind keine Daten vorhanden.")
@@ -471,7 +559,7 @@ class Basic(commands.Cog):
     @commands.command()
     async def trashtalk_reset(self, ctx, *args):
         try:
-            self.cur_main.execute(f"DELETE FROM TrashTalk{str(ctx.message.author.id)} WHERE server=?", (str(ctx.guild.id)))
+            self.cur_main.execute(f"DELETE FROM TrashTalk WHERE server=? AND von=?", (str(ctx.guild.id), str(ctx.message.author)))
             self.conn_main.commit()
             await ctx.send(f"Trashtalk für {ctx.message.author.mention} erfolgreich zurückgesetzt.")
         except:
@@ -952,9 +1040,28 @@ class Basic(commands.Cog):
         self.cur_main.execute("SELECT * FROM LEVEL WHERE server=? ORDER BY xp ASC", ([str(ctx.guild.id)]))
         ordered_list = self.cur_main.fetchall()[::-1]
         x = [count + 1 for count, x in enumerate(ordered_list) if ordered_list[count][1] == user]
-
         return x[0] if x else "Bot"
 
+    @commands.command()
+    async def w2g(self, ctx, url):
+        headers = {"share": url}
+        yt = requests.post("https://w2g.tv/rooms/create.json", data=headers)
+        await ctx.send("https://w2g.tv/rooms/" + json.loads(yt.content.decode())["streamkey"])
+
+    @commands.command()
+    async def rank(self, ctx):
+        self.cur_main.execute("SELECT * FROM LEVEL WHERE server=? ORDER BY xp ASC", ([str(ctx.guild.id)]))
+        x = self.cur_main.fetchall()
+
+        data = [(x[1], await self.xp_lvl(x[2])) for x in x[::-1]]
+
+        embed = discord.Embed(title="Ranklist", description="List of Top 5 Server Ranks", color=0x1acdee)
+        embed.set_author(name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+
+        for x in range(5):
+            embed.add_field(name=f"{data[x][0]}", value=f"Rank: {data[x][1]}", inline=False)
+
+        await ctx.send(embed=embed)
 
 def setup(bot):
     bot.add_cog(Basic(bot))

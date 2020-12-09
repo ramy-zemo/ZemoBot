@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+
+{% import "macros.html" as macros %}
+
+
+{% macro make_title() %}
+    Feeds for {{ url }}
+{% endmacro %}
+
+
+{% block page_title %}{{ make_title() | striptags }}{% endblock %}
+{% block main_title %}{{ make_title() }}{% endblock %}
+
+
+{% block body %}
+
+
+{% if errors %}
+<ul class="controls">
+{% for message in errors %}
+<li class="error">error: {{ message }}
+{% endfor %}
+</ul>
+
+
+{# style similar to macros.entry_enclosures #}
+
+{% elif alternates %}
+<ul>
+
+{% for alternate in alternates %}
+<li>
+<a href="{{ url_for('reader.preview', url=alternate.href) }}">
+{{ alternate.title or alternate.href }}</a>
+<small>
+{% if alternate.type %}{{ alternate.type }}{% endif %}
+</small>
+</li>
+
+{% endfor %}
+</ul>
+{% else %}
+<p>no feeds for this page
+
+{% endif %}
+
+{% endblock %}
