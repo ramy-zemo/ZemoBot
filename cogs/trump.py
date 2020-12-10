@@ -7,7 +7,7 @@ import discord
 
 class trump(commands.Cog):
     def __init__(self, bot):
-        pass
+        self.bot = bot
 
     @commands.command()
     async def trump(self, ctx, *args):

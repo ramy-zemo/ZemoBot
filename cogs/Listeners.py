@@ -1,9 +1,10 @@
-from discord.ext import commands
+from discord.ext import tasks, commands
 from time import perf_counter
 import discord
 import sqlite3
 from datetime import date
 from .ranking import Ranking
+from itertools import cycle
 
 class Listeners(commands.Cog):
     def __init__(self, bot):
@@ -13,6 +14,7 @@ class Listeners(commands.Cog):
         self.invites = {}
         self.bot = bot
         self.ranking = Ranking(bot)
+        self.status = cycle(['Aktuell in Arbeit!', 'Von Ramo programmiert!', 'Noch nicht fertig!'])
 
     # Test On_Join
     @commands.Cog.listener()
@@ -91,6 +93,7 @@ class Listeners(commands.Cog):
         self.conn_main.commit()
 
         print("Bot {} läuft!".format(self.bot.user))
+        self.change_status.start()
 
 
     def find_invite_by_code(self, invite_list, code):
@@ -156,5 +159,10 @@ class Listeners(commands.Cog):
             await self.ranking.add_xp(self, ctx, message.author, 25)
         else:
             await self.ranking.add_xp(self, ctx, message.author, 5)
+
+    @tasks.loop(seconds=10)
+    async def change_status(self):
+        await self.bot.change_presence(activity=discord.Game(next(self.status)))
+
 def setup(bot):
     bot.add_cog(Listeners(bot))

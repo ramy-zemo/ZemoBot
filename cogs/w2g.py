@@ -4,7 +4,8 @@ import json
 
 class w2g(commands.Cog):
     def __init__(self, bot):
-        pass
+        self.bot = bot
+
     
     @commands.command()
     async def w2g(self, ctx, url):

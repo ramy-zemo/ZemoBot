@@ -9,7 +9,8 @@ class Ranking(commands.Cog):
     def __init__(self, bot):
         self.conn_main = sqlite3.connect("main.db")
         self.cur_main = self.conn_main.cursor()
-    
+        self.bot = bot
+
     @commands.command()
     async def rank(self, ctx):
         self.cur_main.execute("SELECT * FROM LEVEL WHERE server=? ORDER BY xp ASC", ([str(ctx.guild.id)]))

@@ -23,6 +23,7 @@ class Font(commands.Cog):
                      'smshadow', 'smslant', 'smtengwar', 'speed', 'stampatello', 'standard', 'starwars', 'stellar',
                      'stop', 'straight', 'swan', 'tanja', 'tengwar', 'term', 'thick', 'thin', 'threepoint', 'ticks',
                      'ticksslant', 'tinker-toy', 'tombstone', 'trek', 'twopoint', 'univers', 'usaflag', 'weird']
+        self.bot = bot
 
     @commands.command()
     async def font_list(self, ctx):
