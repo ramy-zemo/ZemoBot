@@ -3,6 +3,8 @@ import discord
 from dotenv import load_dotenv
 from discord.ext import commands
 
+# Solid Base made by Nikola
+# https://github.com/Anunakif0x
 
 load_dotenv()
 
