@@ -238,8 +238,7 @@ class Mafia(commands.Cog):
         embed.set_author(name="Zemo Bot",
                          icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
 
-        embed.add_field(name="Mitspieler:", value="\n" + ' '.join(
-            [x.mention for x in accepted_user]), inline=True)
+        embed.add_field(name="Mitspieler:", value="\n" + ' '.join([x.mention for x in accepted_user]), inline=True)
 
         await game_text_channel.send(embed=embed)
 

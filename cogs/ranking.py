@@ -5,27 +5,40 @@ import requests
 import discord
 import sqlite3
 
+
 class Ranking(commands.Cog):
     def __init__(self, bot):
         self.conn_main = sqlite3.connect("main.db")
         self.cur_main = self.conn_main.cursor()
         self.bot = bot
 
+    @commands.is_owner()
+    @commands.command()
+    async def setup_db(self, ctx):
+        for user in ctx.guild.users:
+            self.cur_main.execute("INSERT INTO LEVEL (server, user, xp) VALUES (?,?,?)",
+                                  ([ctx.guild.id, str(user), 20]))
+            self.conn_main.commit()
+
     @commands.command()
     async def rank(self, ctx):
-        self.cur_main.execute("SELECT * FROM LEVEL WHERE server=? ORDER BY xp ASC", ([str(ctx.guild.id)]))
-        x = self.cur_main.fetchall()
+        try:
+            self.cur_main.execute("SELECT * FROM LEVEL WHERE server=? ORDER BY xp ASC", ([str(ctx.guild.id)]))
+            x = self.cur_main.fetchall()
 
-        data = [(x[1], await self.xp_lvl(x[2])) for x in x[::-1]]
+            data = [(x[1], await self.xp_lvl(x[2])) for x in x[::-1]]
 
-        embed = discord.Embed(title="Ranklist", description="List of Top 5 Server Ranks", color=0x1acdee)
-        embed.set_author(name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+            embed = discord.Embed(title="Ranklist", description="List of Top 5 Server Ranks", color=0x1acdee)
+            embed.set_author(name="Zemo Bot",
+                             icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
 
-        for x in range(5):
-            embed.add_field(name=f"{data[x][0]}", value=f"Rank: {data[x][1]}", inline=False)
+            for x in range(5):
+                embed.add_field(name=f"{data[x][0]}", value=f"Rank: {data[x][1]}", inline=False)
+            await ctx.send(embed=embed)
 
-        await ctx.send(embed=embed)
-        
+        except:
+            await ctx.send("Bisher sind leider nicht genügend Daten vorhanden.")
+
     @commands.command()
     async def stats(self, ctx):
         async def create_level_image(ctx, name, url, level, rank):
@@ -62,7 +75,7 @@ class Ranking(commands.Cog):
             # Print Name
             draw = ImageDraw.Draw(img)
             draw.text((760, 130), f"Level: {level}\nRank: #{rank}\n{name}", (26, 205, 238), font=font_lvl)
-            #draw.text((650, 350), name, (68, 180, 132), font=font)
+            # draw.text((650, 350), name, (68, 180, 132), font=font)
 
             # Print Lvl
             level_show = draw.text((100, 585), f"Level: {level}", (26, 205, 238), font=font_lvl)
@@ -104,8 +117,9 @@ class Ranking(commands.Cog):
     @commands.is_owner()
     @commands.command()
     async def add_xp(self, ctx, user, xp):
-        async def get_xp( ctx, user):
-            exp = self.cur_main.execute("SELECT * FROM LEVEL WHERE server=? AND user=?", ([str(ctx.guild.id), str(user)]))
+        async def get_xp(ctx, user):
+            exp = self.cur_main.execute("SELECT * FROM LEVEL WHERE server=? AND user=?",
+                                        ([str(ctx.guild.id), str(user)]))
             x = self.cur_main.fetchall()
             if x:
                 return (x[0][2])
@@ -113,27 +127,27 @@ class Ranking(commands.Cog):
                 return 0
 
         async def xp_lvl(xp):
-                level_person = 0
-                increment = 100
-                level = 0
-                j = 1
-                i = 100
-                xp = int(xp)
+            level_person = 0
+            increment = 100
+            level = 0
+            j = 1
+            i = 100
+            xp = int(xp)
 
-                for x in range(100, 55000):
-                    level += 1
+            for x in range(100, 55000):
+                level += 1
 
-                    if j == 10:
-                        j = 0
-                        increment += 100
+                if j == 10:
+                    j = 0
+                    increment += 100
 
-                    if xp >= i and xp < i + increment:
-                        level_person = level
+                if xp >= i and xp < i + increment:
+                    level_person = level
 
-                    i += increment
-                    j += 1
+                i += increment
+                j += 1
 
-                return level_person
+            return level_person
 
         try:
             member = ctx.author
@@ -168,7 +182,8 @@ class Ranking(commands.Cog):
             self.cur_main.execute("SELECT * FROM CHANNELS WHERE server=?", ([ctx.guild.id]))
             channel_id = int(self.cur_main.fetchall()[0][1])
             channel = discord.utils.get(ctx.guild.channels, id=channel_id)
-            await channel.send(f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
+            await channel.send(
+                f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
 
     async def get_xp(self, ctx, user):
         exp = self.cur_main.execute("SELECT * FROM LEVEL WHERE server=? AND user=?", ([str(ctx.guild.id), str(user)]))
@@ -180,7 +195,7 @@ class Ranking(commands.Cog):
 
     async def get_lvl(self, ctx, user):
         return await self.xp_lvl(await self.get_xp(ctx, user))
-    
+
     @commands.command()
     async def get_rank(self, ctx, user):
         self.cur_main.execute("SELECT * FROM LEVEL WHERE server=? ORDER BY xp ASC", ([str(ctx.guild.id)]))
@@ -189,27 +204,28 @@ class Ranking(commands.Cog):
         return x[0] if x else "Bot"
 
     async def xp_lvl(self, xp):
-                level_person = 0
-                increment = 100
-                level = 0
-                j = 1
-                i = 100
-                xp = int(xp)
+        level_person = 0
+        increment = 100
+        level = 0
+        j = 1
+        i = 100
+        xp = int(xp)
 
-                for x in range(100, 55000):
-                    level += 1
+        for x in range(100, 55000):
+            level += 1
 
-                    if j == 10:
-                        j = 0
-                        increment += 100
+            if j == 10:
+                j = 0
+                increment += 100
 
-                    if xp >= i and xp < i + increment:
-                        level_person = level
+            if xp >= i and xp < i + increment:
+                level_person = level
 
-                    i += increment
-                    j += 1
+            i += increment
+            j += 1
 
-                return level_person
+        return level_person
+
 
 def setup(bot):
     bot.add_cog(Ranking(bot))

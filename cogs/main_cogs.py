@@ -19,8 +19,7 @@ class Basic(commands.Cog):
 
     @commands.command()
     async def amo(self, ctx, *args):
-        y = [mem for mem in [m for m in ctx.guild.members if m != ctx.message.author] if
-             "AMO" in [x.name for x in mem.roles]]
+        y = [mem for mem in [m for m in ctx.guild.members if m != ctx.message.author] if "AMO" in [x.name for x in mem.roles]]
 
         for x in y:
             await x.send("{}".format(" ".join(args)))
