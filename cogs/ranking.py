@@ -186,7 +186,7 @@ class Ranking(commands.Cog):
                 f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
 
     async def get_xp(self, ctx, user):
-        exp = self.cur_main.execute("SELECT * FROM LEVEL WHERE server=? AND user=?", ([str(ctx.guild.id), str(user)]))
+        self.cur_main.execute("SELECT * FROM LEVEL WHERE server=? AND user=?", ([str(ctx.guild.id), str(user)]))
         x = self.cur_main.fetchall()
         if x:
             return (x[0][2])
@@ -213,7 +213,6 @@ class Ranking(commands.Cog):
 
         for x in range(100, 55000):
             level += 1
-
             if j == 10:
                 j = 0
                 increment += 100
