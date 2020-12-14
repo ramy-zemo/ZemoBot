@@ -9,3 +9,4 @@ cogs/__pycache__/auszeit.cpython-37.pyc
 .env
 .env
 *.iml
+.env
