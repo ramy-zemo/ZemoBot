@@ -8,8 +8,8 @@ class w2g(commands.Cog):
 
     
     @commands.command()
-    async def w2g(self, ctx, url):
-        headers = {"share": url}
+    async def w2g(self, ctx, *args):
+        headers = {"share": args[0] if args else ""}
         yt = requests.post("https://w2g.tv/rooms/create.json", data=headers)
         await ctx.send("https://w2g.tv/rooms/" + json.loads(yt.content.decode())["streamkey"])
 
