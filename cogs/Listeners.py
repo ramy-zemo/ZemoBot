@@ -90,7 +90,7 @@ class Listeners(commands.Cog):
         self.cur_main.execute('CREATE TABLE IF NOT EXISTS TRASHTALK ( server TEXT, datum TEXT, von TEXT, an TEXT)')
         self.cur_main.execute('CREATE TABLE IF NOT EXISTS CHANNELS ( server TEXT, channel TEXT)')
         self.cur_main.execute('CREATE TABLE IF NOT EXISTS VOICE ( user TEXT, minutes INT)')
-        self.cur_main.execute('CREATE TABLE IF NOT EXISTS PARTNER ( server TEXT, user TEXT, )')
+        self.cur_main.execute('CREATE TABLE IF NOT EXISTS PARTNER ( server TEXT, user TEXT)')
         self.conn_main.commit()
 
         print("Bot {} läuft!".format(self.bot.user))
