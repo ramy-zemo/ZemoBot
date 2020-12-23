@@ -91,6 +91,8 @@ class Listeners(commands.Cog):
         self.cur_main.execute('CREATE TABLE IF NOT EXISTS CHANNELS ( server TEXT, channel TEXT)')
         self.cur_main.execute('CREATE TABLE IF NOT EXISTS VOICE ( user TEXT, minutes INT)')
         self.cur_main.execute('CREATE TABLE IF NOT EXISTS PARTNER ( server TEXT, user TEXT)')
+        #self.cur_main.execute('DROP TABLE TWITCH')
+        self.cur_main.execute('CREATE TABLE IF NOT EXISTS TWITCH ( server TEXT, username TEXT)')
         self.conn_main.commit()
 
         print("Bot {} läuft!".format(self.bot.user))
