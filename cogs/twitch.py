@@ -1,10 +1,13 @@
 from discord.ext import commands, tasks
+from dotenv import load_dotenv
 import sqlite3
 import requests
 import json
 import discord
 import asyncio
+import os
 
+load_dotenv()
 
 class Twitch(commands.Cog):
     def __init__(self, bot):
@@ -18,24 +21,19 @@ class Twitch(commands.Cog):
     @tasks.loop(seconds=10.0)
     async def raute(self):
         await asyncio.sleep(5)
-        print("Checking...")
         self.cur_main.execute('SELECT * FROM TWITCH')
         to_check = self.cur_main.fetchall()
 
         for x in to_check:
             guild_id = x[0]
             self.username = x[1]
-            print(self.username)
             data = await self.get_data()
-            print(data)
             if data['is_live'] and self.username not in self.done_notifiys:
                 await self.twitch_notify(int(guild_id))
                 self.done_notifiys[self.username] = True
             elif not data['is_live'] and self.username in self.done_notifiys:
                 del self.done_notifiys[self.username]
 
-            else:
-                print("Not online...")
 
     @commands.is_owner()
     @commands.command()
@@ -54,8 +52,8 @@ class Twitch(commands.Cog):
         self.conn_main.commit()
 
     async def get_data(self):
-        self.token = "uf34z6iam9421z9t5yl0sv1b8hi6am"
-        headers = {"client-id": "qw6mmjkdrazpzl4odsmgj40bd6i7wd", "Authorization": f"Bearer {self.token}"}
+        self.token = os.getenv('TWITCH_Authorization')
+        headers = {"client-id": os.getenv('TWITCH_CLIENT_ID'), "Authorization": f"Bearer {self.token}"}
 
         x = requests.get(f"https://api.twitch.tv/helix/search/channels?query={self.username}", headers=headers)
         fff = x.content.decode()
@@ -81,10 +79,6 @@ class Twitch(commands.Cog):
         channel_id = self.cur_main.fetchall()[0][1]
         channel = discord.utils.get(guild.channels, id=int(channel_id))
         await channel.send(embed=embed)
-
-    @commands.command()
-    async def ffgs(self, ctx):
-        await self.twitch_notify(481248489238429727)
 
 def setup(bot):
     bot.add_cog(Twitch(bot))
