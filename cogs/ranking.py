@@ -51,7 +51,7 @@ class Ranking(commands.Cog):
             xp_current = await self.get_xp(ctx, user)
 
             step = xp_next_lvl - xp_current_lvl
-            state = xp_current - xp_current_lvl
+            state = xp_current - xp_current_lvl + 25
 
             try:
                 img = Image.open(r'bg/bg{}.png'.format(round(round(state / step * 100) / 2)))
@@ -82,7 +82,7 @@ class Ranking(commands.Cog):
             nxt_level_show = draw.text((1950, 585), f"{level + 1}", (26, 205, 238), font=font_lvl)
 
             # Print XP
-            level_show = draw.text((830, 775), f"XP: {xp_current} / {xp_next_lvl}", (68, 180, 132), font=font)
+            level_show = draw.text((830, 775), f"XP: {xp_current + 25} / {xp_next_lvl}", (68, 180, 132), font=font)
 
             with BytesIO() as output:
                 img.save(output, format="PNG")
@@ -180,10 +180,15 @@ class Ranking(commands.Cog):
 
         if old_level != new_level:
             self.cur_main.execute("SELECT * FROM CHANNELS WHERE server=?", ([ctx.guild.id]))
-            channel_id = int(self.cur_main.fetchall()[0][1])
-            channel = discord.utils.get(ctx.guild.channels, id=channel_id)
-            await channel.send(
-                f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
+            try:
+                channel_id = int(self.cur_main.fetchall()[0][1])
+                channel = discord.utils.get(ctx.guild.channels, id=channel_id)
+                await channel.send(f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
+            except IndexError:
+                channel = discord.utils.get(ctx.guild.channels, name="zemo-bot")
+                await channel.send(f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
+            except:
+                print("Main Channel not found.")
 
     async def get_xp(self, ctx, user):
         self.cur_main.execute("SELECT * FROM LEVEL WHERE server=? AND user=?", ([str(ctx.guild.id), str(user)]))

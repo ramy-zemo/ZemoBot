@@ -9,7 +9,8 @@ from discord.ext import commands
 load_dotenv()
 
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix="$", intents=intents, help_command=None, description="Nice Allrounder Bot, coded by Ramo")
+bot = commands.Bot(command_prefix="$", intents=intents, help_command=None,
+                   description="Nice multipurpose Bot, coded by Ramo")
 
 for filename in os.listdir("cogs"):
     if filename.endswith(".py") and filename != "__init__.py":

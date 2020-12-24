@@ -98,7 +98,6 @@ class Listeners(commands.Cog):
         print("Bot {} läuft!".format(self.bot.user))
         self.change_status.start()
 
-
     def find_invite_by_code(self, invite_list, code):
         for inv in invite_list:
             if inv.code == code:
