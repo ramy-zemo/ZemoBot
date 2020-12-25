@@ -5,6 +5,7 @@ from random import choice
 import asyncio
 from math import ceil
 
+
 class Mafia(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -288,7 +289,6 @@ class Mafia(commands.Cog):
                     await game_text_channel.send("Es konnte keine mehrheit gebildet werden.")
                     await game_text_channel.send("5 Minuten bis zur nächsten Abstimmung.")
 
-
                 else:
                     # Kick Person and notify Users
                     to_kick = guild.get_member(int(str(raus[0]).strip("<>!@")))
@@ -330,5 +330,7 @@ class Mafia(commands.Cog):
 
                 await ctx.send(f"Spiel {game_id} beendet")
                 break
+
+
 def setup(bot):
     bot.add_cog(Mafia(bot))

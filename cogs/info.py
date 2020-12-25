@@ -2,6 +2,7 @@ from discord.ext import commands
 import sqlite3
 import discord
 
+
 class info(commands.Cog):
     def __init__(self, bot):
         self.conn_main = sqlite3.connect("main.db")

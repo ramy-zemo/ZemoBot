@@ -1,6 +1,7 @@
 from io import BytesIO
 from PIL import Image, ImageFont, ImageDraw, ImageOps
 from discord.ext import commands
+from etc.global_functions import get_main_channel
 import requests
 import discord
 import sqlite3
@@ -179,16 +180,8 @@ class Ranking(commands.Cog):
             self.conn_main.commit()
 
         if old_level != new_level:
-            self.cur_main.execute("SELECT * FROM CHANNELS WHERE server=?", ([ctx.guild.id]))
-            try:
-                channel_id = int(self.cur_main.fetchall()[0][1])
-                channel = discord.utils.get(ctx.guild.channels, id=channel_id)
-                await channel.send(f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
-            except IndexError:
-                channel = discord.utils.get(ctx.guild.channels, name="zemo-bot")
-                await channel.send(f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
-            except:
-                print("Main Channel not found.")
+            channel = await get_main_channel(ctx)
+            await channel.send(f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
 
     async def get_xp(self, ctx, user):
         self.cur_main.execute("SELECT * FROM LEVEL WHERE server=? AND user=?", ([str(ctx.guild.id), str(user)]))

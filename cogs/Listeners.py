@@ -6,6 +6,7 @@ from datetime import date
 from .ranking import Ranking
 from itertools import cycle
 
+
 class Listeners(commands.Cog):
     def __init__(self, bot):
         self.voice_track = {}
