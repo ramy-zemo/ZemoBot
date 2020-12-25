@@ -1,6 +1,6 @@
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
-from etc.global_functions import get_main_channel
+from etc.global_functions import get_main_channel, ask_for_thumbs
 import sqlite3
 import requests
 import json
@@ -9,6 +9,7 @@ import asyncio
 import os
 
 load_dotenv()
+
 
 class Twitch(commands.Cog):
     def __init__(self, bot):
@@ -35,10 +36,27 @@ class Twitch(commands.Cog):
             elif not data['is_live'] and self.username in self.done_notifiys:
                 del self.done_notifiys[self.username]
 
+    @commands.command()
+    async def frog(self, ctx):
+        x = await ask_for_thumbs(self.bot, ctx, "", "Wie gehts?")
+        print("X = ", x)
+
     @commands.is_owner()
     @commands.command()
     async def setup_twitch(self, ctx):
-        await ctx.send("Username?")
+        sql_mode = 'INSERT'
+        self.cur_main.execute('SELECT * FROM TWITCH WHERE SERVER = ?', ([ctx.guild.id]))
+        twitch_in_db = self.cur_main.fetchall()
+
+        if twitch_in_db:
+            x = await ask_for_thumbs(self.bot, ctx, "Twitch bereits verknüpft", f"Der Server {ctx.guild} ist bereits mit dem Twitch Konto `{twitch_in_db[0][1]}` verbunden.\nMöchtest du ein neues verbinden?")
+
+            if not x:
+                return
+            else:
+                sql_mode = 'UPDATE'
+
+        await ctx.send("Gib bitte den Nutzernamen des Twitchkontos an:")
 
         def check(reaction):
             if str(reaction.author) == str(self.bot.user):
@@ -54,7 +72,9 @@ class Twitch(commands.Cog):
         else:
             return await ctx.send('Ungültiger Twitch Nutzername.\n')
 
-        self.cur_main.execute('INSERT INTO TWITCH (server, username) VALUES (?, ?)', (str(ctx.guild.id), self.username))
+        sql_command = {'INSERT': ('INSERT INTO TWITCH (server, username) VALUES (?, ?)', (str(ctx.guild.id), self.username)), 'UPDATE': ('UPDATE TWITCH SET username = ? WHERE server = ?', (self.username, str(ctx.guild.id)))}
+
+        self.cur_main.execute(sql_command[sql_mode][0], sql_command[sql_mode][1])
         self.conn_main.commit()
 
     async def get_data(self):
@@ -62,7 +82,12 @@ class Twitch(commands.Cog):
         headers = {"client-id": os.getenv('TWITCH_CLIENT_ID'), "Authorization": f"Bearer {self.token}"}
 
         x = requests.get(f"https://api.twitch.tv/helix/search/channels?query={self.username}", headers=headers)
-        data = json.loads(x.content.decode())["data"][0]
+
+        try:
+            data = json.loads(x.content.decode())["data"][0]
+        except IndexError:
+            return []
+
         return data if data['display_name'] == self.username else []
 
     @commands.command()
@@ -82,6 +107,7 @@ class Twitch(commands.Cog):
         guild = self.bot.get_guild(guild_id)
         channel = await get_main_channel(guild)
         await channel.send(embed=embed)
+
 
 def setup(bot):
     bot.add_cog(Twitch(bot))

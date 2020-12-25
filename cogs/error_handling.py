@@ -20,8 +20,8 @@ class ErrorHandler(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
         if isinstance(error, CommandNotFound):
-            await ctx.send(":question: Unbekannter Befehl :question:")
-
+            return await ctx.send(":question: Unbekannter Befehl :question:")
+        raise error
 
 def setup(bot):
     bot.add_cog(ErrorHandler(bot))
