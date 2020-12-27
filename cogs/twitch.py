@@ -30,6 +30,8 @@ class Twitch(commands.Cog):
             guild_id = x[0]
             self.username = x[1]
             data = await self.get_data()
+            if not data:
+                return
             if data['is_live'] and self.username not in self.done_notifiys:
                 await self.twitch_notify(int(guild_id))
                 self.done_notifiys[self.username] = True
@@ -99,10 +101,9 @@ class Twitch(commands.Cog):
                               description=f"{data['title']}\n{f'https://www.twitch.tv/{self.username}'}\n",
                               url=f"https://www.twitch.tv/{self.username}",
                               color=0x9244ff)
-        embed.set_thumbnail(
-            url=data["thumbnail_url"])
+        embed.set_thumbnail(url=data["thumbnail_url"])
 
-        embed.set_author(name="Zemo Bot",icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+        embed.set_author(name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
 
         guild = self.bot.get_guild(guild_id)
         channel = await get_main_channel(guild)

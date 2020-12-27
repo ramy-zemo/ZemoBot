@@ -30,10 +30,9 @@ class info(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
-    async def help(self, ctx, *args):
+    async def help_old(self, ctx, *args):
         embed = discord.Embed(title="Help", description="List of available commands", color=0x1acdee)
-        embed.set_author(
-            name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+        embed.set_author(name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
         embed.add_field(name="$trashtalk (*Mention)", value="Trashtalk people", inline=False)
         embed.add_field(name="$trashtalk_stats", value="Show your Discord Trashtalk Stats", inline=False)
         embed.add_field(name="$trashtalk_reset", value="Reset your Trashtalk Stats", inline=False)
@@ -53,6 +52,54 @@ class info(commands.Cog):
         embed.add_field(name="$trump_img", value="Get a random Trump Quote.", inline=False)
         embed.add_field(name="$gen_meme (Top Text, Bottom Text)", value="Get a custom Meme.", inline=False)
         await ctx.send(embed=embed)
+
+    @commands.command()
+    async def help(self, ctx, *args):
+        plugins = {
+            'level': {"$trashtalk_stats": "Show your Trashtalk Stats.",
+                      "$trashtalk_reset": "Reset your Trashtalk Stats.",
+                      "$trashtalk_list": "Show Trashtalk Words.",
+                      "$stats": "Get your statistics.", "$invite": "List of your successful invites.",
+                      "$info": "Get your Userinformation."},
+            'fun': {"$trashtalk (*Mention)": "Trashtalk people.", "$trashtalk_add": "Add Words to trashtalk.",
+                    "$ping": "Check if bot is alive.",
+                    "$meme": "Return random meme from Reddit.",
+                    "$font (*keyword) (font)": "Returns ASCII Art, from provided Text.",
+                    "$w2g (url)": "Create watch2gether room with provided Link.",
+                    "$trump": "Get a random Quote of Trump.", "$trump_img": "Get a random Picture of Trump.",
+                    "$gen_meme (Top Text, Bottom Text)": "Get a custom Meme."},
+            'games': {"$mafia (*mention)": "Start Mafia Game.", "$coin": "Flip a ZEMO Coin."},
+            'mod': {"$auszeit (mention) (seconds)": "Timeout Users."},
+            'media': {"$font_list": "Get List of available Fonts.", "$avatar": "Get your own Discord Profile Picture.",
+                      "$avatar (*Mention)": "Get the Discord Avatar from another user."},
+            'search': {}
+        }
+
+        if not args:
+            embed = discord.Embed(color=0x1acdee)
+            embed.set_author(name="Zemo Bot")
+            embed.set_thumbnail(url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+            embed.add_field(name="Level", value="`$help Level` ", inline=True)
+            embed.add_field(name="Fun", value="`$help Fun` ", inline=True)
+            embed.add_field(name="Games", value="`$help Games` ", inline=True)
+            embed.add_field(name="Moderation", value="`$help Mod` ", inline=True)
+            embed.add_field(name="Media", value="`$help Media` ", inline=True)
+            embed.add_field(name="Search", value="`$help Search` ", inline=True)
+            await ctx.send(embed=embed)
+
+        elif len(args) == 1 and args[0].lower() in plugins:
+            category = args[0].lower()
+            embed = discord.Embed(color=0x1acdee)
+            embed.set_author(name="Zemo Bot")
+            embed.set_thumbnail(url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+
+            for count, option in enumerate(plugins[category]):
+                embed.add_field(name=option, value=plugins[category][option], inline=False)
+
+            await ctx.send(embed=embed)
+
+        else:
+            print("Too much")
 
     @commands.command()
     async def invite(self, ctx, *args):

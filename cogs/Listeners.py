@@ -5,6 +5,7 @@ import sqlite3
 from datetime import date
 from .ranking import Ranking
 from itertools import cycle
+from discord.ext.commands import CommandNotFound
 
 
 class Listeners(commands.Cog):
@@ -166,6 +167,12 @@ class Listeners(commands.Cog):
     @tasks.loop(seconds=10)
     async def change_status(self):
         await self.bot.change_presence(activity=discord.Game(next(self.status)))
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, CommandNotFound):
+            return await ctx.send(":question: Unbekannter Befehl :question:")
+        raise error
 
 def setup(bot):
     bot.add_cog(Listeners(bot))

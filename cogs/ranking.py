@@ -55,9 +55,9 @@ class Ranking(commands.Cog):
             state = xp_current - xp_current_lvl + 25
 
             try:
-                img = Image.open(r'bg/bg{}.png'.format(round(round(state / step * 100) / 2)))
+                img = Image.open(r'img/stats/bg{}.png'.format(round(round(state / step * 100) / 2)))
             except:
-                img = Image.open(r'bg/bg0.png')
+                img = Image.open(r'img/stats/bg0.png')
 
             response = requests.get(url)
             pb = Image.open(BytesIO(response.content))

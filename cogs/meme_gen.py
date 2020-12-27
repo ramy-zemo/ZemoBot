@@ -27,7 +27,12 @@ class meme_gen(commands.Cog):
         with BytesIO() as output:
             img.save(output, format="PNG")
             output.seek(0)
-            await ctx.send(file=discord.File(fp=output, filename="image.png"))
+            await ctx.send(file=discord.File(fp=output, filename="image.png"), content=f"by: {ctx.message.author.mention}")
+        try:
+            await ctx.message.delete()
+        except:
+            pass
+
 
 def setup(bot):
     bot.add_cog(meme_gen(bot))

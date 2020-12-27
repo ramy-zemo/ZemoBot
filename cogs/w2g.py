@@ -7,7 +7,7 @@ class W2G(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
+    @commands.command(aliases=["watch2gether"])
     async def w2g(self, ctx, url=""):
         headers = {"share": url}
         yt = requests.post("https://w2g.tv/rooms/create.json", data=headers)
