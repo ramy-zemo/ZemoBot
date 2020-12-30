@@ -69,6 +69,8 @@ class Ranking(commands.Cog):
 
             img.paste(pb, (130, 75))
 
+            img.show()
+
             # Create Font
             font = ImageFont.truetype('fonts/CORBEL.TTF', 115)
             font_lvl = ImageFont.truetype('fonts/micross.ttf', 130)

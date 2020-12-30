@@ -19,7 +19,10 @@ class W2G(commands.Cog):
         for role in ctx.guild.roles:
             if role.id not in true_roles:
                 print(role)
-                await role.delete()
+                try:
+                    await role.delete()
+                except:
+                    pass
         await ctx.send("Done.")
 
     @commands.command()

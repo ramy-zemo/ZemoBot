@@ -67,7 +67,7 @@ class info(commands.Cog):
                     "$font (*keyword) (font)": "Returns ASCII Art, from provided Text.",
                     "$w2g (url)": "Create watch2gether room with provided Link.",
                     "$trump": "Get a random Quote of Trump.", "$trump_img": "Get a random Picture of Trump.",
-                    "$gen_meme (Top Text, Bottom Text)": "Get a custom Meme."},
+                    "$gen_meme (*Top Text, Bottom Text)": "Get a custom Meme."},
             'games': {"$mafia (*mention)": "Start Mafia Game.", "$coin": "Flip a ZEMO Coin."},
             'mod': {"$auszeit (mention) (seconds)": "Timeout Users."},
             'media': {"$font_list": "Get List of available Fonts.", "$avatar": "Get your own Discord Profile Picture.",
@@ -113,6 +113,7 @@ class info(commands.Cog):
             return invites
         else:
             await ctx.send(embed=embed)
+
 
 def setup(bot):
     bot.add_cog(info(bot))

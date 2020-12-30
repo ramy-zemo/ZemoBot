@@ -135,7 +135,7 @@ class Listeners(commands.Cog):
                     self.conn_main.commit()
                     await self.ranking.add_xp(ctx, invite.inviter, 200)
 
-        await self.ranking.add_xp(ctx, ctx, 20)
+        await self.ranking.add_xp(self, ctx, ctx, 20)
 
     @commands.Cog.listener()
     async def on_member_remove(self, ctx):

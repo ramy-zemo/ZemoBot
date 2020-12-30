@@ -25,6 +25,13 @@ class Fun(commands.Cog):
         else:
             await ctx.send(f"{ctx.message.author.mention} Kopf", file=File('img/coin/Coin_Head.gif', filename="Head.gif"))
 
+    @commands.is_owner()
+    @commands.command()
+    async def kick(self, ctx, *args):
+        to_kick = ctx.guild.get_member(int(str(args[0]).strip("<>!@")))
+        await ctx.guild.kick(to_kick)
+        await ctx.send("Habebe ist erledigt")
+
 
 def setup(bot):
     bot.add_cog(Fun(bot))
