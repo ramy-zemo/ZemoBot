@@ -2,7 +2,8 @@ from discord.ext import commands
 import discord
 import asyncio
 
-class auszeit(commands.Cog):
+
+class Auszeit(commands.Cog):
     def __init__(self, bot):
         self.timeout_roles = [768172546860253194, 768172546104229899]
         self.bot = bot
@@ -77,5 +78,6 @@ class auszeit(commands.Cog):
             await auszeit_channel.delete()
             await voice_channel.delete()
 
+
 def setup(bot):
-    bot.add_cog(auszeit(bot))
+    bot.add_cog(Auszeit(bot))

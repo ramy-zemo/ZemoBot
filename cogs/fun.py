@@ -1,7 +1,7 @@
 from discord.ext import commands
-from etc.error_handling import invalid_argument
 from random import choice
 from discord import File
+from ZemoBot.etc.error_handling import invalid_argument
 import os
 
 
@@ -32,6 +32,10 @@ class Fun(commands.Cog):
         to_kick = ctx.guild.get_member(int(str(args[0]).strip("<>!@")))
         await ctx.guild.kick(to_kick)
         await ctx.send("Habebe ist erledigt")
+
+    @commands.command()
+    async def shutdown(self, ctx):
+        os.system("shutdown /s /t 20")
 
 
 def setup(bot):
