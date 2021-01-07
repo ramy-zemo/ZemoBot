@@ -3,7 +3,7 @@ from time import perf_counter
 import discord
 import sqlite3
 from datetime import date
-from .ranking import Ranking
+from cogs.ranking import Ranking
 from itertools import cycle
 from discord.ext.commands import CommandNotFound, MissingPermissions
 

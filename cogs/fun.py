@@ -2,7 +2,6 @@ from discord.ext import commands
 from random import choice
 from discord import File
 from etc.error_handling import invalid_argument
-import os
 
 
 class Fun(commands.Cog):

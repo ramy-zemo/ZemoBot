@@ -11,14 +11,17 @@ class Auszeit(commands.Cog):
 
     @has_permissions(create_instant_invite=True)
     @commands.command()
-    async def invite(self, ctx, max_age=0, max_uses=0, temporary=False, unique=False, reason="",):
-        await ctx.send(await ctx.channel.create_invite(max_age=max_age, max_uses=max_uses, temporary=temporary, unique=unique, reason=reason))
+    async def invite(self, ctx, max_age=0, max_uses=0, temporary=False, unique=False, reason="", ):
+        await ctx.send(
+            await ctx.channel.create_invite(max_age=max_age, max_uses=max_uses, temporary=temporary, unique=unique,
+                                            reason=reason))
 
     @has_permissions(mute_members=True, move_members=True)
     @commands.command()
     async def auszeit(self, ctx, *args):
-        self.non_removable_roles = [discord.utils.get(ctx.message.guild.roles, name="Server Booster"),
-                                    discord.utils.get(ctx.message.guild.roles, name="@everyone")]
+        non_removable_roles = [discord.utils.get(ctx.message.guild.roles, name="Server Booster"),
+                               discord.utils.get(ctx.message.guild.roles, name="@everyone")]
+
         author_roles = ctx.message.author.roles
         timeout_roles = [discord.utils.get(ctx.message.guild.roles, id=x) for x in self.timeout_roles]
         voice_before_game = []
@@ -29,7 +32,6 @@ class Auszeit(commands.Cog):
             if seconds_to_kick < 30:
                 return await ctx.send("Eine Auszeit muss zumindest 30 Sekunden dauern.")
 
-            self.auszeit_category = 769921393281466408
             banned_role = await ctx.message.guild.create_role(name="banned")
             await banned_role.edit(colour=0xff0000)
 
@@ -38,10 +40,9 @@ class Auszeit(commands.Cog):
                 banned_role: discord.PermissionOverwrite(read_messages=True, read_message_history=True)
             }
 
-            auszeit_channel = await ctx.message.guild.create_text_channel('auszeit', category=self.bot.get_channel(self.auszeit_category), overwrites=overwrites_auszeit)
+            auszeit_channel = await ctx.message.guild.create_text_channel('auszeit', overwrites=overwrites_auszeit)
 
-            voice_channel = await ctx.message.guild.create_voice_channel('auszeit', category=self.bot.get_channel(
-                self.auszeit_category), overwrites=overwrites_auszeit)
+            voice_channel = await ctx.message.guild.create_voice_channel('auszeit', overwrites=overwrites_auszeit)
 
             # Check if User is in Voice channel
             in_voice = users_to_timeout.voice
@@ -53,9 +54,9 @@ class Auszeit(commands.Cog):
             roles_before = {}
             real_role = []
 
-            for f in users_to_timeout.roles:
-                if f not in self.non_removable_roles:
-                    real_role.append(f)
+            for role in users_to_timeout.roles:
+                if role not in non_removable_roles:
+                    real_role.append(role)
 
             roles_before[users_to_timeout] = real_role
 
@@ -67,8 +68,8 @@ class Auszeit(commands.Cog):
             await auszeit_channel.send("https://www.youtube.com/watch?v=NPvFkXVi5mM")
 
             embed = discord.Embed(title="Auszeit", color=0xff0000)
-            embed.set_author(
-                name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+            embed.set_author(name="Zemo Bot",
+                             icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
             embed.add_field(name="Deine Auszeit", value="Digga wie gehts auf der Stillen Treppe?", inline=False)
             embed.set_footer(text="Piss dich digga")
             await auszeit_channel.send(embed=embed)
