@@ -1,7 +1,7 @@
 from discord.ext import commands
 from random import choice
 from discord import File
-from ZemoBot.etc.error_handling import invalid_argument
+from etc.error_handling import invalid_argument
 import os
 
 
@@ -25,17 +25,6 @@ class Fun(commands.Cog):
             await ctx.send(f"{ctx.message.author.mention} Zahl", file=File('img/coin/Coin_Tail.gif', filename="Tail.gif"))
         else:
             await ctx.send(f"{ctx.message.author.mention} Kopf", file=File('img/coin/Coin_Head.gif', filename="Head.gif"))
-
-    @commands.is_owner()
-    @commands.command()
-    async def kick(self, ctx, *args):
-        to_kick = ctx.guild.get_member(int(str(args[0]).strip("<>!@")))
-        await ctx.guild.kick(to_kick)
-        await ctx.send("Habebe ist erledigt")
-
-    @commands.command()
-    async def shutdown(self, ctx):
-        os.system("shutdown /s /t 20")
 
 
 def setup(bot):

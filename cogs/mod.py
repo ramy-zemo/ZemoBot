@@ -1,6 +1,7 @@
-from discord.ext import commands
-import discord
 import asyncio
+import discord
+from discord.ext import commands
+from discord.ext.commands import has_permissions
 
 
 class Auszeit(commands.Cog):
@@ -8,6 +9,12 @@ class Auszeit(commands.Cog):
         self.timeout_roles = [768172546860253194, 768172546104229899]
         self.bot = bot
 
+    @has_permissions(create_instant_invite=True)
+    @commands.command()
+    async def invite(self, ctx, max_age=0, max_uses=0, temporary=False, unique=False, reason="",):
+        await ctx.send(await ctx.channel.create_invite(max_age=max_age, max_uses=max_uses, temporary=temporary, unique=unique, reason=reason))
+
+    @has_permissions(mute_members=True, move_members=True)
     @commands.command()
     async def auszeit(self, ctx, *args):
         self.non_removable_roles = [discord.utils.get(ctx.message.guild.roles, name="Server Booster"),
@@ -77,6 +84,27 @@ class Auszeit(commands.Cog):
 
             await auszeit_channel.delete()
             await voice_channel.delete()
+
+    @has_permissions(kick_members=True)
+    @commands.command()
+    async def kick(self, ctx, *args):
+        to_kick = ctx.guild.get_member(int(str(args[0]).strip("<>!@")))
+        await ctx.guild.kick(to_kick)
+        await ctx.send(ctx.message.author.mention + f" Habebe ist erledigt. {to_kick} wurde gekickt.")
+
+    @has_permissions(ban_members=True)
+    @commands.command()
+    async def ban(self, ctx, *args):
+        to_ban = ctx.guild.get_member(int(str(args[0]).strip("<>!@")))
+        await ctx.guild.ban(to_ban)
+        await ctx.send(ctx.message.author.mention + f" Habebe ist erledigt. {to_ban} wurde gebannt.")
+
+    @has_permissions(ban_members=True)
+    @commands.command()
+    async def unban(self, ctx, *args):
+        to_unban = ctx.guild.get_member(int(str(args[0]).strip("<>!@")))
+        await ctx.guild.unban(to_unban)
+        await ctx.send(ctx.message.author.mention + f"Habebe ist erledigt. {to_unban} wurde entbannt.")
 
 
 def setup(bot):

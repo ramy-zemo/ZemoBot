@@ -5,7 +5,7 @@ import sqlite3
 from datetime import date
 from .ranking import Ranking
 from itertools import cycle
-from discord.ext.commands import CommandNotFound
+from discord.ext.commands import CommandNotFound, MissingPermissions
 
 
 class Listeners(commands.Cog):
@@ -93,8 +93,8 @@ class Listeners(commands.Cog):
         self.cur_main.execute('CREATE TABLE IF NOT EXISTS CHANNELS ( server TEXT, channel TEXT)')
         self.cur_main.execute('CREATE TABLE IF NOT EXISTS VOICE ( user TEXT, minutes INT)')
         self.cur_main.execute('CREATE TABLE IF NOT EXISTS PARTNER ( server TEXT, user TEXT)')
-        #self.cur_main.execute('DROP TABLE TWITCH')
         self.cur_main.execute('CREATE TABLE IF NOT EXISTS TWITCH ( server TEXT, username TEXT)')
+        self.cur_main.execute('CREATE TABLE IF NOT EXISTS CONFIG ( server TEXT, sprache TEXT, prefix TEXT, welcome_text TEXT, welcome_role TEXT, disabled_commands TEXT)')
         self.conn_main.commit()
 
         print("Bot {} läuft!".format(self.bot.user))
@@ -133,7 +133,7 @@ class Listeners(commands.Cog):
 
                     self.cur_main.execute(sql, val_1)
                     self.conn_main.commit()
-                    await self.ranking.add_xp(ctx, invite.inviter, 200)
+                    await self.ranking.add_xp(self, ctx, invite.inviter, 200)
 
         await self.ranking.add_xp(self, ctx, ctx, 20)
 
@@ -172,7 +172,12 @@ class Listeners(commands.Cog):
     async def on_command_error(self, ctx, error):
         if isinstance(error, CommandNotFound):
             return await ctx.send(":question: Unbekannter Befehl :question:")
+
+        elif isinstance(error, MissingPermissions):
+            return await ctx.send(":hammer: Du bist leider nicht berechtigt diesen Command zu nutzen. :hammer:")
+
         raise error
+
 
 def setup(bot):
     bot.add_cog(Listeners(bot))

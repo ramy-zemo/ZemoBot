@@ -1,6 +1,7 @@
 from discord.ext import commands
 import sqlite3
 import discord
+from etc.error_handling import invalid_argument
 
 
 class info(commands.Cog):
@@ -18,21 +19,28 @@ class info(commands.Cog):
         self.cur_main.execute("SELECT minutes from VOICE WHERE user=?", ([str(ctx.author)]))
         minutes = self.cur_main.fetchall()[0][0]
 
-        self.cur_main.execute(f"SELECT * FROM TrashTalk WHERE server=? AND von=?", [str(ctx.guild.id), str(ctx.message.author)])
+        self.cur_main.execute(f"SELECT * FROM TrashTalk WHERE server=? AND von=?",
+                              [str(ctx.guild.id), str(ctx.message.author)])
         trashtalk = len(self.cur_main.fetchall())
 
         embed = discord.Embed(title="Info", description="Deine Nutzerinformationen:", color=0x1acdee)
         embed.add_field(name="Nachrichten", value=f"Du hast bisher {messages} Nachrichten versendet.", inline=False)
-        embed.add_field(name="Invites", value=f"""Du hast bisher {await self.invite(ctx, "No Print")} Invites versendet.""", inline=False)
-        embed.add_field(name="Minuten", value=f"Du warst {minutes} Minuten mit einem Sprachchannel verbunden.", inline=False)
-        embed.add_field(name="Trashtalk", value=f"""Du hast bereits {trashtalk} mal Trashtalk versendet.""", inline=False)
-        embed.set_author(name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+        embed.add_field(name="Invites",
+                        value=f"""Du hast bisher {await self.invite(ctx, "No Print")} Invites versendet.""",
+                        inline=False)
+        embed.add_field(name="Minuten", value=f"Du warst {minutes} Minuten mit einem Sprachchannel verbunden.",
+                        inline=False)
+        embed.add_field(name="Trashtalk", value=f"""Du hast bereits {trashtalk} mal Trashtalk versendet.""",
+                        inline=False)
+        embed.set_author(name="Zemo Bot",
+                         icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
         await ctx.send(embed=embed)
 
     @commands.command()
     async def help_old(self, ctx, *args):
         embed = discord.Embed(title="Help", description="List of available commands", color=0x1acdee)
-        embed.set_author(name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+        embed.set_author(name="Zemo Bot",
+                         icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
         embed.add_field(name="$trashtalk (*Mention)", value="Trashtalk people", inline=False)
         embed.add_field(name="$trashtalk_stats", value="Show your Discord Trashtalk Stats", inline=False)
         embed.add_field(name="$trashtalk_reset", value="Reset your Trashtalk Stats", inline=False)
@@ -60,8 +68,8 @@ class info(commands.Cog):
                       "$trashtalk_reset": "Reset your Trashtalk Stats.",
                       "$trashtalk_list": "Show Trashtalk Words.",
                       "$stats": "Get your statistics.", "$invite": "List of your successful invites.",
-                      "$info": "Get your Userinformation."},
-            'fun': {"$trashtalk (*Mention)": "Trashtalk people.", "$trashtalk_add": "Add Words to trashtalk.",
+                      "$info": "Get your Userinformation.", "$rank": "List of Top 5 Server Ranks"},
+            'fun': {"$trashtalk (*mention)": "Trashtalk people.", "$trashtalk_add": "Add Words to trashtalk.",
                     "$ping": "Check if bot is alive.",
                     "$meme": "Return random meme from Reddit.",
                     "$font (*keyword) (font)": "Returns ASCII Art, from provided Text.",
@@ -69,9 +77,11 @@ class info(commands.Cog):
                     "$trump": "Get a random Quote of Trump.", "$trump_img": "Get a random Picture of Trump.",
                     "$gen_meme (*Top Text, Bottom Text)": "Get a custom Meme."},
             'games': {"$mafia (*mention)": "Start Mafia Game.", "$coin": "Flip a ZEMO Coin."},
-            'mod': {"$auszeit (mention) (seconds)": "Timeout Users."},
+            'mod': {"$auszeit (*mention) (*seconds)": "Timeout Users.", "$kick (*mention)": "Kick Members.",
+                    "$ban (*mention)": "Ban Members", "$unban (*mention)": "Unban Members",
+                    "$invite (max_age) (max_uses) (temporary) (unique) (reason)": "Create Invites."},
             'media': {"$font_list": "Get List of available Fonts.", "$avatar": "Get your own Discord Profile Picture.",
-                      "$avatar (*Mention)": "Get the Discord Avatar from another user."},
+                      "$avatar (*mention)": "Get the Discord Avatar from another user."},
             'search': {}
         }
 
@@ -94,20 +104,23 @@ class info(commands.Cog):
             embed.set_thumbnail(url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
 
             for count, option in enumerate(plugins[category]):
-                embed.add_field(name=option, value=plugins[category][option], inline=False)
+                embed.add_field(name="`" + option + "`", value=plugins[category][option], inline=False)
 
             await ctx.send(embed=embed)
 
         else:
-            print("Too much")
+            return await invalid_argument(ctx, "help", "$help (category)")
 
     @commands.command()
-    async def invite(self, ctx, *args):
-        self.cur_main.execute("SELECT * FROM INVITES WHERE server=? AND von=?", tuple([ctx.guild.id, str(ctx.message.author)]))
+    async def invites(self, ctx, *args):
+        self.cur_main.execute("SELECT * FROM INVITES WHERE server=? AND von=?",
+                              tuple([ctx.guild.id, str(ctx.message.author)]))
 
         invites = len(self.cur_main.fetchall())
-        embed = discord.Embed(title="Invites", description=f"Du hast bereits erfolgreich {invites} Personen eingeladen.", color=0x1acdee)
-        embed.set_author(name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+        embed = discord.Embed(title="Invites",
+                              description=f"Du hast bereits erfolgreich {invites} Personen eingeladen.", color=0x1acdee)
+        embed.set_author(name="Zemo Bot",
+                         icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
 
         if args:
             return invites

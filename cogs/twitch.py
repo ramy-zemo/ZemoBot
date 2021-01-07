@@ -1,7 +1,7 @@
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
-from ZemoBot.etc.ask import ask_for_thumbs
-from ZemoBot.etc.global_functions import get_main_channel
+from etc.ask import ask_for_thumbs
+from etc.global_functions import get_main_channel
 import sqlite3
 import requests
 import json
