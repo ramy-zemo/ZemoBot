@@ -12,8 +12,9 @@ async def get_main_channel(ctx):
     except:
         guild = ctx
     try:
-        cur_main.execute("SELECT * FROM CHANNELS WHERE server=?", ([guild.id]))
-        channel_id = cur_main.fetchall()[0][1]
+        cur_main.execute("SELECT main_channel FROM CONFIG WHERE server=?", ([guild.id]))
+        k = cur_main.fetchall()
+        channel_id = k[0][1]
         channel = discord.utils.get(guild.channels, id=int(channel_id))
 
     except IndexError:

@@ -36,10 +36,12 @@ class Listeners(commands.Cog):
                 self.cur_main.execute("SELECT * FROM VOICE WHERE user=?", ([str(member)]))
 
                 if self.cur_main.fetchall():
-                    self.cur_main.execute("UPDATE VOICE SET minutes = minutes + ? WHERE user=?", ([int(round(time * -1) / 60), str(member)]))
+                    self.cur_main.execute("UPDATE VOICE SET minutes = minutes + ? WHERE user=?",
+                                          ([int(round(time * -1) / 60), str(member)]))
                     self.conn_main.commit()
                 else:
-                    self.cur_main.execute("INSERT INTO VOICE (user, minutes) VALUES (? , ?)", ([str(member), int(round(time * -1) / 60)]))
+                    self.cur_main.execute("INSERT INTO VOICE (user, minutes) VALUES (? , ?)",
+                                          ([str(member), int(round(time * -1) / 60)]))
                     self.conn_main.commit()
 
                 print([[int(round(time * -1) / 60), str(member)]])
@@ -50,7 +52,8 @@ class Listeners(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         overwrites_main = {
-           guild.default_role: discord.PermissionOverwrite(read_messages=True, read_message_history=True, send_messages=False)
+            guild.default_role: discord.PermissionOverwrite(read_messages=True, read_message_history=True,
+                                                            send_messages=False)
         }
 
         # Check if Server is in Database
@@ -90,15 +93,13 @@ class Listeners(commands.Cog):
         self.cur_main.execute('CREATE TABLE IF NOT EXISTS LEVEL ( server TEXT, user TEXT, xp INT)')
         self.cur_main.execute('CREATE TABLE IF NOT EXISTS MESSAGE ( server TEXT, datum TEXT, von TEXT, nachricht TEXT)')
         self.cur_main.execute('CREATE TABLE IF NOT EXISTS TRASHTALK ( server TEXT, datum TEXT, von TEXT, an TEXT)')
-        self.cur_main.execute('CREATE TABLE IF NOT EXISTS CHANNELS ( server TEXT, channel TEXT)')
         self.cur_main.execute('CREATE TABLE IF NOT EXISTS VOICE ( user TEXT, minutes INT)')
         self.cur_main.execute('CREATE TABLE IF NOT EXISTS PARTNER ( server TEXT, user TEXT)')
-        self.cur_main.execute('CREATE TABLE IF NOT EXISTS TWITCH ( server TEXT, username TEXT)')
-        self.cur_main.execute('CREATE TABLE IF NOT EXISTS CONFIG ( server TEXT, sprache TEXT, prefix TEXT, welcome_text TEXT, welcome_role TEXT, disabled_commands TEXT)')
+        self.cur_main.execute('CREATE TABLE IF NOT EXISTS CONFIG ( server TEXT, sprache TEXT, prefix TEXT, welcome_text TEXT, welcome_role TEXT, disabled_commands TEXT, twitch_username TEXT, main_channel TEXT)')
         self.conn_main.commit()
 
-        print("Bot {} läuft!".format(self.bot.user))
         self.change_status.start()
+        print("Bot {} läuft!".format(self.bot.user))
 
     def find_invite_by_code(self, invite_list, code):
         for inv in invite_list:
@@ -121,11 +122,13 @@ class Listeners(commands.Cog):
 
             if invite.uses < self.find_invite_by_code(invites_after_join, invite.code).uses:
                 if channel is not None:
-                    await channel.send(f'Selam {ctx.mention}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!\nEingeladen von: {invite.inviter.mention}')
+                    await channel.send(
+                        f'Selam {ctx.mention}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!\nEingeladen von: {invite.inviter.mention}')
 
                 self.invites[ctx.guild.id] = invites_after_join
 
-                self.cur_main.execute("SELECT * FROM INVITES WHERE server = ? AND an=?", tuple([str(ctx.guild.id), str(ctx)]))
+                self.cur_main.execute("SELECT * FROM INVITES WHERE server = ? AND an=?",
+                                      tuple([str(ctx.guild.id), str(ctx)]))
 
                 if len(self.cur_main.fetchall()) == 0:
                     sql = "INSERT INTO INVITES (server, datum, von, an) VALUES (?, ?, ?, ?)"
@@ -168,7 +171,7 @@ class Listeners(commands.Cog):
     async def change_status(self):
         await self.bot.change_presence(activity=discord.Game(next(self.status)))
 
-    @commands.Cog.listener()
+    #@commands.Cog.listener()
     async def on_command_error(self, ctx, error):
         if isinstance(error, CommandNotFound):
             return await ctx.send(":question: Unbekannter Befehl :question:")
