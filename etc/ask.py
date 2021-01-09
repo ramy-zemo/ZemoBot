@@ -34,7 +34,7 @@ async def ask_for_thumbs(bot, ctx, title, question):
     return reaction.emoji == '👍'
 
 
-async def ask(author, ask_type, question, text_channel, bot, options=[], max_answers=9999, range_int=[0, 100], msg_type="text"):
+async def ask(author, ask_type, question, text_channel, bot, options=["0", "0"], max_answers=9999, range_int=[0, 100], msg_type="text", reaction_type="usual"):
     class InvalidInt(Exception):
         pass
 
@@ -44,6 +44,9 @@ async def ask(author, ask_type, question, text_channel, bot, options=[], max_ans
     sent_messages = []
     while True:
         embed = discord.Embed(title=question, description='\n'.join(options), color=0x1acdee)
+
+        if ask_type == "reaction_add" and reaction_type == "bool":
+            embed.description = "1. Ja\n2. Nein"
 
         embed.set_author(name="Zemo Bot",
                          icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
@@ -135,6 +138,9 @@ async def ask(author, ask_type, question, text_channel, bot, options=[], max_ans
                 for count, emoji in enumerate(emojis):
                     if answer == emojis[emoji]:
                         answers.append(count + 1)
+
+        if ask_type == "reaction_add" and reaction_type == "bool":
+            answers = answers[0] == 1
 
         elif ask_type == "message":
             return reaction.content
