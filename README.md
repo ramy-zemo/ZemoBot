@@ -45,4 +45,10 @@ Currently available commands (will be extended continuously):
 
 `$twitch_setup (Owner only command)` -> Setup Twitch Streamer, to enable live notifications.
 
-<hr>
+## Debug Commands
+
+`$show_roles` -> Print Roles and Role IDs from a Guild
+
+`$show_channels` -> Print Channels and Channels IDs from a Guild
+
+
