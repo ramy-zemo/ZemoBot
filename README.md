@@ -44,3 +44,5 @@ Currently available commands (will be extended continuously):
 `$gen_meme (Top Text, Bottom Text)` -> Get a custom Meme.
 
 `$twitch_setup (Owner only command)` -> Setup Twitch Streamer, to enable live notifications.
+
+<hr>
