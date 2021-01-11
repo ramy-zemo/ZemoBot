@@ -57,13 +57,15 @@ class Listeners(commands.Cog):
         }
 
         # Check if Server is in Database
-        self.cur_main.execute("SELECT * FROM CHANNELS WHERE server=?", ([str(guild.id)]))
+        self.cur_main.execute("SELECT MESSAGE_CHANNEL FROM CONFIG WHERE server=?", ([str(guild.id)]))
         result = self.cur_main.fetchall()
 
         if not result:
             main_channel = await guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
-            sql = "INSERT INTO CHANNELS (server, channel) VALUES (?, ?)"
-            val_1 = (str(guild.id), str(main_channel.id))
+            welcome_channel = await guild.create_text_channel(name="willkommen", overwrites=overwrites_main)
+
+            sql = "INSERT INTO CONFIG (SERVER, SPRACHE, PREFIX, MESSAGE_CHANNEL, WELCOME_TEXT, WELCOME_CHANNEL) VALUES (?, ?, ?, ?, ?, ?)"
+            val_1 = (str(guild.id), "german", "$", str(main_channel.id), 'Selam {member}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!\n Eingeladen von: {inviter}', str(welcome_channel.id))
 
             self.cur_main.execute(sql, val_1)
             self.conn_main.commit()
@@ -95,7 +97,7 @@ class Listeners(commands.Cog):
         self.cur_main.execute('CREATE TABLE IF NOT EXISTS TRASHTALK ( server TEXT, datum TEXT, von TEXT, an TEXT)')
         self.cur_main.execute('CREATE TABLE IF NOT EXISTS VOICE ( user TEXT, minutes INT)')
         self.cur_main.execute('CREATE TABLE IF NOT EXISTS PARTNER ( server TEXT, user TEXT)')
-        self.cur_main.execute('CREATE TABLE IF NOT EXISTS CONFIG ( server TEXT, sprache TEXT, prefix TEXT, welcome_text TEXT, welcome_role TEXT, disabled_commands TEXT, twitch_username TEXT, main_channel TEXT)')
+        self.cur_main.execute('CREATE TABLE IF NOT EXISTS CONFIG ( SERVER TEXT, SPRACHE TEXT, PREFIX TEXT, MESSAGE_CHANNEL TEXT, WELCOME_TEXT TEXT, WELCOME_ROLE TEXT, WELCOME_CHANNEL TEXT, DISABLED_COMMANDS TEXT, TWITCH_USERNAME TEXT)')
         self.conn_main.commit()
 
         self.change_status.start()
@@ -122,8 +124,7 @@ class Listeners(commands.Cog):
 
             if invite.uses < self.find_invite_by_code(invites_after_join, invite.code).uses:
                 if channel is not None:
-                    await channel.send(
-                        f'Selam {ctx.mention}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!\nEingeladen von: {invite.inviter.mention}')
+                    await channel.send(f'Selam {ctx.mention}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!\n Eingeladen von: {invite.inviter.mention}')
 
                 self.invites[ctx.guild.id] = invites_after_join
 

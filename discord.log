@@ -1,1 +1,29 @@
-2021-01-10 00:32:14,150:WARNING:discord.client: PyNaCl is not installed, voice will NOT be supported
+2021-01-11 20:43:07,847:WARNING:discord.client: PyNaCl is not installed, voice will NOT be supported
+2021-01-11 20:48:40,877:ERROR:discord.client: Attempting a reconnect in 0.99s
+Traceback (most recent call last):
+  File "E:\Program Files (x86)\Microsoft Visual Studio\Shared\Python37_64\lib\site-packages\discord\client.py", line 548, in connect
+    self.ws = await asyncio.wait_for(coro, timeout=60.0)
+  File "E:\Program Files (x86)\Microsoft Visual Studio\Shared\Python37_64\lib\asyncio\tasks.py", line 442, in wait_for
+    return fut.result()
+  File "E:\Program Files (x86)\Microsoft Visual Studio\Shared\Python37_64\lib\site-packages\discord\gateway.py", line 305, in from_client
+    gateway = gateway or await client.http.get_gateway()
+  File "E:\Program Files (x86)\Microsoft Visual Studio\Shared\Python37_64\lib\site-packages\discord\http.py", line 910, in get_gateway
+    data = await self.request(Route('GET', '/gateway'))
+  File "E:\Program Files (x86)\Microsoft Visual Studio\Shared\Python37_64\lib\site-packages\discord\http.py", line 185, in request
+    async with self.__session.request(method, url, **kwargs) as r:
+  File "E:\Program Files (x86)\Microsoft Visual Studio\Shared\Python37_64\lib\site-packages\aiohttp\client.py", line 1012, in __aenter__
+    self._resp = await self._coro
+  File "E:\Program Files (x86)\Microsoft Visual Studio\Shared\Python37_64\lib\site-packages\aiohttp\client.py", line 504, in _request
+    await resp.start(conn)
+  File "E:\Program Files (x86)\Microsoft Visual Studio\Shared\Python37_64\lib\site-packages\aiohttp\client_reqrep.py", line 847, in start
+    message, payload = await self._protocol.read()  # type: ignore  # noqa
+  File "E:\Program Files (x86)\Microsoft Visual Studio\Shared\Python37_64\lib\site-packages\aiohttp\streams.py", line 591, in read
+    await self._waiter
+aiohttp.client_exceptions.ServerDisconnectedError
+2021-01-11 20:49:41,963:ERROR:discord.client: Attempting a reconnect in 1.74s
+Traceback (most recent call last):
+  File "E:\Program Files (x86)\Microsoft Visual Studio\Shared\Python37_64\lib\site-packages\discord\client.py", line 548, in connect
+    self.ws = await asyncio.wait_for(coro, timeout=60.0)
+  File "E:\Program Files (x86)\Microsoft Visual Studio\Shared\Python37_64\lib\asyncio\tasks.py", line 449, in wait_for
+    raise futures.TimeoutError()
+concurrent.futures._base.TimeoutError

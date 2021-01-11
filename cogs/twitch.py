@@ -19,12 +19,13 @@ class Twitch(commands.Cog):
         self.cur_main = self.conn_main.cursor()
         self.username = ""
         self.done_notifiys = {}
+        self.token = os.getenv('TWITCH_Authorization')
         self.twitch_loop.start()
 
     @tasks.loop(seconds=10.0)
     async def twitch_loop(self):
         await asyncio.sleep(5)
-        self.cur_main.execute('SELECT * FROM TWITCH')
+        self.cur_main.execute('SELECT SERVER, TWITCH_USERNAME FROM CONFIG')
         to_check = self.cur_main.fetchall()
 
         for x in to_check:
@@ -38,6 +39,7 @@ class Twitch(commands.Cog):
                 self.done_notifiys[self.username] = True
             elif not data['is_live'] and self.username in self.done_notifiys:
                 del self.done_notifiys[self.username]
+                del self.done_notifiys[self.username]
 
     @commands.command()
     async def frog(self, ctx):
@@ -47,17 +49,14 @@ class Twitch(commands.Cog):
     @commands.is_owner()
     @commands.command()
     async def setup_twitch(self, ctx):
-        sql_mode = 'INSERT'
-        self.cur_main.execute('SELECT * FROM TWITCH WHERE SERVER = ?', ([ctx.guild.id]))
+        self.cur_main.execute('SELECT TWITCH_USERNAME FROM CONFIG WHERE SERVER = ?', ([ctx.guild.id]))
         twitch_in_db = self.cur_main.fetchall()
 
-        if twitch_in_db:
-            x = await ask_for_thumbs(self.bot, ctx, "Twitch bereits verknüpft", f"Der Server {ctx.guild} ist bereits mit dem Twitch Konto `{twitch_in_db[0][1]}` verbunden.\nMöchtest du ein neues verbinden?")
+        if twitch_in_db[0][0]:
+            x = await ask_for_thumbs(self.bot, ctx, "Twitch bereits verknüpft", f"Der Server {ctx.guild} ist bereits mit dem Twitch Konto `{twitch_in_db[0][0]}` verbunden.\nMöchtest du ein neues verbinden?")
 
             if not x:
                 return
-            else:
-                sql_mode = 'UPDATE'
 
         await ctx.send("Gib bitte den Nutzernamen des Twitchkontos an:")
 
@@ -70,18 +69,15 @@ class Twitch(commands.Cog):
         reaction = await self.bot.wait_for('message', check=check)
         self.username = reaction.content
 
+        self.cur_main.execute('UPDATE CONFIG SET TWITCH_USERNAME = ? WHERE SERVER = ?', (self.username, str(ctx.guild.id)))
+        self.conn_main.commit()
+
         if await self.get_data():
             await ctx.send(f'Das Twitch Konto {self.username} wurde erfolgreich mit dem Server {ctx.guild} verbunden.')
         else:
             return await ctx.send('Ungültiger Twitch Nutzername.\n')
 
-        sql_command = {'INSERT': ('INSERT INTO TWITCH (server, username) VALUES (?, ?)', (str(ctx.guild.id), self.username)), 'UPDATE': ('UPDATE TWITCH SET username = ? WHERE server = ?', (self.username, str(ctx.guild.id)))}
-
-        self.cur_main.execute(sql_command[sql_mode][0], sql_command[sql_mode][1])
-        self.conn_main.commit()
-
     async def get_data(self):
-        self.token = os.getenv('TWITCH_Authorization')
         headers = {"client-id": os.getenv('TWITCH_CLIENT_ID'), "Authorization": f"Bearer {self.token}"}
 
         x = requests.get(f"https://api.twitch.tv/helix/search/channels?query={self.username}", headers=headers)
@@ -91,7 +87,10 @@ class Twitch(commands.Cog):
         except IndexError:
             return []
 
-        return data if data['display_name'] == self.username else []
+        try:
+            return data if data['display_name'].lower() == self.username.lower() else []
+        except:
+            return []
 
     @commands.command()
     @commands.is_owner()
@@ -107,7 +106,7 @@ class Twitch(commands.Cog):
         embed.set_author(name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
 
         guild = self.bot.get_guild(guild_id)
-        channel = await get_main_channel(guild)
+        channel = await get_main_channel(guild.id)
         await channel.send(embed=embed)
 
 

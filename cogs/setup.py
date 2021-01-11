@@ -12,7 +12,8 @@ class Setup(commands.Cog):
 
     @commands.command()
     async def setup(self, ctx):
-        asko = await ask(ctx.message.author, "reaction_add", "Möchtest du den Command Prefix (Standard $) ändern?", ctx.message.channel, self.bot, max_answers=1, reaction_type="bool")
+        asko = await ask(ctx.message.author, "reaction_add", "Möchtest du den Command Prefix (Standard $) ändern?",
+                         ctx.message.channel, self.bot, max_answers=1, reaction_type="bool")
 
         print(asko)
 
