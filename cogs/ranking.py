@@ -1,7 +1,7 @@
 from io import BytesIO
 from PIL import Image, ImageFont, ImageDraw, ImageOps
 from discord.ext import commands
-from etc.global_functions import get_main_channel
+from ZemoBot.etc.global_functions import get_main_channel
 import requests
 import discord
 import sqlite3
@@ -180,7 +180,7 @@ class Ranking(commands.Cog):
             self.conn_main.commit()
 
         if old_level != new_level:
-            channel = await get_main_channel(ctx)
+            channel = await get_main_channel(ctx.guild)
             await channel.send(f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
 
     async def get_xp(self, ctx, user):

@@ -4,7 +4,7 @@ import random
 from io import BytesIO
 import discord
 from PIL import Image
-from etc.error_handling import invalid_argument
+from ZemoBot.etc.error_handling import invalid_argument
 
 
 class MemeGen(commands.Cog):
@@ -44,10 +44,15 @@ class MemeGen(commands.Cog):
                 return await invalid_argument(ctx, command="gen_meme", usage="$gen_meme (*Top Text, Bottom Text) oder nur $gen_meme nachdem bereits ein Meme generiert wurde.")
 
         meme = random.choice(self.avalible_memes)
-        top_text = string[:string.index(",")]
+        try:
+            top_text = string[:string.index(",")]
+        except:
+            top_text = ' '.join(args)
 
         if "," in string:
             bottom_text = string[string.index(",") + 1:]
+        else:
+            bottom_text = " "
 
         url = f"http://apimeme.com/meme?meme={meme}&top={top_text}&bottom={bottom_text}"        
         img = Image.open(BytesIO(requests.get(url).content))
