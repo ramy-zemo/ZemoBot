@@ -17,6 +17,14 @@ class Fun(commands.Cog):
         else:
             return await invalid_argument(ctx, "avatar", "$avatar @Member")
 
+    @commands.command()
+    async def coin(self, ctx):
+        head_or_tail = choice([0, 1])
+        if head_or_tail:
+            await ctx.send(f"{ctx.message.author.mention} Zahl", file=File('img/coin/Coin_Tail.gif', filename="Tail.gif"))
+        else:
+            await ctx.send(f"{ctx.message.author.mention} Kopf", file=File('img/coin/Coin_Head.gif', filename="Head.gif"))
+
 
 def setup(bot):
     bot.add_cog(Fun(bot))

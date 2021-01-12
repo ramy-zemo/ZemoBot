@@ -1,7 +1,14 @@
 *.pyc
+<<<<<<< HEAD
 *.db
 venv/
 .idea/
 cogs/.env
 .env
 discord.log
+=======
+*.xml
+.idea/workspace.xml
+*.env
+*.iml
+>>>>>>> parent of caefeb7... Random Number Picker implementiert.

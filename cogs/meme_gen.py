@@ -4,7 +4,7 @@ import random
 from io import BytesIO
 import discord
 from PIL import Image
-from etc.error_handling import invalid_argument
+from ZemoBot.etc.error_handling import invalid_argument
 
 
 class MemeGen(commands.Cog):

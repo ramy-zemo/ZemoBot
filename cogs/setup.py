@@ -1,6 +1,7 @@
 from discord.ext import commands
 from etc.ask import ask
 import sqlite3
+import discord
 
 
 class Setup(commands.Cog):

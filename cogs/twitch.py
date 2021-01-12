@@ -1,6 +1,6 @@
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
-from etc.ask import ask
+from etc.ask import ask_for_thumbs
 from etc.global_functions import get_main_channel
 import sqlite3
 import requests
@@ -41,6 +41,11 @@ class Twitch(commands.Cog):
                 del self.done_notifiys[self.username]
                 del self.done_notifiys[self.username]
 
+    @commands.command()
+    async def frog(self, ctx):
+        x = await ask_for_thumbs(self.bot, ctx, "", "Wie gehts?")
+        print("X = ", x)
+
     @commands.is_owner()
     @commands.command()
     async def setup_twitch(self, ctx):
@@ -48,7 +53,7 @@ class Twitch(commands.Cog):
         twitch_in_db = self.cur_main.fetchall()
 
         if twitch_in_db[0][0]:
-            x = await ask(ctx.message.author, "reaction_add", f"Der Server {ctx.guild} ist bereits mit dem Twitch Konto `{twitch_in_db[0][0]}` verbunden.\nMöchtest du ein neues verbinden?", ctx, self.bot, reaction_type="bool")
+            x = await ask_for_thumbs(self.bot, ctx, "Twitch bereits verknüpft", f"Der Server {ctx.guild} ist bereits mit dem Twitch Konto `{twitch_in_db[0][0]}` verbunden.\nMöchtest du ein neues verbinden?")
 
             if not x:
                 return

@@ -1,5 +1,6 @@
 import discord
 import sqlite3
+import asyncio
 
 conn_main = sqlite3.connect("main.db")
 cur_main = conn_main.cursor()
@@ -39,3 +40,5 @@ async def get_welcome_channel(ctx):
         channel = discord.utils.get(guild.channels, name="willkommen")
 
     return channel
+
+
