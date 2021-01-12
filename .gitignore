@@ -1,8 +1,7 @@
-main.db
-cogs/__pycache__/auszeit.cpython-37.pyc
-*.xml
 *.pyc
-*.xml
-.idea/workspace.xml
+*.db
+venv/
+.idea/
+cogs/.env
 .env
-*.iml
+discord.log
