@@ -2,12 +2,20 @@ import asyncio
 import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions
+from ZemoBot.etc.error_handling import invalid_argument
 
 
 class Auszeit(commands.Cog):
     def __init__(self, bot):
         self.timeout_roles = [768172546860253194, 768172546104229899]
         self.bot = bot
+
+    @commands.command()
+    async def amo(self, ctx, *args):
+        y = [mem for mem in [m for m in ctx.guild.members if m != ctx.message.author] if "AMO" in [x.name for x in mem.roles]]
+
+        for x in y:
+            await x.send("{}".format(" ".join(args)))
 
     @has_permissions(create_instant_invite=True)
     @commands.command()
@@ -16,7 +24,7 @@ class Auszeit(commands.Cog):
             await ctx.channel.create_invite(max_age=max_age, max_uses=max_uses, temporary=temporary, unique=unique,
                                             reason=reason))
 
-    @has_permissions(mute_members=True, move_members=True)
+    @has_permissions(kick_members=True)
     @commands.command()
     async def auszeit(self, ctx, *args):
         non_removable_roles = [discord.utils.get(ctx.message.guild.roles, name="Server Booster"),
@@ -30,7 +38,7 @@ class Auszeit(commands.Cog):
             seconds_to_kick = int(args[1])
 
             if seconds_to_kick < 30:
-                return await ctx.send("Eine Auszeit muss zumindest 30 Sekunden dauern.")
+                return await invalid_argument(ctx, "auszeit", "Eine Auszeit muss zumindest 30 Sekunden dauern.")
 
             banned_role = await ctx.message.guild.create_role(name="banned")
             await banned_role.edit(colour=0xff0000)

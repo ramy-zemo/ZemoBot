@@ -1,6 +1,8 @@
 from discord.ext import commands
 from datetime import date
 import sqlite3
+from ZemoBot.etc.sql_reference import get_user_trashtalk
+
 
 class Trashtalk(commands.Cog):
     def __init__(self, bot):
@@ -57,17 +59,13 @@ class Trashtalk(commands.Cog):
     async def trashtalk_stats(self, ctx, *args):
         datum = str(date.today())
         try:
-            sql = f"SELECT * FROM TrashTalk WHERE server=? AND von=?"
-            val = ([str(ctx.guild.id), str(ctx.message.author)])
-            self.cur_main.execute(sql, val)
-
-            result = self.cur_main.fetchall()
-            daten = [x[1] for x in result if x[1] == datum]
+            result = get_user_trashtalk(ctx.guild.id, ctx.message.author)
+            today = [x[1] for x in result if x[1] == datum]
 
             if args:
                 return len(result)
             else:
-                await ctx.send(f"All time: {len(result)}, Today: {len(daten)}")
+                await ctx.send(f"All time: {len(result)}, Today: {len(today)}")
 
         except sqlite3.OperationalError:
             await ctx.send("Bisher sind keine Daten vorhanden.")

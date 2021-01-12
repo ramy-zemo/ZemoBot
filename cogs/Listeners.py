@@ -1,21 +1,23 @@
 from discord.ext import tasks, commands
 from time import perf_counter
 import discord
-import sqlite3
 from datetime import date
 from ZemoBot.cogs.ranking import Ranking
 from itertools import cycle
 from discord.ext.commands import CommandNotFound, MissingPermissions
-from ZemoBot.etc.global_functions import database_setup, log_message, get_user_voice_time
+from ZemoBot.etc.sql_reference import database_setup, log_message, get_user_voice_time
+from ZemoBot.etc.sql_reference import change_msg_welcome_channel, setup_config, add_user_voice_time
+from ZemoBot.etc.sql_reference import insert_user_voice_time, get_main_channel, get_invites_to_user, log_invite
+import sqlite3
 
 
 class Listeners(commands.Cog):
     def __init__(self, bot):
         self.voice_track = {}
-        self.conn_main = sqlite3.connect("main.db")
-        self.cur_main = self.conn_main.cursor()
         self.invites = {}
         self.bot = bot
+        self.conn_main = sqlite3.connect("main.db")
+        self.cur_main = self.conn_main.cursor()
         self.ranking = Ranking(bot)
         self.status = cycle(['Aktuell in Arbeit!', 'Von Ramo programmiert!', 'Noch nicht fertig!'])
 
@@ -34,13 +36,13 @@ class Listeners(commands.Cog):
 
                 await self.ranking.add_xp(self, member, member, round(round(time * -1) * 0.05))
 
+                minutes = int(round(time * - 1) / 60)
+
                 if get_user_voice_time(member):
-                    self.cur_main.execute("UPDATE VOICE SET minutes = minutes + ? WHERE user=?", ([int(round(time * -1) / 60), str(member)]))
-                    self.conn_main.commit()
+                    add_user_voice_time(member, minutes)
 
                 else:
-                    self.cur_main.execute("INSERT INTO VOICE (user, minutes) VALUES (? , ?)", ([str(member), int(round(time * -1) / 60)]))
-                    self.conn_main.commit()
+                    insert_user_voice_time(member, minutes)
 
             except KeyError:
                 print("Join Time unknowwn")
@@ -53,18 +55,12 @@ class Listeners(commands.Cog):
         }
 
         # Check if Server is in Database
-        self.cur_main.execute("SELECT MESSAGE_CHANNEL FROM CONFIG WHERE server=?", ([str(guild.id)]))
-        result = self.cur_main.fetchall()
+        result = get_main_channel(guild)
 
         if not result:
             main_channel = await guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
-            welcome_channel = await guild.create_text_channel(name="willkommen", overwrites=overwrites_main)
 
-            sql = "INSERT INTO CONFIG (SERVER, SPRACHE, PREFIX, MESSAGE_CHANNEL, WELCOME_TEXT, WELCOME_CHANNEL) VALUES (?, ?, ?, ?, ?, ?)"
-            val_1 = (str(guild.id), "german", "$", str(main_channel.id), 'Selam {member}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!\n Eingeladen von: {inviter}', str(welcome_channel.id))
-
-            self.cur_main.execute(sql, val_1)
-            self.conn_main.commit()
+            setup_config(guild, main_channel, main_channel)
 
         else:
             channel_id = result[0][0]
@@ -76,11 +72,8 @@ class Listeners(commands.Cog):
             else:
                 main_channel = await guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
 
-                sql = "UPDATE CONFIG SET MESSAGE_CHANNEL=? WHERE server=?"
-                val_1 = (str(main_channel.id), str(guild.id))
+                change_msg_welcome_channel(guild, main_channel, main_channel)
 
-                self.cur_main.execute(sql, val_1)
-                self.conn_main.commit()
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -117,15 +110,8 @@ class Listeners(commands.Cog):
 
                 self.invites[ctx.guild.id] = invites_after_join
 
-                self.cur_main.execute("SELECT * FROM INVITES WHERE server = ? AND an=?",
-                                      tuple([str(ctx.guild.id), str(ctx)]))
-
-                if len(self.cur_main.fetchall()) == 0:
-                    sql = "INSERT INTO INVITES (server, datum, von, an) VALUES (?, ?, ?, ?)"
-                    val_1 = (ctx.guild.id, datum, str(invite.inviter), str(ctx))
-
-                    self.cur_main.execute(sql, val_1)
-                    self.conn_main.commit()
+                if len(get_invites_to_user(ctx.guild.id, ctx)) == 0:
+                    log_invite(ctx.guild.id, datum, str(invite.inviter), str(ctx))
                     await self.ranking.add_xp(self, ctx, invite.inviter, 200)
 
         await self.ranking.add_xp(self, ctx, ctx, 20)

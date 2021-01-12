@@ -1,33 +1,27 @@
 from io import BytesIO
 from PIL import Image, ImageFont, ImageDraw, ImageOps
 from discord.ext import commands
-from ZemoBot.etc.global_functions import get_main_channel
+from ZemoBot.etc.sql_reference import get_main_channel, setup_db, get_server_ranks, get_xp_from_user, update_user_xp
+from ZemoBot.etc.sql_reference import insert_user_xp
 import requests
 import discord
-import sqlite3
 
 
 class Ranking(commands.Cog):
     def __init__(self, bot):
-        self.conn_main = sqlite3.connect("main.db")
-        self.cur_main = self.conn_main.cursor()
         self.bot = bot
 
     @commands.is_owner()
     @commands.command()
     async def setup_db(self, ctx):
-        for user in ctx.guild.users:
-            self.cur_main.execute("INSERT INTO LEVEL (server, user, xp) VALUES (?,?,?)",
-                                  ([ctx.guild.id, str(user), 20]))
-            self.conn_main.commit()
+        setup_db(ctx, 20)
 
     @commands.command()
     async def rank(self, ctx):
         try:
-            self.cur_main.execute("SELECT * FROM LEVEL WHERE server=? ORDER BY xp ASC", ([str(ctx.guild.id)]))
-            x = self.cur_main.fetchall()
+            server_ranks = get_server_ranks(ctx)
 
-            data = [(x[1], await self.xp_lvl(x[2])) for x in x[::-1]]
+            data = [(server_ranks[1], await self.xp_lvl(server_ranks[2])) for server_ranks in server_ranks[::-1]]
 
             embed = discord.Embed(title="Ranklist", description="List of Top 5 Server Ranks", color=0x1acdee)
             embed.set_author(name="Zemo Bot",
@@ -35,6 +29,7 @@ class Ranking(commands.Cog):
 
             for x in range(5):
                 embed.add_field(name=f"{data[x][0]}", value=f"Rank: {data[x][1]}", inline=False)
+
             await ctx.send(embed=embed)
 
         except:
@@ -119,11 +114,9 @@ class Ranking(commands.Cog):
     @commands.command()
     async def add_xp(self, ctx, user, xp):
         async def get_xp(ctx, user):
-            exp = self.cur_main.execute("SELECT * FROM LEVEL WHERE server=? AND user=?",
-                                        ([str(ctx.guild.id), str(user)]))
-            x = self.cur_main.fetchall()
-            if x:
-                return (x[0][2])
+            data = get_xp_from_user(ctx, user)
+            if data:
+                return data[0][2]
             else:
                 return 0
 
@@ -142,7 +135,7 @@ class Ranking(commands.Cog):
                     j = 0
                     increment += 100
 
-                if xp >= i and xp < i + increment:
+                if i <= xp < i + increment:
                     level_person = level
 
                 i += increment
@@ -156,38 +149,29 @@ class Ranking(commands.Cog):
             member = ctx
 
         user = str(user)
-        self.cur_main.execute("SELECT * FROM LEVEL WHERE server=? AND user=?", ([str(ctx.guild.id), user]))
-        x = self.cur_main.fetchall()
+        user_xp = get_xp_from_user(ctx, user)
 
-        if x:
-            old_level = await xp_lvl(x[0][2])
+        if user_xp:
+            old_level = await xp_lvl(user_xp[0][2])
             new_level = await xp_lvl(int(await get_xp(ctx, user)) + int(xp))
-
             new_xp = int(await get_xp(ctx, user)) + int(xp)
-            sql = "UPDATE LEVEL SET xp=? WHERE server=? AND user=?"
-            val_1 = (new_xp, str(ctx.guild.id), str(user))
 
-            self.cur_main.execute(sql, val_1)
-            self.conn_main.commit()
+            update_user_xp(ctx, user, new_xp)
+
         else:
             old_level = 0
             new_level = await xp_lvl(int(xp))
 
-            sql = "INSERT INTO LEVEL (server, user, xp) VALUES (?, ?, ?)"
-            val_1 = (str(ctx.guild.id), str(user), int(xp))
-
-            self.cur_main.execute(sql, val_1)
-            self.conn_main.commit()
+            insert_user_xp(ctx, user, xp)
 
         if old_level != new_level:
             channel = await get_main_channel(ctx.guild)
             await channel.send(f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
 
     async def get_xp(self, ctx, user):
-        self.cur_main.execute("SELECT * FROM LEVEL WHERE server=? AND user=?", ([str(ctx.guild.id), str(user)]))
-        x = self.cur_main.fetchall()
-        if x:
-            return (x[0][2])
+        xp_data = get_xp_from_user(ctx, user)
+        if xp_data:
+            return xp_data[0][2]
         else:
             return 0
 
@@ -196,8 +180,7 @@ class Ranking(commands.Cog):
 
     @commands.command()
     async def get_rank(self, ctx, user):
-        self.cur_main.execute("SELECT * FROM LEVEL WHERE server=? ORDER BY xp ASC", ([str(ctx.guild.id)]))
-        ordered_list = self.cur_main.fetchall()[::-1]
+        ordered_list = get_server_ranks(ctx)[::-1]
         x = [count + 1 for count, x in enumerate(ordered_list) if ordered_list[count][1] == user]
         return x[0] if x else "Bot"
 

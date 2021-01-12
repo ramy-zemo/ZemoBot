@@ -48,6 +48,10 @@ class Debug(commands.Cog):
         for channel in ctx.guild.channels:
             print(channel, channel.id)
 
+    @commands.command()
+    async def ping(self, ctx):
+        await ctx.send(f'Pong!  :ping_pong:  In {round(self.bot.latency * 1000)}ms')
+
 
 def setup(bot):
     bot.add_cog(Debug(bot))

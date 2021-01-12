@@ -2,14 +2,11 @@ import requests
 import json
 from discord.ext import commands, tasks
 import datetime
-import sqlite3
 
 
 class Rap(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.conn_main = sqlite3.connect("main.db")
-        self.cur_main = self.conn_main.cursor()
         self.check.start()
 
         self.done= []

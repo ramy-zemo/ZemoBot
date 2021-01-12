@@ -1,8 +1,7 @@
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from ZemoBot.etc.ask import ask_for_thumbs
-from ZemoBot.etc.global_functions import get_main_channel
-import sqlite3
+from ZemoBot.etc.sql_reference import get_main_channel, update_twitch_username, get_twitch_username, get_all_twitch_data
 import requests
 import json
 import discord
@@ -15,18 +14,15 @@ load_dotenv()
 class Twitch(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.conn_main = sqlite3.connect("main.db")
-        self.cur_main = self.conn_main.cursor()
         self.username = ""
         self.done_notifiys = {}
         self.token = os.getenv('TWITCH_Authorization')
         self.twitch_loop.start()
 
-    @tasks.loop(seconds=10.0)
+    @tasks.loop(seconds=5.0)
     async def twitch_loop(self):
         await asyncio.sleep(5)
-        self.cur_main.execute('SELECT SERVER, TWITCH_USERNAME FROM CONFIG')
-        to_check = self.cur_main.fetchall()
+        to_check = get_all_twitch_data()
 
         for x in to_check:
             guild_id = x[0]
@@ -44,8 +40,7 @@ class Twitch(commands.Cog):
     @commands.is_owner()
     @commands.command()
     async def setup_twitch(self, ctx):
-        self.cur_main.execute('SELECT TWITCH_USERNAME FROM CONFIG WHERE SERVER = ?', ([ctx.guild.id]))
-        twitch_in_db = self.cur_main.fetchall()
+        twitch_in_db = get_twitch_username(ctx)
 
         if twitch_in_db[0][0]:
             x = await ask_for_thumbs(self.bot, ctx, "Twitch bereits verknüpft", f"Der Server {ctx.guild} ist bereits mit dem Twitch Konto `{twitch_in_db[0][0]}` verbunden.\nMöchtest du ein neues verbinden?")
@@ -64,8 +59,7 @@ class Twitch(commands.Cog):
         reaction = await self.bot.wait_for('message', check=check)
         self.username = reaction.content
 
-        self.cur_main.execute('UPDATE CONFIG SET TWITCH_USERNAME = ? WHERE SERVER = ?', (self.username, str(ctx.guild.id)))
-        self.conn_main.commit()
+        update_twitch_username(ctx, self.username)
 
         if await self.get_data():
             await ctx.send(f'Das Twitch Konto {self.username} wurde erfolgreich mit dem Server {ctx.guild} verbunden.')

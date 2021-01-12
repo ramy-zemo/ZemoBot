@@ -1,10 +1,10 @@
 from discord.ext import commands
 import discord
 from ZemoBot.etc.error_handling import invalid_argument
-from ZemoBot.etc.global_functions import get_user_messages, get_user_voice_time, get_user_trashtalk, get_user_invites
+from ZemoBot.etc.sql_reference import get_user_messages, get_user_voice_time, get_user_trashtalk, get_user_invites
 
 
-class info(commands.Cog):
+class Info(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -113,4 +113,4 @@ class info(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(info(bot))
+    bot.add_cog(Info(bot))
