@@ -1,8 +1,7 @@
-discord.log
-main.db
+*.log
+*.db
+.*
+!/.gitignore
 venv/
-.idea/
 cogs/__pycache__/
-.env
-cogs/.env
 etc/__pycache__/
