@@ -41,11 +41,6 @@ class Twitch(commands.Cog):
                 del self.done_notifiys[self.username]
                 del self.done_notifiys[self.username]
 
-    @commands.command()
-    async def frog(self, ctx):
-        x = await ask_for_thumbs(self.bot, ctx, "", "Wie gehts?")
-        print("X = ", x)
-
     @commands.is_owner()
     @commands.command()
     async def setup_twitch(self, ctx):
