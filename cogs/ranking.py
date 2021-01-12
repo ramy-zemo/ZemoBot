@@ -1,7 +1,7 @@
 from io import BytesIO
 from PIL import Image, ImageFont, ImageDraw, ImageOps
 from discord.ext import commands
-from ZemoBot.etc.global_functions import get_main_channel
+from etc.global_functions import get_main_channel
 import requests
 import discord
 import sqlite3

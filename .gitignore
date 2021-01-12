@@ -4,5 +4,5 @@ cogs/__pycache__/auszeit.cpython-37.pyc
 *.pyc
 *.xml
 .idea/workspace.xml
-*.env
+.env
 *.iml
