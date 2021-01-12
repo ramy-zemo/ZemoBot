@@ -5,6 +5,7 @@ from discord.ext import commands
 import discord
 from random import choice
 
+
 class Font(commands.Cog):
     def __init__(self, bot):
         self.font_list = ['3-d', '3x5', '5lineoblique ', 'acrobatic', 'alligator', 'alligator2', 'alphabet', 'avatar',

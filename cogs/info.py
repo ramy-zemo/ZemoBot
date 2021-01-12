@@ -1,32 +1,25 @@
 from discord.ext import commands
-import sqlite3
 import discord
-from etc.error_handling import invalid_argument
+from ZemoBot.etc.error_handling import invalid_argument
+from ZemoBot.etc.global_functions import get_user_messages, get_user_voice_time, get_user_trashtalk, get_user_invites
 
 
 class info(commands.Cog):
     def __init__(self, bot):
-        self.conn_main = sqlite3.connect("main.db")
-        self.cur_main = self.conn_main.cursor()
         self.bot = bot
 
     @commands.command()
-    async def info(self, ctx, *args):
+    async def info(self, ctx):
+        user = str(ctx.message.author)
 
-        self.cur_main.execute("SELECT * from MESSAGE WHERE von=?", ([str(ctx.author)]))
-        messages = len(self.cur_main.fetchall())
-
-        self.cur_main.execute("SELECT minutes from VOICE WHERE user=?", ([str(ctx.author)]))
-        minutes = self.cur_main.fetchall()[0][0]
-
-        self.cur_main.execute(f"SELECT * FROM TrashTalk WHERE server=? AND von=?",
-                              [str(ctx.guild.id), str(ctx.message.author)])
-        trashtalk = len(self.cur_main.fetchall())
+        messages = len(get_user_messages(user))
+        minutes = get_user_voice_time(user)
+        trashtalk = len(get_user_trashtalk(ctx.guild.id, ctx.message.author))
 
         embed = discord.Embed(title="Info", description="Deine Nutzerinformationen:", color=0x1acdee)
         embed.add_field(name="Nachrichten", value=f"Du hast bisher {messages} Nachrichten versendet.", inline=False)
         embed.add_field(name="Invites",
-                        value=f"""Du hast bisher {await self.invite(ctx, "No Print")} Invites versendet.""",
+                        value=f"""Du hast bisher {await self.invites(ctx, "No Print")} Invites versendet.""",
                         inline=False)
         embed.add_field(name="Minuten", value=f"Du warst {minutes} Minuten mit einem Sprachchannel verbunden.",
                         inline=False)
@@ -113,19 +106,10 @@ class info(commands.Cog):
 
     @commands.command()
     async def invites(self, ctx, *args):
-        self.cur_main.execute("SELECT * FROM INVITES WHERE server=? AND von=?",
-                              tuple([ctx.guild.id, str(ctx.message.author)]))
-
-        invites = len(self.cur_main.fetchall())
-        embed = discord.Embed(title="Invites",
-                              description=f"Du hast bereits erfolgreich {invites} Personen eingeladen.", color=0x1acdee)
-        embed.set_author(name="Zemo Bot",
-                         icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
-
         if args:
-            return invites
+            return await get_user_invites(ctx.guild.id, ctx.message.author)
         else:
-            await ctx.send(embed=embed)
+            return await get_user_invites(ctx.guild.id, ctx.message.author, ctx)
 
 
 def setup(bot):

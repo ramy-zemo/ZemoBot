@@ -1,10 +1,5 @@
 import discord
-import sqlite3
 import asyncio
-
-
-conn_main = sqlite3.connect("main.db")
-cur_main = conn_main.cursor()
 
 
 async def ask_for_thumbs(bot, ctx, title, question):

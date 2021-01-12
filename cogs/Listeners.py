@@ -3,9 +3,10 @@ from time import perf_counter
 import discord
 import sqlite3
 from datetime import date
-from cogs.ranking import Ranking
+from ZemoBot.cogs.ranking import Ranking
 from itertools import cycle
 from discord.ext.commands import CommandNotFound, MissingPermissions
+from ZemoBot.etc.global_functions import database_setup, log_message, get_user_voice_time
 
 
 class Listeners(commands.Cog):
@@ -33,18 +34,13 @@ class Listeners(commands.Cog):
 
                 await self.ranking.add_xp(self, member, member, round(round(time * -1) * 0.05))
 
-                self.cur_main.execute("SELECT * FROM VOICE WHERE user=?", ([str(member)]))
-
-                if self.cur_main.fetchall():
-                    self.cur_main.execute("UPDATE VOICE SET minutes = minutes + ? WHERE user=?",
-                                          ([int(round(time * -1) / 60), str(member)]))
+                if get_user_voice_time(member):
+                    self.cur_main.execute("UPDATE VOICE SET minutes = minutes + ? WHERE user=?", ([int(round(time * -1) / 60), str(member)]))
                     self.conn_main.commit()
+
                 else:
-                    self.cur_main.execute("INSERT INTO VOICE (user, minutes) VALUES (? , ?)",
-                                          ([str(member), int(round(time * -1) / 60)]))
+                    self.cur_main.execute("INSERT INTO VOICE (user, minutes) VALUES (? , ?)", ([str(member), int(round(time * -1) / 60)]))
                     self.conn_main.commit()
-
-                print([[int(round(time * -1) / 60), str(member)]])
 
             except KeyError:
                 print("Join Time unknowwn")
@@ -71,7 +67,7 @@ class Listeners(commands.Cog):
             self.conn_main.commit()
 
         else:
-            channel_id = result[0][1]
+            channel_id = result[0][0]
             channel = discord.utils.get(guild.channels, id=int(channel_id))
 
             if channel:
@@ -80,7 +76,7 @@ class Listeners(commands.Cog):
             else:
                 main_channel = await guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
 
-                sql = "UPDATE CHANNELS SET channel=? WHERE server=?"
+                sql = "UPDATE CONFIG SET MESSAGE_CHANNEL=? WHERE server=?"
                 val_1 = (str(main_channel.id), str(guild.id))
 
                 self.cur_main.execute(sql, val_1)
@@ -91,14 +87,7 @@ class Listeners(commands.Cog):
         for guild in self.bot.guilds:
             self.invites[guild.id] = await guild.invites()
 
-        self.cur_main.execute('CREATE TABLE IF NOT EXISTS INVITES ( server TEXT, datum TEXT, von TEXT, an TEXT)')
-        self.cur_main.execute('CREATE TABLE IF NOT EXISTS LEVEL ( server TEXT, user TEXT, xp INT)')
-        self.cur_main.execute('CREATE TABLE IF NOT EXISTS MESSAGE ( server TEXT, datum TEXT, von TEXT, nachricht TEXT)')
-        self.cur_main.execute('CREATE TABLE IF NOT EXISTS TRASHTALK ( server TEXT, datum TEXT, von TEXT, an TEXT)')
-        self.cur_main.execute('CREATE TABLE IF NOT EXISTS VOICE ( user TEXT, minutes INT)')
-        self.cur_main.execute('CREATE TABLE IF NOT EXISTS PARTNER ( server TEXT, user TEXT)')
-        self.cur_main.execute('CREATE TABLE IF NOT EXISTS CONFIG ( SERVER TEXT, SPRACHE TEXT, PREFIX TEXT, MESSAGE_CHANNEL TEXT, WELCOME_TEXT TEXT, WELCOME_ROLE TEXT, WELCOME_CHANNEL TEXT, DISABLED_COMMANDS TEXT, TWITCH_USERNAME TEXT)')
-        self.conn_main.commit()
+        database_setup()
 
         self.change_status.start()
         print("Bot {} läuft!".format(self.bot.user))
@@ -152,16 +141,12 @@ class Listeners(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, ctx):
         message = ctx
+
         if message.author == self.bot.user:
             return
 
         datum = str(date.today())
-
-        sql = "INSERT INTO MESSAGE (server, datum, von, nachricht) VALUES (?, ?, ?, ?)"
-        val_1 = (ctx.guild.id, datum, str(message.author), str(message.content))
-
-        self.cur_main.execute(sql, val_1)
-        self.conn_main.commit()
+        log_message(ctx.guild.id, datum, message)
 
         if str(message.content).startswith("$"):
             await self.ranking.add_xp(self, ctx, message.author, 25)
@@ -172,7 +157,7 @@ class Listeners(commands.Cog):
     async def change_status(self):
         await self.bot.change_presence(activity=discord.Game(next(self.status)))
 
-    #@commands.Cog.listener()
+    @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
         if isinstance(error, CommandNotFound):
             return await ctx.send(":question: Unbekannter Befehl :question:")

@@ -1,13 +1,10 @@
 from discord.ext import commands
-from etc.ask import ask
-import sqlite3
+from ZemoBot.etc.ask import ask
 
 
 class Setup(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.conn_main = sqlite3.connect("main.db")
-        self.cur_main = self.conn_main.cursor()
 
     @commands.command()
     async def setup(self, ctx):

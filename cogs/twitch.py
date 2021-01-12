@@ -1,7 +1,7 @@
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
-from etc.ask import ask_for_thumbs
-from etc.global_functions import get_main_channel
+from ZemoBot.etc.ask import ask_for_thumbs
+from ZemoBot.etc.global_functions import get_main_channel
 import sqlite3
 import requests
 import json
@@ -90,6 +90,7 @@ class Twitch(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def twitch_notify(self, guild_id):
+        print(guild_id)
         data = await self.get_data()
 
         embed = discord.Embed(title=f"{data['display_name']} ist nun Online auf Twitch",
@@ -99,9 +100,7 @@ class Twitch(commands.Cog):
         embed.set_thumbnail(url=data["thumbnail_url"])
 
         embed.set_author(name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
-
-        guild = self.bot.get_guild(guild_id)
-        channel = await get_main_channel(guild.id)
+        channel = await get_main_channel(self.bot.get_guild(guild_id))
         await channel.send(embed=embed)
 
 
