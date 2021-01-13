@@ -1,5 +1,5 @@
 # ZemoBot
-
+<img src="https://raw.githubusercontent.com/ramy-zemo/ZemoBot/stable/img/coin/Coin_Head.gif"></a> 
 Nice Discord Bot in progress
 
 
