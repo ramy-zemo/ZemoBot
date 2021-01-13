@@ -1,12 +1,17 @@
 import discord
 import mysql.connector
+import os
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 
 conn_main = mysql.connector.connect(
-  host="127.0.0.1",
-  user="root",
-  password="WhateverPassword",
-  database="main"
+  host=os.getenv('db_ip'),
+  user=os.getenv('db_user'),
+  password=os.getenv('db_password'),
+  database=os.getenv('db_database')
 )
 cur_main = conn_main.cursor()
 
