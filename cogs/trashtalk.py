@@ -1,44 +1,32 @@
 from discord.ext import commands
 from datetime import date
-import sqlite3
-from ZemoBot.etc.sql_reference import get_user_trashtalk
+from etc.sql_reference import get_user_trashtalk, log_trashtalk, reset_trashtalk
 
 
 class Trashtalk(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        with open("trashtalk.txt") as file:
-                    self.text = file.readlines()
-        
-        self.conn_main = sqlite3.connect("main.db")
-        self.cur_main = self.conn_main.cursor()
-
     @commands.command()
     async def trashtalk(self, ctx, *args):
         datum = str(date.today())
-
-        sql = f"SELECT * FROM TrashTalk WHERE von=?"
-
-        self.cur_main.execute(sql, ([str(ctx.message.author)]))
-
-        result = self.cur_main.fetchall()
+        result = get_user_trashtalk(ctx.guild.id, ctx.message.author)
         daten = [x[0] for x in result if x[0] == datum]
 
         if len(daten) < 10:
             users_to_tt = [ctx.message.guild.get_member(int(str(x).strip("<>!@"))) for x in args]
-            for user in users_to_tt:
-                try:
-                    for t in self.text:
-                        await user.send(t)
-                except:
-                    return await ctx.send(f"Trashtalk an {user.mention} fehlgeschlagen.")
+            with open("trashtalk.txt") as file:
 
-                sql = "INSERT INTO TrashTalk (server, datum, von, an) VALUES (?, ?, ?, ?)"
-                val_1 = (str(ctx.guild.id), datum, str(ctx.message.author), str(user))
+                text = file.readlines()
 
-                self.cur_main.execute(sql,val_1)
-                self.conn_main.commit()
+                for user in users_to_tt:
+                    try:
+                        for t in text:
+                            await user.send(t)
+                    except:
+                        return await ctx.send(f"Trashtalk an {user.mention} fehlgeschlagen.")
+
+                    log_trashtalk(ctx, datum, user)
         else:
             await ctx.send(f"{ctx.message.author.mention} du hast dein Trash Limit für heute erreicht.")
 
@@ -73,8 +61,7 @@ class Trashtalk(commands.Cog):
     @commands.command()
     async def trashtalk_reset(self, ctx, *args):
         try:
-            self.cur_main.execute(f"DELETE FROM TrashTalk WHERE server=? AND von=?", (str(ctx.guild.id), str(ctx.message.author)))
-            self.conn_main.commit()
+            reset_trashtalk(ctx.guild.id, ctx.message.author)
             await ctx.send(f"Trashtalk für {ctx.message.author.mention} erfolgreich zurückgesetzt.")
         except:
             await ctx.send(f"Nutzer {ctx.message.author.mention} nicht gefunden.")

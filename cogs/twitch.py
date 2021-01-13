@@ -1,7 +1,7 @@
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
-from ZemoBot.etc.ask import ask_for_thumbs
-from ZemoBot.etc.sql_reference import get_main_channel, update_twitch_username, get_twitch_username, get_all_twitch_data
+from etc.ask import ask_for_thumbs
+from etc.sql_reference import get_main_channel, update_twitch_username, get_twitch_username, get_all_twitch_data
 import requests
 import json
 import discord
@@ -94,7 +94,7 @@ class Twitch(commands.Cog):
         embed.set_thumbnail(url=data["thumbnail_url"])
 
         embed.set_author(name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
-        channel = await get_main_channel(self.bot.get_guild(guild_id))
+        channel = get_main_channel(self.bot.get_guild(guild_id))
         await channel.send(embed=embed)
 
 

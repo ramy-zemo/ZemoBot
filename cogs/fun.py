@@ -1,5 +1,5 @@
 from discord.ext import commands
-from ZemoBot.etc.error_handling import invalid_argument
+from etc.error_handling import invalid_argument
 
 
 class Fun(commands.Cog):

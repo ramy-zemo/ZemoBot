@@ -1,8 +1,13 @@
 import discord
-import sqlite3
+import mysql.connector
 
 
-conn_main = sqlite3.connect("main.db")
+conn_main = mysql.connector.connect(
+  host="127.0.0.1",
+  user="root",
+  password="WhateverPassword",
+  database="main"
+)
 cur_main = conn_main.cursor()
 
 
@@ -12,17 +17,17 @@ def get_all_twitch_data():
 
 
 def get_twitch_username(ctx):
-    cur_main.execute('SELECT TWITCH_USERNAME FROM CONFIG WHERE SERVER = ?', ([ctx.guild.id]))
+    cur_main.execute('SELECT TWITCH_USERNAME FROM CONFIG WHERE SERVER = %s', ([ctx.guild.id]))
     cur_main.fetchall()
 
 
 def update_twitch_username(ctx, username):
-    cur_main.execute('UPDATE CONFIG SET TWITCH_USERNAME = ? WHERE SERVER = ?', (username, str(ctx.guild.id)))
+    cur_main.execute('UPDATE CONFIG SET TWITCH_USERNAME = %s WHERE SERVER = %s', (username, str(ctx.guild.id)))
     conn_main.commit()
 
 
 def insert_user_xp(ctx, user, xp):
-    sql = "INSERT INTO LEVEL (server, user, xp) VALUES (?, ?, ?)"
+    sql = "INSERT INTO LEVEL (server, user, xp) VALUES (%s, %s, %s)"
     val_1 = (str(ctx.guild.id), str(user), int(xp))
 
     cur_main.execute(sql, val_1)
@@ -30,7 +35,7 @@ def insert_user_xp(ctx, user, xp):
 
 
 def update_user_xp(ctx, user, new_xp):
-    sql = "UPDATE LEVEL SET xp=? WHERE server=? AND user=?"
+    sql = "UPDATE LEVEL SET xp=%s WHERE server=%s AND user=%s"
     val_1 = (new_xp, str(ctx.guild.id), str(user))
 
     cur_main.execute(sql, val_1)
@@ -38,22 +43,22 @@ def update_user_xp(ctx, user, new_xp):
 
 
 def get_xp_from_user(ctx, user):
-    cur_main.execute("SELECT * FROM LEVEL WHERE server=? AND user=?", ([str(ctx.guild.id), str(user)]))
+    cur_main.execute("SELECT * FROM LEVEL WHERE server=%s AND user=%s", (str(ctx.guild.id), str(user)))
     return cur_main.fetchall()
 
 
 def get_server_ranks(ctx):
-    cur_main.execute("SELECT * FROM LEVEL WHERE server=? ORDER BY xp ASC", ([str(ctx.guild.id)]))
+    cur_main.execute("SELECT * FROM LEVEL WHERE server=%s ORDER BY xp ASC", ([str(ctx.guild.id)]))
     return cur_main.fetchall()
 
 
 def setup_db(ctx, amout):
     for user in ctx.guild.users:
-        cur_main.execute("INSERT INTO LEVEL (server, user, xp) VALUES (?,?,?)", ([ctx.guild.id, str(user), amout]))
+        cur_main.execute("INSERT INTO LEVEL (server, user, xp) VALUES (%s, %s, %s)", ([ctx.guild.id, str(user), amout]))
         conn_main.commit()
 
 
-async def get_main_channel(ctx):
+def get_main_channel(ctx):
     try:
         cur_main.execute("SELECT MESSAGE_CHANNEL FROM CONFIG WHERE server=?", ([ctx.id]))
         k = cur_main.fetchall()
@@ -73,7 +78,7 @@ async def get_welcome_channel(ctx):
         guild = ctx
 
     try:
-        cur_main.execute("SELECT WELCOME_CHANNEL FROM CONFIG WHERE server=?", ([guild.id]))
+        cur_main.execute("SELECT WELCOME_CHANNEL FROM CONFIG WHERE server=%s", ([guild.id]))
         k = cur_main.fetchall()
         channel_id = k[0][0]
         channel = discord.utils.get(guild.channels, id=int(channel_id))
@@ -85,34 +90,34 @@ async def get_welcome_channel(ctx):
 
 
 def get_user_messages(user):
-    cur_main.execute("SELECT * from MESSAGE WHERE von=?", (user,))
+    cur_main.execute("SELECT * from MESSAGE WHERE von=%s", (user,))
     return cur_main.fetchall()
 
 
 def get_user_voice_time(user):
-    cur_main.execute("SELECT minutes from VOICE WHERE user=?", (str(user),))
+    cur_main.execute("SELECT minutes from VOICE WHERE user=%s", (str(user),))
     data = cur_main.fetchall()
     return data[0][0] if data else 0
 
 
 def add_user_voice_time(user, minutes):
-    cur_main.execute("UPDATE VOICE SET minutes = minutes + ? WHERE user=?", ([minutes, str(user)]))
+    cur_main.execute("UPDATE VOICE SET minutes = minutes + %s WHERE user=%s", ([minutes, str(user)]))
     conn_main.commit()
 
 
 def insert_user_voice_time(user, minutes):
-    cur_main.execute("INSERT INTO VOICE (user, minutes) VALUES (? , ?)", ([str(user), minutes]))
+    cur_main.execute("INSERT INTO VOICE (user, minutes) VALUES (%s , %s)", ([str(user), minutes]))
     conn_main.commit()
 
 
 def get_user_trashtalk(guild_id, user):
-    cur_main.execute(f"SELECT * FROM TrashTalk WHERE server=? AND von=?", [str(guild_id), str(user)])
+    cur_main.execute(f"SELECT * FROM TrashTalk WHERE server=%s AND von=%s", [str(guild_id), str(user)])
     return cur_main.fetchall()
 
 
 def reset_trashtalk(guild_id, user):
     try:
-        cur_main.execute(f"DELETE FROM TrashTalk WHERE server=? AND von=?", (str(guild_id), str(user)))
+        cur_main.execute(f"DELETE FROM TrashTalk WHERE server=%s AND von=%s", (str(guild_id), str(user)))
         conn_main.commit()
         return 1
 
@@ -120,12 +125,12 @@ def reset_trashtalk(guild_id, user):
        return 0
 
 def get_invites_to_user(server, invite_to):
-    cur_main.execute("SELECT * FROM INVITES WHERE server = ? AND an=?", ([str(server), str(invite_to)]))
+    cur_main.execute("SELECT * FROM INVITES WHERE server = %s AND an=%s", ([str(server), str(invite_to)]))
     return cur_main.fetchall()
 
 
 async def get_user_invites(guild_id, user, ctx=0):
-    cur_main.execute("SELECT * FROM INVITES WHERE server=? AND von=?", ([str(guild_id), str(user)]))
+    cur_main.execute("SELECT * FROM INVITES WHERE server=%s AND von=%s", ([str(guild_id), str(user)]))
 
     invites = len(cur_main.fetchall())
     if ctx == 0:
@@ -153,8 +158,8 @@ def database_setup():
 
 
 def log_message(server, date, message):
-    sql = "INSERT INTO MESSAGE (server, datum, von, nachricht) VALUES (?, ?, ?, ?)"
-    val_1 = (server, date, str(message.author), str(message.content))
+    sql = "INSERT INTO MESSAGE (server, datum, von, nachricht) VALUES (%s, %s, %s, %s)"
+    val_1 = (str(server), str(date), str(message.author), str(message.content))
 
     cur_main.execute(sql, val_1)
     conn_main.commit()
@@ -163,7 +168,7 @@ def log_message(server, date, message):
 
 
 def log_invite(server, datum, von, an):
-    sql = "INSERT INTO MESSAGE (server, datum, von, nachricht) VALUES (?, ?, ?, ?)"
+    sql = "INSERT INTO MESSAGE (server, datum, von, nachricht) VALUES (%s, %s, %s, %s)"
     val_1 = (server, datum, von, an)
 
     cur_main.execute(sql, val_1)
@@ -172,8 +177,16 @@ def log_invite(server, datum, von, an):
     return 1
 
 
+def log_trashtalk(ctx, datum, user):
+    sql = "INSERT INTO TrashTalk (server, datum, von, an) VALUES (%s, %s, %s, %s)"
+    val_1 = (str(ctx.guild.id), datum, str(ctx.message.author), str(user))
+
+    cur_main.execute(sql, val_1)
+    conn_main.commit()
+
+
 def change_msg_welcome_channel(guild, main_channel, welcome_channel):
-    sql = "UPDATE CONFIG SET MESSAGE_CHANNEL=?, WELCOME_CHANNEL = ? WHERE server=?"
+    sql = "UPDATE CONFIG SET MESSAGE_CHANNEL=%s, WELCOME_CHANNEL = %s WHERE server=%s"
     val_1 = (str(main_channel.id), str(welcome_channel.id), str(guild.id))
 
     cur_main.execute(sql, val_1)
@@ -183,7 +196,7 @@ def change_msg_welcome_channel(guild, main_channel, welcome_channel):
 
 
 def setup_config(guild, main_channel, welcome_channel):
-    sql = "INSERT INTO CONFIG (SERVER, SPRACHE, PREFIX, MESSAGE_CHANNEL, WELCOME_TEXT, WELCOME_CHANNEL) VALUES (?, ?, ?, ?, ?, ?)"
+    sql = "INSERT INTO CONFIG (SERVER, SPRACHE, PREFIX, MESSAGE_CHANNEL, WELCOME_TEXT, WELCOME_CHANNEL) VALUES (%s, %s, %s, %s, %s, %s)"
     val_1 = (str(guild.id), "german", "$", str(main_channel.id),
              'Selam {member}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!\n Eingeladen von: {inviter}',
              str(welcome_channel.id))
@@ -192,6 +205,4 @@ def setup_config(guild, main_channel, welcome_channel):
     conn_main.commit()
 
     return 1
-
-
 

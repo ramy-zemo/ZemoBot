@@ -2,7 +2,7 @@ import asyncio
 import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions
-from ZemoBot.etc.error_handling import invalid_argument
+from etc.error_handling import invalid_argument
 
 
 class Auszeit(commands.Cog):

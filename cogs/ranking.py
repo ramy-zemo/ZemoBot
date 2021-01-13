@@ -1,8 +1,8 @@
 from io import BytesIO
 from PIL import Image, ImageFont, ImageDraw, ImageOps
 from discord.ext import commands
-from ZemoBot.etc.sql_reference import get_main_channel, setup_db, get_server_ranks, get_xp_from_user, update_user_xp
-from ZemoBot.etc.sql_reference import insert_user_xp
+from etc.sql_reference import get_main_channel, setup_db, get_server_ranks, get_xp_from_user, update_user_xp
+from etc.sql_reference import insert_user_xp
 import requests
 import discord
 
@@ -165,7 +165,7 @@ class Ranking(commands.Cog):
             insert_user_xp(ctx, user, xp)
 
         if old_level != new_level:
-            channel = await get_main_channel(ctx.guild)
+            channel = get_main_channel(ctx.guild)
             await channel.send(f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
 
     async def get_xp(self, ctx, user):

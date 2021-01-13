@@ -1,6 +1,10 @@
 from discord.ext import commands
 
 
+def effify(non_f_str: str):
+    return eval(f'f"""{non_f_str}"""')
+
+
 class Debug(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

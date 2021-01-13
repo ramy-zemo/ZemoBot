@@ -1,5 +1,5 @@
 from discord.ext import commands
-from ZemoBot.etc.ask import ask
+from etc.ask import ask
 
 
 class Setup(commands.Cog):

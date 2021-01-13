@@ -1,6 +1,6 @@
 from discord.ext import commands
 import discord
-from ZemoBot.etc.ask import ask
+from etc.ask import ask
 
 
 class Partner(commands.Cog):

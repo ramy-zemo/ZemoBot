@@ -2,12 +2,12 @@ from discord.ext import tasks, commands
 from time import perf_counter
 import discord
 from datetime import date
-from ZemoBot.cogs.ranking import Ranking
+from cogs.ranking import Ranking
 from itertools import cycle
 from discord.ext.commands import CommandNotFound, MissingPermissions
-from ZemoBot.etc.sql_reference import database_setup, log_message, get_user_voice_time
-from ZemoBot.etc.sql_reference import change_msg_welcome_channel, setup_config, add_user_voice_time
-from ZemoBot.etc.sql_reference import insert_user_voice_time, get_main_channel, get_invites_to_user, log_invite
+from etc.sql_reference import database_setup, log_message, get_user_voice_time
+from etc.sql_reference import change_msg_welcome_channel, setup_config, add_user_voice_time
+from etc.sql_reference import insert_user_voice_time, get_main_channel, get_invites_to_user, log_invite
 import sqlite3
 
 
