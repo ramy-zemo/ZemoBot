@@ -1,7 +1,7 @@
 # ZemoBot
 <p align="center">
-<img src="https://raw.githubusercontent.com/ramy-zemo/ZemoBot/stable/img/coin/Coin_Head.gif" height=200><p>
-Nice Discord Bot in progress</p>
+<img src="https://raw.githubusercontent.com/ramy-zemo/ZemoBot/stable/img/coin/Coin_Head.gif" height=200><br>
+Nice Discord Bot in progress
 </p>
 
 ## Commands
