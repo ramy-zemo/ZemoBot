@@ -59,7 +59,9 @@ class Debug(commands.Cog):
 
     @commands.command()
     async def test(self, ctx):
-        pass
+        #message = await ctx.fetch_message(799725740970737675)
+        #print(message.attachments)
+        await ctx.send("Test03883")
 
 def setup(bot):
     bot.add_cog(Debug(bot))

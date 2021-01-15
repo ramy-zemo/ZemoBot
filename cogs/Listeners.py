@@ -118,11 +118,9 @@ class Listeners(commands.Cog):
         if str(payload.event_type) == "REACTION_ADD" and str(payload.emoji) == "🔁":
             guild = self.bot.get_guild(payload.guild_id)
             message = await discord.utils.get(guild.channels, id=payload.channel_id).fetch_message(payload.message_id)
-            if str(message.author) == str(payload.member):
-                await self.bot.process_commands(message)
 
-        else:
-            print("err")
+            if str(message.author) == str(payload.member):
+                again = await self.bot.process_commands(message)
 
     @tasks.loop(seconds=10)
     async def change_status(self):

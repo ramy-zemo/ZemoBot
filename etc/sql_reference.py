@@ -67,7 +67,7 @@ async def get_main_channel(ctx):
     except AttributeError:
         guild = ctx
 
-    cur_main.execute("SELECT MESSAGE_CHANNEL FROM CONFIG WHERE server=%s", ([ctx.id]))
+    cur_main.execute("SELECT MESSAGE_CHANNEL FROM CONFIG WHERE server=%s", ([guild.id]))
     channel = cur_main.fetchall()
 
     overwrites_main = {
