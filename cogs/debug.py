@@ -1,4 +1,5 @@
 from discord.ext import commands
+#from discord_local.ext.commands.bot import process_commands
 
 
 def effify(non_f_str: str):
@@ -56,6 +57,9 @@ class Debug(commands.Cog):
     async def ping(self, ctx):
         await ctx.send(f'Pong!  :ping_pong:  In {round(self.bot.latency * 1000)}ms')
 
+    @commands.command()
+    async def test(self, ctx):
+        pass
 
 def setup(bot):
     bot.add_cog(Debug(bot))

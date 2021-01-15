@@ -16,12 +16,9 @@ class Listeners(commands.Cog):
         self.voice_track = {}
         self.invites = {}
         self.bot = bot
-        self.conn_main = sqlite3.connect("main.db")
-        self.cur_main = self.conn_main.cursor()
         self.ranking = Ranking(bot)
         self.status = cycle(['Aktuell in Arbeit!', 'Von Ramo programmiert!', 'Noch nicht fertig!'])
 
-    # Test On_Join
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if not before.channel and after.channel:
@@ -102,18 +99,30 @@ class Listeners(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, ctx):
-        message = ctx
-
-        if message.author == self.bot.user:
+        if ctx.author == self.bot.user:
             return
 
-        datum = str(date.today())
-        log_message(ctx.guild.id, datum, message)
+        log_message(ctx.guild.id, str(date.today()), ctx)
 
-        if str(message.content).startswith("$"):
-            await self.ranking.add_xp(self, ctx, message.author, 25)
+        if str(ctx.content).startswith("$"):
+            await ctx.add_reaction("🔁")
+            await self.ranking.add_xp(self, ctx, ctx.author, 25)
         else:
-            await self.ranking.add_xp(self, ctx, message.author, 5)
+            await self.ranking.add_xp(self, ctx, ctx.author, 5)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        if str(payload.member) == str(self.bot.user):
+            return
+
+        if str(payload.event_type) == "REACTION_ADD" and str(payload.emoji) == "🔁":
+            guild = self.bot.get_guild(payload.guild_id)
+            message = await discord.utils.get(guild.channels, id=payload.channel_id).fetch_message(payload.message_id)
+            if str(message.author) == str(payload.member):
+                await self.bot.process_commands(message)
+
+        else:
+            print("err")
 
     @tasks.loop(seconds=10)
     async def change_status(self):

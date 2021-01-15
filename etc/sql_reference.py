@@ -62,22 +62,27 @@ def setup_db(ctx, amout):
 
 
 async def get_main_channel(ctx):
+    try:
+        guild = ctx.guild
+    except AttributeError:
+        guild = ctx
+
     cur_main.execute("SELECT MESSAGE_CHANNEL FROM CONFIG WHERE server=%s", ([ctx.id]))
     channel = cur_main.fetchall()
 
     overwrites_main = {
-        ctx.guild.default_role: discord.PermissionOverwrite(read_messages=True, read_message_history=True,
-                                                            send_messages=False)
+        guild.default_role: discord.PermissionOverwrite(read_messages=True, read_message_history=True,
+                                                        send_messages=False)
     }
 
     if channel:
-        if not discord.utils.get(ctx.channels, id=int(channel[0][0])):
-            main_channel = await ctx.guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
-            change_msg_welcome_channel(ctx.guild, main_channel, main_channel)
+        if not discord.utils.get(guild.channels, id=int(channel[0][0])):
+            main_channel = await guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
+            change_msg_welcome_channel(guild, main_channel, main_channel)
             return main_channel
     else:
-        main_channel = await ctx.guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
-        change_msg_welcome_channel(ctx.guild, main_channel, main_channel)
+        main_channel = await guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
+        change_msg_welcome_channel(guild, main_channel, main_channel)
         return main_channel
 
 
@@ -209,8 +214,8 @@ def change_msg_welcome_channel(guild, main_channel, welcome_channel):
 def setup_config(guild, main_channel, welcome_channel):
     sql = "INSERT INTO CONFIG (ACTIVE, SERVER, SPRACHE, PREFIX, MESSAGE_CHANNEL, WELCOME_TEXT, WELCOME_CHANNEL) VALUES (%s, %s, %s, %s, %s, %s, %s)"
     val = ("True", str(guild.id), "german", "$", str(main_channel.id),
-             'Selam {member}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!\n Eingeladen von: {inviter}',
-             str(welcome_channel.id))
+           'Selam {member}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!\n Eingeladen von: {inviter}',
+           str(welcome_channel.id))
 
     cur_main.execute(sql, val)
     conn_main.commit()
