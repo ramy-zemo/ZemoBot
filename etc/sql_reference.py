@@ -3,15 +3,13 @@ import mysql.connector
 import os
 from dotenv import load_dotenv
 
-
 load_dotenv()
 
-
 conn_main = mysql.connector.connect(
-  host=os.getenv('db_ip'),
-  user=os.getenv('db_user'),
-  password=os.getenv('db_password'),
-  database=os.getenv('db_database')
+    host=os.getenv('db_ip'),
+    user=os.getenv('db_user'),
+    password=os.getenv('db_password'),
+    database=os.getenv('db_database')
 )
 cur_main = conn_main.cursor()
 
@@ -63,17 +61,24 @@ def setup_db(ctx, amout):
         conn_main.commit()
 
 
-def get_main_channel(ctx):
-    try:
-        cur_main.execute("SELECT MESSAGE_CHANNEL FROM CONFIG WHERE server=?", ([ctx.id]))
-        k = cur_main.fetchall()
-        channel_id = k[0][0]
-        channel = discord.utils.get(ctx.channels, id=int(channel_id))
+async def get_main_channel(ctx):
+    cur_main.execute("SELECT MESSAGE_CHANNEL FROM CONFIG WHERE server=%s", ([ctx.id]))
+    channel = cur_main.fetchall()
 
-    except:
-        channel = discord.utils.get(ctx.channels, name="zemo-bot")
+    overwrites_main = {
+        ctx.guild.default_role: discord.PermissionOverwrite(read_messages=True, read_message_history=True,
+                                                            send_messages=False)
+    }
 
-    return channel
+    if channel:
+        if not discord.utils.get(ctx.channels, id=int(channel[0][0])):
+            main_channel = await ctx.guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
+            change_msg_welcome_channel(ctx.guild, main_channel, main_channel)
+            return main_channel
+    else:
+        main_channel = await ctx.guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
+        change_msg_welcome_channel(ctx.guild, main_channel, main_channel)
+        return main_channel
 
 
 async def get_welcome_channel(ctx):
@@ -127,7 +132,8 @@ def reset_trashtalk(guild_id, user):
         return 1
 
     except:
-       return 0
+        return 0
+
 
 def get_invites_to_user(server, invite_to):
     cur_main.execute("SELECT * FROM INVITES WHERE server = %s AND an=%s", ([str(server), str(invite_to)]))
@@ -156,7 +162,7 @@ def database_setup():
     cur_main.execute('CREATE TABLE IF NOT EXISTS TRASHTALK ( server TEXT, datum TEXT, von TEXT, an TEXT)')
     cur_main.execute('CREATE TABLE IF NOT EXISTS VOICE ( user TEXT, minutes INT)')
     cur_main.execute('CREATE TABLE IF NOT EXISTS PARTNER ( server TEXT, user TEXT)')
-    cur_main.execute('CREATE TABLE IF NOT EXISTS CONFIG ( SERVER TEXT, SPRACHE TEXT, PREFIX TEXT,'
+    cur_main.execute('CREATE TABLE IF NOT EXISTS CONFIG ( ACTIVE TEXT, SERVER TEXT, SPRACHE TEXT, PREFIX TEXT,'
                      ' MESSAGE_CHANNEL TEXT, WELCOME_TEXT TEXT, WELCOME_ROLE TEXT,'
                      ' WELCOME_CHANNEL TEXT, DISABLED_COMMANDS TEXT, TWITCH_USERNAME TEXT)')
     conn_main.commit()
@@ -201,13 +207,28 @@ def change_msg_welcome_channel(guild, main_channel, welcome_channel):
 
 
 def setup_config(guild, main_channel, welcome_channel):
-    sql = "INSERT INTO CONFIG (SERVER, SPRACHE, PREFIX, MESSAGE_CHANNEL, WELCOME_TEXT, WELCOME_CHANNEL) VALUES (%s, %s, %s, %s, %s, %s)"
-    val_1 = (str(guild.id), "german", "$", str(main_channel.id),
+    sql = "INSERT INTO CONFIG (ACTIVE, SERVER, SPRACHE, PREFIX, MESSAGE_CHANNEL, WELCOME_TEXT, WELCOME_CHANNEL) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    val = ("True", str(guild.id), "german", "$", str(main_channel.id),
              'Selam {member}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!\n Eingeladen von: {inviter}',
              str(welcome_channel.id))
 
-    cur_main.execute(sql, val_1)
+    cur_main.execute(sql, val)
     conn_main.commit()
 
     return 1
 
+
+def activate_guild(guild_id):
+    sql = "UPDATE CONFIG SET ACTIVE = %s WHERE SERVER = %s"
+    val = ("True", str(guild_id))
+
+    cur_main.execute(sql, val)
+    conn_main.commit()
+
+
+def deactivate_guild(guild_id):
+    sql = "UPDATE CONFIG SET ACTIVE = %s WHERE SERVER = %s"
+    val = ("False", str(guild_id))
+
+    cur_main.execute(sql, val)
+    conn_main.commit()

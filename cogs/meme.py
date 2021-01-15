@@ -13,5 +13,6 @@ class Meme(commands.Cog):
         except:
             await ctx.send("Die Meme API ist aktuell nicht verfügbar.")
 
+
 def setup(bot):
     bot.add_cog(Meme(bot))

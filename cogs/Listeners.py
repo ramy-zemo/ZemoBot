@@ -49,31 +49,8 @@ class Listeners(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
-        overwrites_main = {
-            guild.default_role: discord.PermissionOverwrite(read_messages=True, read_message_history=True,
-                                                            send_messages=False)
-        }
-
-        # Check if Server is in Database
-        result = get_main_channel(guild)
-
-        if not result:
-            main_channel = await guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
-
-            setup_config(guild, main_channel, main_channel)
-
-        else:
-            channel_id = result[0][0]
-            channel = discord.utils.get(guild.channels, id=int(channel_id))
-
-            if channel:
-                print("Hinzugefügter Server schon in Datenbank")
-
-            else:
-                main_channel = await guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
-
-                change_msg_welcome_channel(guild, main_channel, main_channel)
-
+        main_channel = await get_main_channel(guild)
+        setup_config(guild, main_channel, main_channel)
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -118,11 +95,10 @@ class Listeners(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, ctx):
-        print(ctx)
         try:
             self.invites[ctx.guild.id] = await ctx.guild.invites()
         except:
-            print("Error")
+            pass
 
     @commands.Cog.listener()
     async def on_message(self, ctx):

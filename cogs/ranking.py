@@ -165,7 +165,7 @@ class Ranking(commands.Cog):
             insert_user_xp(ctx, user, xp)
 
         if old_level != new_level:
-            channel = get_main_channel(ctx.guild)
+            channel = await get_main_channel(ctx.guild)
             await channel.send(f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
 
     async def get_xp(self, ctx, user):

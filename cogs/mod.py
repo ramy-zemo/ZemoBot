@@ -26,7 +26,7 @@ class Auszeit(commands.Cog):
 
     @has_permissions(kick_members=True)
     @commands.command()
-    async def auszeit(self, ctx, *args):
+    async def auszeit(self, ctx, member: discord.Member, *args):
         non_removable_roles = [discord.utils.get(ctx.message.guild.roles, name="Server Booster"),
                                discord.utils.get(ctx.message.guild.roles, name="@everyone")]
 
@@ -34,8 +34,8 @@ class Auszeit(commands.Cog):
         timeout_roles = [discord.utils.get(ctx.message.guild.roles, id=x) for x in self.timeout_roles]
         voice_before_game = []
         if any([True for x in author_roles if x in timeout_roles]):
-            users_to_timeout = ctx.message.guild.get_member(int(str(args[0]).strip("<>!@")))
-            seconds_to_kick = int(args[1])
+            users_to_timeout = member
+            seconds_to_kick = int(args[0])
 
             if seconds_to_kick < 30:
                 return await invalid_argument(ctx, "auszeit", "Eine Auszeit muss zumindest 30 Sekunden dauern.")
@@ -96,17 +96,15 @@ class Auszeit(commands.Cog):
 
     @has_permissions(kick_members=True)
     @commands.command()
-    async def kick(self, ctx, *args):
-        to_kick = ctx.guild.get_member(int(str(args[0]).strip("<>!@")))
-        await ctx.guild.kick(to_kick)
-        await ctx.send(ctx.message.author.mention + f" Habebe ist erledigt. {to_kick} wurde gekickt.")
+    async def kick(self, ctx, member: discord.Member):
+        await ctx.guild.kick(member)
+        await ctx.send(ctx.message.author.mention + f" Habebe ist erledigt. {member} wurde gekickt.")
 
     @has_permissions(ban_members=True)
     @commands.command()
-    async def ban(self, ctx, *args):
-        to_ban = ctx.guild.get_member(int(str(args[0]).strip("<>!@")))
-        await ctx.guild.ban(to_ban)
-        await ctx.send(ctx.message.author.mention + f" Habebe ist erledigt. {to_ban} wurde gebannt.")
+    async def ban(self, ctx, member: discord.Member):
+        await ctx.guild.ban(member)
+        await ctx.send(ctx.message.author.mention + f" Habebe ist erledigt. {member} wurde gebannt.")
 
     @has_permissions(ban_members=True)
     @commands.command()
