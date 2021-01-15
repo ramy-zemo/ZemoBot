@@ -2,6 +2,7 @@ from discord.ext import commands
 import discord
 from etc.error_handling import invalid_argument
 from etc.sql_reference import get_user_messages, get_user_voice_time, get_user_trashtalk, get_user_invites
+import psutil, datetime
 
 
 class Info(commands.Cog):
@@ -85,6 +86,19 @@ class Info(commands.Cog):
             return await get_user_invites(ctx.guild.id, ctx.message.author)
         else:
             return await get_user_invites(ctx.guild.id, ctx.message.author, ctx)
+
+    @commands.command()
+    async def server_info(self, ctx):
+        embed = discord.Embed(title="Server Infos", description="Informationen des Discord Bot Servers:", color=0x1acdee)
+
+        embed.add_field(name="CPU Percent:", value=psutil.cpu_percent(interval=1), inline=False)
+        embed.add_field(name="RAM Total:", value=round(psutil.virtual_memory()[0] / 1000000000, 2), inline=False)
+        embed.add_field(name="Boot Time:", value=datetime.datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d %H:%M:%S"), inline=False)
+        embed.add_field(name="Processes running:", value=str(len(psutil.pids())), inline=False)
+
+        embed.set_author(name="Zemo Bot",
+                         icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+        await ctx.send(embed=embed)
 
 
 def setup(bot):
