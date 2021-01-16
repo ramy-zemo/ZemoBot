@@ -52,7 +52,19 @@ def get_xp_from_user(ctx, user):
 
 def get_server_ranks(ctx):
     cur_main.execute("SELECT * FROM LEVEL WHERE server=%s ORDER BY xp ASC", ([str(ctx.guild.id)]))
-    return cur_main.fetchall()
+    data = cur_main.fetchall()
+
+    new_data = list()
+    for data_set in data:
+        entry = list()
+        for item in data_set:
+            if isinstance(item, bytes):
+                entry.append(item.decode())
+            else:
+                entry.append(item)
+        new_data.append(entry)
+
+    return new_data
 
 
 def setup_db(ctx, amout):
@@ -69,6 +81,8 @@ async def get_main_channel(ctx):
 
     cur_main.execute("SELECT MESSAGE_CHANNEL FROM CONFIG WHERE server=%s", ([guild.id]))
     channel = cur_main.fetchall()
+
+    print(channel)
 
     overwrites_main = {
         guild.default_role: discord.PermissionOverwrite(read_messages=True, read_message_history=True,

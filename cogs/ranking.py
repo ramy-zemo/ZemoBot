@@ -44,10 +44,10 @@ class Ranking(commands.Cog):
 
             xp_current_lvl = await self.lvl_xp(level)
             xp_next_lvl = await self.lvl_xp(level + 1)
-            xp_current = await self.get_xp(ctx, user)
+            xp_current = await self.get_xp(ctx, user) + 25
 
             step = xp_next_lvl - xp_current_lvl
-            state = xp_current - xp_current_lvl + 25
+            state = xp_current - xp_current_lvl
 
             try:
                 img = Image.open(r'img/stats/bg{}.png'.format(round(round(state / step * 100) / 2)))
@@ -156,7 +156,8 @@ class Ranking(commands.Cog):
 
         if user_xp:
             old_level = await xp_lvl(user_xp[0][2])
-            new_level = await xp_lvl(int(await get_xp(ctx, user)) + int(xp))
+            uxp = await get_xp(ctx, user)
+            new_level = await xp_lvl(int(uxp) + int(xp))
             new_xp = int(await get_xp(ctx, user)) + int(xp)
 
             update_user_xp(ctx, user, new_xp)
@@ -201,7 +202,7 @@ class Ranking(commands.Cog):
                 j = 0
                 increment += 100
 
-            if xp >= i and xp < i + increment:
+            if i <= xp < i + increment:
                 level_person = level
 
             i += increment
