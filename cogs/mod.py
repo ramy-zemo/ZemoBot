@@ -97,13 +97,20 @@ class Auszeit(commands.Cog):
     @has_permissions(kick_members=True)
     @commands.command()
     async def kick(self, ctx, member: discord.Member):
-        await ctx.guild.kick(member)
+        try:
+            await ctx.guild.kick(member)
+        except discord.errors.Forbidden:
+            return await ctx.send("Ich habe leider nicht die notwendige Berechtigung. " + ctx.author.mention)
+
         await ctx.send(ctx.message.author.mention + f" Habebe ist erledigt. {member} wurde gekickt.")
 
     @has_permissions(ban_members=True)
     @commands.command()
     async def ban(self, ctx, member: discord.Member):
-        await ctx.guild.ban(member)
+        try:
+            await ctx.guild.ban(member)
+        except discord.errors.Forbidden:
+            return await ctx.send("Ich habe leider nicht die notwendige Berechtigung. " + ctx.author.mention)
         await ctx.send(ctx.message.author.mention + f" Habebe ist erledigt. {member} wurde gebannt.")
 
     @has_permissions(ban_members=True)

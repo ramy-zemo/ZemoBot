@@ -80,7 +80,8 @@ class Listeners(commands.Cog):
 
             if invite.uses < self.find_invite_by_code(invites_after_join, invite.code).uses:
                 if channel is not None:
-                    await channel.send(f'Selam {ctx.mention}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!\n Eingeladen von: {invite.inviter.mention}')
+                    await channel.send(
+                        f'Selam {ctx.mention}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!\n Eingeladen von: {invite.inviter.mention}')
 
                 self.invites[ctx.guild.id] = invites_after_join
 
@@ -120,6 +121,8 @@ class Listeners(commands.Cog):
             message = await discord.utils.get(guild.channels, id=payload.channel_id).fetch_message(payload.message_id)
 
             if str(message.author) == str(payload.member):
+                await self.ranking.add_xp(self, discord.utils.get(guild.channels, id=payload.channel_id),
+                                          message.author, 25)
                 again = await self.bot.process_commands(message)
 
     @tasks.loop(seconds=10)

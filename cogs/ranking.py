@@ -143,10 +143,13 @@ class Ranking(commands.Cog):
 
             return level_person
 
-        try:
-            member = ctx.author
-        except:
-            member = ctx
+        if isinstance(user, str):
+            try:
+                member = ctx.author
+            except:
+                member = ctx
+        else:
+            member = user
 
         user = str(user)
         user_xp = get_xp_from_user(ctx, user)
