@@ -96,7 +96,7 @@ class Twitch(commands.Cog):
         embed.set_author(name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
         channel = await get_main_channel(self.bot.get_guild(guild_id))
         await channel.send(embed=embed)
-        
+
 
 def setup(bot):
     bot.add_cog(Twitch(bot))
