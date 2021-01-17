@@ -8,7 +8,6 @@ from discord.ext.commands import CommandNotFound, MissingPermissions
 from etc.sql_reference import database_setup, log_message, get_user_voice_time
 from etc.sql_reference import change_msg_welcome_channel, setup_config, add_user_voice_time
 from etc.sql_reference import insert_user_voice_time, get_main_channel, get_invites_to_user, log_invite
-import sqlite3
 
 
 class Listeners(commands.Cog):
