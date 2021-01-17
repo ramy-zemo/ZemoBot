@@ -44,7 +44,7 @@ class Ranking(commands.Cog):
 
             xp_current_lvl = await self.lvl_xp(level)
             xp_next_lvl = await self.lvl_xp(level + 1)
-            xp_current = await self.get_xp(ctx, user) + 25
+            xp_current = await self.get_xp(ctx, user)
 
             step = xp_next_lvl - xp_current_lvl
             state = xp_current - xp_current_lvl
@@ -78,7 +78,7 @@ class Ranking(commands.Cog):
             nxt_level_show = draw.text((1950, 585), f"{level + 1}", (26, 205, 238), font=font_lvl)
 
             # Print XP
-            level_show = draw.text((830, 775), f"XP: {xp_current + 25} / {xp_next_lvl}", (68, 180, 132), font=font)
+            level_show = draw.text((830, 775), f"XP: {xp_current} / {xp_next_lvl}", (68, 180, 132), font=font)
 
             with BytesIO() as output:
                 img.save(output, format="PNG")

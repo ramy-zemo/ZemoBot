@@ -105,6 +105,9 @@ class Listeners(commands.Cog):
 
         log_message(ctx.guild.id, str(date.today()), ctx)
 
+        if str(ctx.content) == "$stats":
+            return await ctx.add_reaction("🔁")
+
         if str(ctx.content).startswith("$"):
             await ctx.add_reaction("🔁")
             await self.ranking.add_xp(self, ctx, ctx.author, 25)
