@@ -2,7 +2,7 @@ from io import BytesIO
 from PIL import Image, ImageFont, ImageDraw, ImageOps
 from discord.ext import commands
 from etc.sql_reference import get_main_channel, setup_db, get_server_ranks, get_xp_from_user, update_user_xp
-from etc.sql_reference import insert_user_xp
+from etc.sql_reference import insert_user_xp, update_user_xp
 import requests
 import discord
 
@@ -109,6 +109,11 @@ class Ranking(commands.Cog):
 
             i += increment
             j += 1
+
+    @commands.is_owner()
+    @commands.command()
+    async def set_xp(self, ctx, user, amout):
+        update_user_xp(ctx, user, amout)
 
     @commands.is_owner()
     @commands.command()

@@ -14,6 +14,11 @@ conn_main = mysql.connector.connect(
 cur_main = conn_main.cursor()
 
 
+def get_server(guild_id):
+    cur_main.execute('SELECT ACTIVE FROM CONFIG WHERE SERVER = %s', ([str(guild_id)]))
+    return print(cur_main.fetchall())
+
+
 def get_all_twitch_data():
     cur_main.execute('SELECT SERVER, TWITCH_USERNAME FROM CONFIG')
     return cur_main.fetchall()
@@ -21,7 +26,7 @@ def get_all_twitch_data():
 
 def get_twitch_username(ctx):
     cur_main.execute('SELECT TWITCH_USERNAME FROM CONFIG WHERE SERVER = %s', ([ctx.guild.id]))
-    cur_main.fetchall()
+    return cur_main.fetchall()[0][0]
 
 
 def update_twitch_username(ctx, username):
@@ -80,20 +85,22 @@ async def get_main_channel(ctx):
         guild = ctx
 
     cur_main.execute("SELECT MESSAGE_CHANNEL FROM CONFIG WHERE server=%s", ([guild.id]))
-    channel = cur_main.fetchall()
-
-    print(channel)
+    channel_db = cur_main.fetchall()
 
     overwrites_main = {
         guild.default_role: discord.PermissionOverwrite(read_messages=True, read_message_history=True,
                                                         send_messages=False)
     }
 
-    if channel:
-        if not discord.utils.get(guild.channels, id=int(channel[0][0])):
+    if channel_db:
+        channel = discord.utils.get(guild.channels, id=channel_db[0][0].decode())
+
+        if not channel:
             main_channel = await guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
             change_msg_welcome_channel(guild, main_channel, main_channel)
             return main_channel
+        else:
+            return channel
     else:
         main_channel = await guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
         change_msg_welcome_channel(guild, main_channel, main_channel)
@@ -109,8 +116,8 @@ async def get_welcome_channel(ctx):
     try:
         cur_main.execute("SELECT WELCOME_CHANNEL FROM CONFIG WHERE server=%s", ([guild.id]))
         k = cur_main.fetchall()
-        channel_id = k[0][0]
-        channel = discord.utils.get(guild.channels, id=int(channel_id))
+        channel_id = k[0][0].decode()
+        channel = discord.utils.get(guild.channels, id=channel_id)
 
     except:
         channel = discord.utils.get(guild.channels, name="willkommen")
@@ -250,4 +257,17 @@ def deactivate_guild(guild_id):
     val = ("False", str(guild_id))
 
     cur_main.execute(sql, val)
+    conn_main.commit()
+
+
+def change_prefix(guild_id, prefix):
+    sql = "UPDATE CONFIG SET PREFIX = %s WHERE SERVER = %s"
+    val = (prefix, str(guild_id))
+
+    cur_main.execute(sql, val)
+    conn_main.commit()
+
+
+def clear_categories():
+    cur_main.execute("""TRUNCATE TABLE config;""")
     conn_main.commit()

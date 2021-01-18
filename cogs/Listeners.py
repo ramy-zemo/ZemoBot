@@ -5,9 +5,9 @@ from datetime import date
 from cogs.ranking import Ranking
 from itertools import cycle
 from discord.ext.commands import CommandNotFound, MissingPermissions
-from etc.sql_reference import database_setup, log_message, get_user_voice_time
-from etc.sql_reference import change_msg_welcome_channel, setup_config, add_user_voice_time
-from etc.sql_reference import insert_user_voice_time, get_main_channel, get_invites_to_user, log_invite
+from etc.sql_reference import database_setup, log_message, get_user_voice_time, get_server
+from etc.sql_reference import change_msg_welcome_channel, setup_config, add_user_voice_time, deactivate_guild
+from etc.sql_reference import insert_user_voice_time, get_main_channel, get_invites_to_user, log_invite, activate_guild
 
 
 class Listeners(commands.Cog):
@@ -46,7 +46,14 @@ class Listeners(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         main_channel = await get_main_channel(guild)
-        setup_config(guild, main_channel, main_channel)
+        if get_server(guild.id):
+            activate_guild(guild.id)
+        else:
+            setup_config(guild, main_channel, main_channel)
+
+    @commands.Cog.listener()
+    async def on_guild_remove(self, guild):
+        deactivate_guild(guild.id)
 
     @commands.Cog.listener()
     async def on_ready(self):

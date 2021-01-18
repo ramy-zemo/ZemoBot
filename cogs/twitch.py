@@ -42,8 +42,8 @@ class Twitch(commands.Cog):
     async def setup_twitch(self, ctx):
         twitch_in_db = get_twitch_username(ctx)
 
-        if twitch_in_db[0][0]:
-            x = await ask_for_thumbs(self.bot, ctx, "Twitch bereits verknüpft", f"Der Server {ctx.guild} ist bereits mit dem Twitch Konto `{twitch_in_db[0][0]}` verbunden.\nMöchtest du ein neues verbinden?")
+        if twitch_in_db:
+            x = await ask_for_thumbs(self.bot, ctx, "Twitch bereits verknüpft", f"Der Server {ctx.guild} ist bereits mit dem Twitch Konto `{twitch_in_db}` verbunden.\nMöchtest du ein neues verbinden?")
 
             if not x:
                 return
@@ -84,7 +84,6 @@ class Twitch(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def twitch_notify(self, guild_id):
-        print(guild_id)
         data = await self.get_data()
 
         embed = discord.Embed(title=f"{data['display_name']} ist nun Online auf Twitch",

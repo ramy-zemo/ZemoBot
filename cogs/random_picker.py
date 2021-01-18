@@ -23,6 +23,6 @@ class RandomPicker(commands.Cog):
         end = int(args[1])
         await ctx.send(choice(range(start, end, 1)))
 
-test
+
 def setup(bot):
     bot.add_cog(RandomPicker(bot))

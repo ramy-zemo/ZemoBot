@@ -1,6 +1,6 @@
 from discord.ext import commands
 #from discord_local.ext.commands.bot import process_commands
-
+from ZemoBot.etc.sql_reference import clear_categories, get_main_channel
 
 def effify(non_f_str: str):
     return eval(f'f"""{non_f_str}"""')
@@ -58,10 +58,14 @@ class Debug(commands.Cog):
         await ctx.send(f'Pong!  :ping_pong:  In {round(self.bot.latency * 1000)}ms')
 
     @commands.command()
+    async def clear_cat(self, ctx):
+        clear_categories()
+
+    @commands.command()
     async def test(self, ctx):
-        #message = await ctx.fetch_message(799725740970737675)
-        #print(message.attachments)
-        await ctx.send("Test03883")
+        x = await get_main_channel(ctx)
+        print(x)
+
 
 def setup(bot):
     bot.add_cog(Debug(bot))
