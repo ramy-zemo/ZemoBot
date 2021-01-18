@@ -14,7 +14,7 @@ class Mafia(commands.Cog):
     async def mafia(self, ctx, *args):
         guild = ctx.message.guild
         users_to_play = [guild.get_member(int(str(x).strip("<>!@"))) for x in args]
-        self.non_removable_roles = [discord.utils.get(ctx.message.guild.roles, name="Server Booster"),
+        non_removable_roles = [discord.utils.get(ctx.message.guild.roles, name="Server Booster"),
                                     discord.utils.get(ctx.message.guild.roles, name="@everyone")]
 
         roles_before_game = {}
@@ -114,7 +114,7 @@ class Mafia(commands.Cog):
             real_role = []
 
             for f in x.roles:
-                if f not in self.non_removable_roles:
+                if f not in non_removable_roles:
                     real_role.append(f)
 
             roles_before_game[x] = real_role

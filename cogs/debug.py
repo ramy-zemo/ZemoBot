@@ -1,4 +1,9 @@
 from discord.ext import commands
+#from discord_local.ext.commands.bot import process_commands
+from ZemoBot.etc.sql_reference import clear_categories, get_main_channel
+
+def effify(non_f_str: str):
+    return eval(f'f"""{non_f_str}"""')
 
 
 class Debug(commands.Cog):
@@ -47,6 +52,19 @@ class Debug(commands.Cog):
     async def show_channels(self, ctx):
         for channel in ctx.guild.channels:
             print(channel, channel.id)
+
+    @commands.command()
+    async def ping(self, ctx):
+        await ctx.send(f'Pong!  :ping_pong:  In {round(self.bot.latency * 1000)}ms')
+
+    @commands.command()
+    async def clear_cat(self, ctx):
+        clear_categories()
+
+    @commands.command()
+    async def test(self, ctx):
+        x = await get_main_channel(ctx)
+        print(x)
 
 
 def setup(bot):

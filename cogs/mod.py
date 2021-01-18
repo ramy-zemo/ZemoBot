@@ -2,12 +2,20 @@ import asyncio
 import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions
+from etc.error_handling import invalid_argument
 
 
 class Auszeit(commands.Cog):
     def __init__(self, bot):
         self.timeout_roles = [768172546860253194, 768172546104229899]
         self.bot = bot
+
+    @commands.command()
+    async def amo(self, ctx, *args):
+        y = [mem for mem in [m for m in ctx.guild.members if m != ctx.message.author] if "AMO" in [x.name for x in mem.roles]]
+
+        for x in y:
+            await x.send("{}".format(" ".join(args)))
 
     @has_permissions(create_instant_invite=True)
     @commands.command()
@@ -16,9 +24,9 @@ class Auszeit(commands.Cog):
             await ctx.channel.create_invite(max_age=max_age, max_uses=max_uses, temporary=temporary, unique=unique,
                                             reason=reason))
 
-    @has_permissions(mute_members=True, move_members=True)
+    @has_permissions(kick_members=True)
     @commands.command()
-    async def auszeit(self, ctx, *args):
+    async def auszeit(self, ctx, member: discord.Member, *args):
         non_removable_roles = [discord.utils.get(ctx.message.guild.roles, name="Server Booster"),
                                discord.utils.get(ctx.message.guild.roles, name="@everyone")]
 
@@ -26,11 +34,11 @@ class Auszeit(commands.Cog):
         timeout_roles = [discord.utils.get(ctx.message.guild.roles, id=x) for x in self.timeout_roles]
         voice_before_game = []
         if any([True for x in author_roles if x in timeout_roles]):
-            users_to_timeout = ctx.message.guild.get_member(int(str(args[0]).strip("<>!@")))
-            seconds_to_kick = int(args[1])
+            users_to_timeout = member
+            seconds_to_kick = int(args[0])
 
             if seconds_to_kick < 30:
-                return await ctx.send("Eine Auszeit muss zumindest 30 Sekunden dauern.")
+                return await invalid_argument(ctx, "auszeit", "Eine Auszeit muss zumindest 30 Sekunden dauern.")
 
             banned_role = await ctx.message.guild.create_role(name="banned")
             await banned_role.edit(colour=0xff0000)
@@ -88,17 +96,22 @@ class Auszeit(commands.Cog):
 
     @has_permissions(kick_members=True)
     @commands.command()
-    async def kick(self, ctx, *args):
-        to_kick = ctx.guild.get_member(int(str(args[0]).strip("<>!@")))
-        await ctx.guild.kick(to_kick)
-        await ctx.send(ctx.message.author.mention + f" Habebe ist erledigt. {to_kick} wurde gekickt.")
+    async def kick(self, ctx, member: discord.Member):
+        try:
+            await ctx.guild.kick(member)
+        except discord.errors.Forbidden:
+            return await ctx.send("Ich habe leider nicht die notwendige Berechtigung. " + ctx.author.mention)
+
+        await ctx.send(ctx.message.author.mention + f" Habebe ist erledigt. {member} wurde gekickt.")
 
     @has_permissions(ban_members=True)
     @commands.command()
-    async def ban(self, ctx, *args):
-        to_ban = ctx.guild.get_member(int(str(args[0]).strip("<>!@")))
-        await ctx.guild.ban(to_ban)
-        await ctx.send(ctx.message.author.mention + f" Habebe ist erledigt. {to_ban} wurde gebannt.")
+    async def ban(self, ctx, member: discord.Member):
+        try:
+            await ctx.guild.ban(member)
+        except discord.errors.Forbidden:
+            return await ctx.send("Ich habe leider nicht die notwendige Berechtigung. " + ctx.author.mention)
+        await ctx.send(ctx.message.author.mention + f" Habebe ist erledigt. {member} wurde gebannt.")
 
     @has_permissions(ban_members=True)
     @commands.command()

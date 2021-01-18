@@ -1,5 +1,4 @@
 from discord.ext import commands
-import sqlite3
 import discord
 from etc.ask import ask
 
@@ -7,8 +6,6 @@ from etc.ask import ask
 class Partner(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.conn_main = sqlite3.connect("main.db")
-        self.cur_main = self.conn_main.cursor()
         self.current_in_partner = []
 
     @commands.command()

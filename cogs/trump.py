@@ -5,7 +5,8 @@ from io import BytesIO
 from PIL import Image
 import discord
 
-class trump(commands.Cog):
+
+class Trump(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -22,5 +23,6 @@ class trump(commands.Cog):
             output.seek(0)
             await ctx.send(file=discord.File(fp=output, filename="image.png"))
 
+
 def setup(bot):
-    bot.add_cog(trump(bot))
+    bot.add_cog(Trump(bot))

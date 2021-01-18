@@ -1,10 +1,6 @@
 import discord
-import sqlite3
 import asyncio
-
-
-conn_main = sqlite3.connect("main.db")
-cur_main = conn_main.cursor()
+import re
 
 
 async def ask_for_thumbs(bot, ctx, title, question):
@@ -34,16 +30,22 @@ async def ask_for_thumbs(bot, ctx, title, question):
     return reaction.emoji == '👍'
 
 
-async def ask(author, ask_type, question, text_channel, bot, options=["0", "0"], max_answers=9999, range_int=[0, 100], msg_type="text", reaction_type="usual"):
+async def ask(author, ask_type, question, text_channel, bot, options=0, max_answers=9999, range_int=[0, 100], msg_type="text", reaction_type="usual", msg_max_length=0, msg_description=""):
     class InvalidInt(Exception):
         pass
 
-    class ToMuchReaction(Exception):
+    class TooMuchReaction(Exception):
+        pass
+
+    class TooLongReaction(Exception):
         pass
 
     sent_messages = []
     while True:
-        embed = discord.Embed(title=question, description='\n'.join(options), color=0x1acdee)
+        if options:
+            embed = discord.Embed(title=question, description='\n'.join(options), color=0x1acdee)
+        else:
+            embed = discord.Embed(title=question, description=msg_description, color=0x1acdee)
 
         if ask_type == "reaction_add" and reaction_type == "bool":
             embed.description = "1. Ja\n2. Nein"
@@ -58,10 +60,16 @@ async def ask(author, ask_type, question, text_channel, bot, options=["0", "0"],
         emojis = {1: "1️⃣", 2: "2️⃣", 3: "3️⃣", 4: "4️⃣", 5: "5️⃣", 6: "6️⃣", 7: "7️⃣", 8: "8️⃣", 9: "9️⃣", 10: "🔟"}
 
         if ask_type == "reaction_add":
-            for count in range(len(options)):
-                await request.add_reaction(emojis[count + 1])
+            if not options:
+                for count in range(2):
+                    await request.add_reaction(emojis[count + 1])
+                else:
+                    await request.add_reaction("⏭")
             else:
-                await request.add_reaction("⏭")
+                for count in range(len(options)):
+                    await request.add_reaction(emojis[count + 1])
+                else:
+                    await request.add_reaction("⏭")
 
         reactions = []
 
@@ -75,7 +83,7 @@ async def ask(author, ask_type, question, text_channel, bot, options=["0", "0"],
 
             if str(reaction.emoji) in ["⏭"]:
                 if len(reactions) > max_answers:
-                    raise ToMuchReaction
+                    raise TooMuchReaction
                 return True
 
         def check_message(reaction):
@@ -99,6 +107,11 @@ async def ask(author, ask_type, question, text_channel, bot, options=["0", "0"],
                         int(reaction.content)
                     except ValueError:
                         raise InvalidInt
+            elif msg_max_length:
+                if len(reaction.content) == msg_max_length:
+                    return True
+                else:
+                    raise TooLongReaction
             else:
                 return True
 
@@ -106,7 +119,7 @@ async def ask(author, ask_type, question, text_channel, bot, options=["0", "0"],
             check_methods = {"reaction_add": reaction_add, "message": check_message}
             reaction = await bot.wait_for(ask_type, check=check_methods[ask_type])
 
-        except ToMuchReaction:
+        except TooMuchReaction:
             embed = discord.Embed(title="Zu viele Optionen gewählt",
                                   description=f"Du hast zu viele Optionen gewählt. Wähle maximal {max_answers}",
                                   color=0x1acdee)
@@ -123,6 +136,15 @@ async def ask(author, ask_type, question, text_channel, bot, options=["0", "0"],
             embed.set_author(name="Zemo Bot",
                              icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
             embed.set_footer(text=f"Die Auswahl muss zwischen {range_int[0]} und {range_int[1]} liegen.")
+            sent_messages.append(await text_channel.send(embed=embed))
+            continue
+
+        except TooLongReaction:
+            embed = discord.Embed(title="Ungültige Auswahl", description=f"Deine Antwort ist nicht gültig.",
+                                  color=0x1acdee)
+            embed.set_author(name="Zemo Bot",
+                             icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+            embed.set_footer(text=f"Die Antwort darf maximal {msg_max_length} Zeichen lang sein.")
             sent_messages.append(await text_channel.send(embed=embed))
             continue
 

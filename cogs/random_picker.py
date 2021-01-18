@@ -1,4 +1,3 @@
-import discord
 from random import choice
 from discord import File
 from discord.ext import commands
