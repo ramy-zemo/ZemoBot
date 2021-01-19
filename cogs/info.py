@@ -51,7 +51,7 @@ class Info(commands.Cog):
                     "$invite (max_age) (max_uses) (temporary) (unique) (reason)": "Create Invites."},
             'media': {"$font_list": "Get List of available Fonts.", "$avatar": "Get your own Discord Profile Picture.",
                       "$avatar (*mention)": "Get the Discord Avatar from another user."},
-            'search': {"faceit_finder steam_url": "Find a FaceIt account by Steam identifier."}
+            'search': {"$faceit_finder (steam_url)": "Find a FaceIt account by Steam identifier."}
         }
 
         if not args:
