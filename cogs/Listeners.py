@@ -83,7 +83,6 @@ class Listeners(commands.Cog):
         invites_after_join = await ctx.guild.invites()
 
         for invite in invites_before_join:
-
             if invite.uses < self.find_invite_by_code(invites_after_join, invite.code).uses:
                 if channel is not None:
                     await channel.send(

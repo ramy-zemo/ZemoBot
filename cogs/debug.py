@@ -1,6 +1,7 @@
 from discord.ext import commands
 #from discord_local.ext.commands.bot import process_commands
-from ZemoBot.etc.sql_reference import clear_categories, get_main_channel
+from ZemoBot.etc.sql_reference import clear_categories, get_user_invites
+
 
 def effify(non_f_str: str):
     return eval(f'f"""{non_f_str}"""')
@@ -63,9 +64,9 @@ class Debug(commands.Cog):
 
     @commands.command()
     async def test(self, ctx):
-        x = await get_main_channel(ctx)
+        x = await get_user_invites(ctx.guild.id, "Ramo#4907")
+        #print(*x, sep="\n")
         print(x)
-
 
 def setup(bot):
     bot.add_cog(Debug(bot))
