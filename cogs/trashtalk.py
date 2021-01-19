@@ -26,7 +26,7 @@ class Trashtalk(commands.Cog):
                     except:
                         return await ctx.send(f"Trashtalk an {user.mention} fehlgeschlagen.")
 
-                    log_trashtalk(ctx, datum, user)
+                    log_trashtalk(ctx, datum, ctx.message.author, user)
         else:
             await ctx.send(f"{ctx.message.author.mention} du hast dein Trash Limit für heute erreicht.")
 

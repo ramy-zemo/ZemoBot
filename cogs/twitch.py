@@ -40,7 +40,7 @@ class Twitch(commands.Cog):
     @commands.is_owner()
     @commands.command()
     async def setup_twitch(self, ctx):
-        twitch_in_db = get_twitch_username(ctx)
+        twitch_in_db = get_twitch_username(ctx.guild.id)
 
         if twitch_in_db:
             x = await ask_for_thumbs(self.bot, ctx, "Twitch bereits verknüpft", f"Der Server {ctx.guild} ist bereits mit dem Twitch Konto `{twitch_in_db}` verbunden.\nMöchtest du ein neues verbinden?")
@@ -59,7 +59,7 @@ class Twitch(commands.Cog):
         reaction = await self.bot.wait_for('message', check=check)
         self.username = reaction.content
 
-        update_twitch_username(ctx, self.username)
+        update_twitch_username(ctx.guild.id, self.username)
 
         if await self.get_data():
             await ctx.send(f'Das Twitch Konto {self.username} wurde erfolgreich mit dem Server {ctx.guild} verbunden.')
