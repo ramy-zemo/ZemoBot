@@ -31,6 +31,9 @@ class Faceit_finder(commands.Cog):
             faceit_url = \
             [x["href"] for x in url if "https://www.faceit.com/" in str(x["href"]) and "csgo" not in str(x["href"])][0]
             faceit_description = response_html_soup.find_all("meta")[::-1][0]["content"]
+            skill_image_url = "https://faceitfinder.com" + \
+                              [x["src"] for x in response_html_soup.find_all("img") if "skill_level" in str(x["src"])][
+                                  0]
 
             embed = Embed(title="Faceit Finder",
                           description=faceit_description,
@@ -40,6 +43,8 @@ class Faceit_finder(commands.Cog):
                              icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
 
             embed.add_field(name="Faceit Account:", value=faceit_url)
+
+            embed.set_thumbnail(url=skill_image_url)
 
             await ctx.send(embed=embed)
         except:
