@@ -19,7 +19,7 @@ class Ranking(commands.Cog):
     @commands.command()
     async def rank(self, ctx):
         try:
-            server_ranks = get_server_ranks(ctx)
+            server_ranks = get_server_ranks(ctx.guild.id)
 
             data = [(server_ranks[1], await self.xp_lvl(server_ranks[2])) for server_ranks in server_ranks[::-1]]
 
@@ -113,7 +113,7 @@ class Ranking(commands.Cog):
     @commands.is_owner()
     @commands.command()
     async def set_xp(self, ctx, user, amout):
-        update_user_xp(ctx, user, amout)
+        update_user_xp(ctx.guild.id, user, amout)
 
     @commands.is_owner()
     @commands.command()
@@ -165,13 +165,13 @@ class Ranking(commands.Cog):
             new_level = await xp_lvl(int(uxp) + int(xp))
             new_xp = int(await get_xp(ctx, user)) + int(xp)
 
-            update_user_xp(ctx, user, new_xp)
+            update_user_xp(ctx.guild.id, user, new_xp)
 
         else:
             old_level = 0
             new_level = await xp_lvl(int(xp))
 
-            insert_user_xp(ctx, user, xp)
+            insert_user_xp(ctx.guild.id, user, xp)
 
         if old_level != new_level:
             channel = await get_main_channel(ctx.guild)
@@ -189,7 +189,7 @@ class Ranking(commands.Cog):
 
     @commands.command()
     async def get_rank(self, ctx, user):
-        ordered_list = get_server_ranks(ctx)[::-1]
+        ordered_list = get_server_ranks(ctx.guild.id)[::-1]
         x = [count + 1 for count, x in enumerate(ordered_list) if ordered_list[count][1] == user]
         return x[0] if x else "Bot"
 

@@ -49,7 +49,7 @@ class Listeners(commands.Cog):
         if get_server(guild.id):
             activate_guild(guild.id)
         else:
-            setup_config(guild, main_channel, main_channel)
+            setup_config(guild.id, main_channel, main_channel)
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
