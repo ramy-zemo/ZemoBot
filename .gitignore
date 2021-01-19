@@ -5,3 +5,5 @@
 venv/
 cogs/__pycache__/
 etc/__pycache__/
+cogs/debug.py
+playground.py
