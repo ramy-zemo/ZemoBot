@@ -43,7 +43,14 @@ class Faceit_finder(commands.Cog):
 
             await ctx.send(embed=embed)
         except:
-            await ctx.send("Faceit Account konnte nicht gefunden werden.")
+            embed = Embed(title="Faceit Finder",
+                          description="Faceit Account konnte nicht gefunden werden.",
+                          color=0x1acdee)
+
+            embed.set_author(name="Zemo Bot",
+                             icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+
+            await ctx.send(embed=embed)
 
 
 def setup(bot):
