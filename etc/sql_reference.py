@@ -151,7 +151,7 @@ def get_user_messages(user):
 def get_user_voice_time(user):
     cur_main.execute("SELECT minutes from VOICE WHERE user=%s", (str(user),))
     data = cur_main.fetchall()
-    return data[0][0].decode() if data else 0
+    return data[0][0] if data else 0
 
 
 def add_user_voice_time(user, minutes):
