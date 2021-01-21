@@ -60,7 +60,6 @@ def insert_user_xp(guild_id, user, xp):
 
 
 def update_user_xp(guild_id, user, new_xp):
-    ic(guild_id, user, new_xp)
     sql = "UPDATE LEVEL SET xp=%s WHERE server=%s AND user=%s"
     val_1 = (new_xp, str(guild_id), str(user))
 
