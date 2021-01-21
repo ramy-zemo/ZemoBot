@@ -1,8 +1,8 @@
 import os
 import discord
+import logging
 from dotenv import load_dotenv
 from discord.ext import commands
-import logging
 
 
 # Solid Base made by Nikola

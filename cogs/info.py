@@ -1,8 +1,9 @@
-from discord.ext import commands
+import datetime
 import discord
+import psutil
+from discord.ext import commands
 from etc.error_handling import invalid_argument
 from etc.sql_reference import get_user_messages, get_user_voice_time, get_user_trashtalk, get_user_invites
-import psutil, datetime
 
 
 class Info(commands.Cog):
@@ -78,7 +79,7 @@ class Info(commands.Cog):
             await ctx.send(embed=embed)
 
         else:
-            return await invalid_argument(ctx, "help", "$help (category)")
+            return await invalid_argument(ctx, "help")
 
     @commands.command()
     async def invites(self, ctx, *args):

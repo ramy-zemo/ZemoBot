@@ -302,8 +302,7 @@ class MemeGen(commands.Cog):
                     try:
                         string = self.old_memes[str(member)]
                     except:
-                        return await invalid_argument(ctx, command="gen_meme",
-                                                      usage="$gen_meme (*Top Text, Bottom Text) oder nur $gen_meme nachdem bereits ein Meme generiert wurde.")
+                        return await invalid_argument(ctx, command="gen_meme")
 
                 else:
                     string = str(ctx.message.author)
@@ -318,8 +317,7 @@ class MemeGen(commands.Cog):
                 string = self.old_memes[str(ctx.message.author)]
 
             except:
-                return await invalid_argument(ctx, command="gen_meme",
-                                              usage="$gen_meme (*Top Text, Bottom Text) oder nur $gen_meme nachdem bereits ein Meme generiert wurde.")
+                return await invalid_argument(ctx, command="gen_meme")
 
         meme = random.choice(self.available_memes)
         try:

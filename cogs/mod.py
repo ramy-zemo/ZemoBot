@@ -38,7 +38,7 @@ class Auszeit(commands.Cog):
             seconds_to_kick = int(args[0])
 
             if seconds_to_kick < 30:
-                return await invalid_argument(ctx, "auszeit", "Eine Auszeit muss zumindest 30 Sekunden dauern.")
+                return await invalid_argument(ctx, "auszeit")
 
             banned_role = await ctx.message.guild.create_role(name="banned")
             await banned_role.edit(colour=0xff0000)

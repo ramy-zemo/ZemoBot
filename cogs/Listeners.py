@@ -5,9 +5,11 @@ from datetime import date
 from cogs.ranking import Ranking
 from itertools import cycle
 from discord.ext.commands import CommandNotFound, MissingPermissions
+from discord.ext.commands.errors import MemberNotFound
 from etc.sql_reference import database_setup, log_message, get_user_voice_time, get_server
 from etc.sql_reference import change_msg_welcome_channel, setup_config, add_user_voice_time, deactivate_guild
 from etc.sql_reference import insert_user_voice_time, get_main_channel, get_invites_to_user, log_invite, activate_guild
+from etc.error_handling import invalid_argument
 
 
 class Listeners(commands.Cog):
@@ -144,6 +146,9 @@ class Listeners(commands.Cog):
 
         elif isinstance(error, MissingPermissions):
             return await ctx.send(":hammer: Du bist leider nicht berechtigt diesen Command zu nutzen. :hammer:")
+
+        elif isinstance(error, MemberNotFound):
+            return await invalid_argument(ctx, ctx.message.content.split()[0][1:])
 
         raise error
 
