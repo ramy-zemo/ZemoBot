@@ -46,9 +46,6 @@ class Trashtalk(commands.Cog):
 
     @commands.command()
     async def trashtalk_stats(self, ctx, member: Member = 0, *args):
-        print(member)
-        print(args)
-        return 0
         datum = str(date.today())
         if not member:
             result = get_user_trashtalk(ctx.guild.id, ctx.message.author)
@@ -61,8 +58,6 @@ class Trashtalk(commands.Cog):
             return len(result)
         else:
             await ctx.send(f"All time: {len(result)}, Today: {len(today)}")
-
-        await ctx.send("Bisher sind keine Daten vorhanden.")
 
     @commands.command()
     async def trashtalk_reset(self, ctx, *args):
