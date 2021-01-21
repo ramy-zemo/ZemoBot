@@ -5,6 +5,7 @@ from etc.sql_reference import get_main_channel, setup_db, get_server_ranks, get_
 from etc.sql_reference import insert_user_xp, update_user_xp
 import requests
 import discord
+from icecream import ic
 
 
 class Ranking(commands.Cog):
@@ -36,7 +37,7 @@ class Ranking(commands.Cog):
             await ctx.send("Bisher sind leider nicht genügend Daten vorhanden.")
 
     @commands.command()
-    async def stats(self, ctx):
+    async def stats(self, ctx, member: discord.Member = 0):
         async def create_level_image(ctx, name, url, level, rank):
             user = name
             name = str(name)
@@ -85,9 +86,14 @@ class Ranking(commands.Cog):
                 output.seek(0)
                 await ctx.send(file=discord.File(fp=output, filename="image.png"))
 
-        level = await self.get_lvl(ctx, str(ctx.author))
-        rank = await self.get_rank(ctx, str(ctx.author))
-        await create_level_image(ctx, ctx.author, ctx.author.avatar_url, level, rank)
+        if not member:
+            level = await self.get_lvl(ctx, str(ctx.author))
+            rank = await self.get_rank(ctx, str(ctx.author))
+            await create_level_image(ctx, ctx.author, ctx.author.avatar_url, level, rank)
+        else:
+            level = await self.get_lvl(ctx, member)
+            rank = await self.get_rank(ctx, member)
+            await create_level_image(ctx, member, member.avatar_url, level, rank)
 
     async def lvl_xp(self, lvl):
         if lvl == 0:
@@ -112,14 +118,17 @@ class Ranking(commands.Cog):
 
     @commands.is_owner()
     @commands.command()
-    async def set_xp(self, ctx, user, amout):
-        update_user_xp(ctx.guild.id, user, amout)
+    async def set_xp(self, ctx, user: discord.Member, amout):
+        if get_xp_from_user(ctx.guild.id, user):
+            update_user_xp(ctx.guild.id, user, amout)
+        else:
+            insert_user_xp(ctx.guild.id, user, amout)
 
     @commands.is_owner()
     @commands.command()
-    async def add_xp(self, ctx, user, xp):
+    async def add_xp(self, ctx, user, xp, guild_id):
         async def get_xp(ctx, user):
-            data = get_xp_from_user(ctx, user)
+            data = get_xp_from_user(guild_id, user)
             if data:
                 return data[0][2]
             else:
@@ -157,7 +166,7 @@ class Ranking(commands.Cog):
             member = user
 
         user = str(user)
-        user_xp = get_xp_from_user(ctx, user)
+        user_xp = get_xp_from_user(guild_id, user)
 
         if user_xp:
             old_level = await xp_lvl(user_xp[0][2])
@@ -165,20 +174,20 @@ class Ranking(commands.Cog):
             new_level = await xp_lvl(int(uxp) + int(xp))
             new_xp = int(await get_xp(ctx, user)) + int(xp)
 
-            update_user_xp(ctx.guild.id, user, new_xp)
+            update_user_xp(guild_id, user, new_xp)
 
         else:
             old_level = 0
             new_level = await xp_lvl(int(xp))
 
-            insert_user_xp(ctx.guild.id, user, xp)
+            insert_user_xp(guild_id, user, xp)
 
         if old_level != new_level:
-            channel = await get_main_channel(ctx.guild)
+            channel = await get_main_channel(ctx)
             await channel.send(f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
 
     async def get_xp(self, ctx, user):
-        xp_data = get_xp_from_user(ctx, user)
+        xp_data = get_xp_from_user(ctx.guild.id, user)
         if xp_data:
             return xp_data[0][2]
         else:

@@ -32,7 +32,7 @@ class Listeners(commands.Cog):
                 if round(time * -1) <= 60:
                     return
 
-                await self.ranking.add_xp(self, member, member, round(round(time * -1) * 0.05))
+                await self.ranking.add_xp(self, member, member, round(round(time * -1) * 0.05), member.guild.id)
 
                 minutes = int(round(time * - 1) / 60)
 
@@ -94,9 +94,9 @@ class Listeners(commands.Cog):
 
                 if len(get_invites_to_user(ctx.guild.id, ctx)) == 0:
                     log_invite(ctx.guild.id, datum, str(invite.inviter), str(ctx))
-                    await self.ranking.add_xp(self, ctx, invite.inviter, 200)
+                    await self.ranking.add_xp(self, ctx, invite.inviter, 200, ctx.guild.id)
 
-        await self.ranking.add_xp(self, ctx, ctx, 20)
+        await self.ranking.add_xp(self, ctx, ctx, 20, ctx.guild.id)
 
     @commands.Cog.listener()
     async def on_member_remove(self, ctx):
@@ -117,9 +117,9 @@ class Listeners(commands.Cog):
 
         if str(ctx.content).startswith("$"):
             await ctx.add_reaction("🔁")
-            await self.ranking.add_xp(self, ctx, ctx.author, 25)
+            await self.ranking.add_xp(self, ctx, ctx.author, 25, ctx.guild.id)
         else:
-            await self.ranking.add_xp(self, ctx, ctx.author, 5)
+            await self.ranking.add_xp(self, ctx, ctx.author, 5, ctx.guild.id)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -132,7 +132,7 @@ class Listeners(commands.Cog):
 
             if str(message.author) == str(payload.member):
                 await self.ranking.add_xp(self, discord.utils.get(guild.channels, id=payload.channel_id),
-                                          message.author, 25)
+                                          message.author, 25, payload.guild_id)
                 again = await self.bot.process_commands(message)
 
     @tasks.loop(seconds=10)
