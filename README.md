@@ -51,4 +51,5 @@ Currently available commands (will be extended continuously):
 
 `$show_channels` -> Print Channels and Channels IDs from a Guild
 
+`$set_xp (member) (amout)` -> Set User xp
 
