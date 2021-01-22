@@ -11,17 +11,20 @@ class Info(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def info(self, ctx):
-        user = str(ctx.message.author)
+    async def info(self, ctx, member: discord.Member = 0):
+        if not member:
+            user = str(ctx.message.author)
+        else:
+            user = member
 
         messages = len(get_user_messages(user))
         minutes = get_user_voice_time(user)
-        trashtalk = len(get_user_trashtalk(ctx.guild.id, ctx.message.author))
+        trashtalk = len(get_user_trashtalk(ctx.guild.id, user))
 
-        embed = discord.Embed(title="Info", description="Deine Nutzerinformationen:", color=0x1acdee)
+        embed = discord.Embed(title="Info", description=f"{user} Nutzerinformationen:", color=0x1acdee)
         embed.add_field(name="Nachrichten", value=f"Du hast bisher {messages} Nachrichten versendet.", inline=False)
         embed.add_field(name="Invites",
-                        value=f"""Du hast bisher {await self.invites(ctx, "No Print")} Invites versendet.""",
+                        value=f"""Du hast bisher {await self.invites(ctx, user, "No Print")} Invites versendet.""",
                         inline=False)
         embed.add_field(name="Minuten", value=f"Du warst {minutes} Minuten mit einem Sprachchannel verbunden.",
                         inline=False)
@@ -38,7 +41,7 @@ class Info(commands.Cog):
                       "$trashtalk_reset": "Reset your Trashtalk Stats.",
                       "$trashtalk_list": "Show Trashtalk Words.",
                       "$stats (member)": "Get your statistics.", "$invite": "List of your successful invites.",
-                      "$info": "Get your Userinformation.", "$rank": "List of Top 5 Server Ranks"},
+                      "$info (member)": "Get your Userinformation.", "$rank": "List of Top 5 Server Ranks"},
             'fun': {"$trashtalk (*mention)": "Trashtalk people.", "$trashtalk_add": "Add Words to trashtalk.",
                     "$ping": "Check if bot is alive.",
                     "$meme": "Return random meme from Reddit.",
@@ -82,9 +85,9 @@ class Info(commands.Cog):
             return await invalid_argument(ctx, "help")
 
     @commands.command()
-    async def invites(self, ctx, *args):
+    async def invites(self, ctx, member="", *args):
         if args:
-            return await get_user_invites(ctx.guild.id, ctx.message.author)
+            return await get_user_invites(ctx.guild.id, member)
         else:
             return await get_user_invites(ctx.guild.id, ctx.message.author, ctx)
 
