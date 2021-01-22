@@ -30,6 +30,12 @@ class GuildConfig(commands.Cog):
     async def enable_command(self, ctx, command):
         if command in self.bot.user_commands:
             enable_command(ctx.guild.id, command)
+            embed = Embed(color=0x1acdee,
+                          description=f"Command {command} erfolgreich für den Server {ctx.guild} aktiviert.")
+            embed.set_author(name="Zemo Bot")
+            embed.set_thumbnail(url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+            await ctx.send(embed=embed)
+
         else:
             embed = Embed(color=0x1acdee,
                           description="Command nicht gefunden. Bitte gib den Command ohne Prefix ein.")
@@ -42,6 +48,13 @@ class GuildConfig(commands.Cog):
     async def disable_command(self, ctx, command):
         if command in self.bot.user_commands:
             disable_command(ctx.guild.id, command)
+            enable_command(ctx.guild.id, command)
+            embed = Embed(color=0x1acdee,
+                          description=f"Command {command} erfolgreich für den Server {ctx.guild} deaktiviert.")
+            embed.set_author(name="Zemo Bot")
+            embed.set_thumbnail(url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+            await ctx.send(embed=embed)
+
         else:
             embed = Embed(color=0x1acdee,
                           description="Command nicht gefunden. Bitte gib den Command ohne Prefix ein.")

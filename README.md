@@ -45,6 +45,9 @@ Currently available commands (will be extended continuously):
 
 `$twitch_setup (Owner only command)` -> Setup Twitch Streamer, to enable live notifications.
 
+`$avatar (member)` -> Get your own Discord Profile Picture.
+
+
 ## Debug Commands
 
 `$show_roles` -> Print Roles and Role IDs from a Guild

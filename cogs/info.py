@@ -4,6 +4,7 @@ import psutil
 from discord.ext import commands
 from etc.error_handling import invalid_argument
 from etc.sql_reference import get_user_messages, get_user_voice_time, get_user_trashtalk, get_user_invites, get_prefix
+from etc.sql_reference import get_disabled_commands
 
 
 class Info(commands.Cog):
@@ -37,6 +38,7 @@ class Info(commands.Cog):
     @commands.command()
     async def help(self, ctx, *args):
         prefix = get_prefix(ctx.guild.id)
+        disabled_commands = get_disabled_commands(ctx.guild.id)
         plugins = {
             'level': {"trashtalk_stats": "Show your Trashtalk Stats.",
                       "trashtalk_reset": "Reset your Trashtalk Stats.",
@@ -62,8 +64,7 @@ class Info(commands.Cog):
                     "unban (*mention)": "Unban Members",
                     "invite (max_age) (max_uses) (temporary) (unique) (reason)": "Create Invites."},
             'media': {"font_list": "Get List of available Fonts.",
-                      "avatar": "Get your own Discord Profile Picture.",
-                      "avatar (*mention)": "Get the Discord Avatar from another user.",
+                      "avatar (mention)": "Get a Discord Profile Picture.",
                       "server_info": "Get some Server Statistics."},
             'search': {"faceit_finder (steam_url)": "Find a FaceIt account by Steam identifier."}
         }
@@ -87,7 +88,8 @@ class Info(commands.Cog):
             embed.set_thumbnail(url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
 
             for count, option in enumerate(plugins[category]):
-                embed.add_field(name=prefix + option, value=plugins[category][option], inline=False)
+                if option not in disabled_commands:
+                    embed.add_field(name=prefix + option, value=plugins[category][option], inline=False)
 
             await ctx.send(embed=embed)
 
