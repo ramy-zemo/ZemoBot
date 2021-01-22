@@ -292,3 +292,36 @@ def change_prefix(guild_id, prefix):
 def clear_categories():
     cur_main.execute("""TRUNCATE TABLE config;""")
     conn_main.commit()
+
+
+def change_auto_role(guild_id, role_id):
+    sql = "UPDATE CONFIG SET WELCOME_ROLE = %s WHERE SERVER = %s"
+    val = (str(role_id), str(guild_id))
+
+    cur_main.execute(sql, val)
+    conn_main.commit()
+
+
+def get_welcome_role_id(guild_id):
+    sql = "SELECT WELCOME_ROLE FROM CONFIG WHERE SERVER = %s"
+    val = (str(guild_id),)
+
+    cur_main.execute(sql, val)
+
+    data = cur_main.fetchall()
+
+    return data[0][0].decode() if data else []
+
+
+def get_welcome_role(guild):
+    sql = "SELECT WELCOME_ROLE FROM CONFIG WHERE SERVER = %s"
+    val = (str(guild.id),)
+
+    cur_main.execute(sql, val)
+
+    data = cur_main.fetchall()
+
+    if data:
+        role = discord.utils.get(guild.roles, id=int(data[0][0].decode()))
+
+    return role

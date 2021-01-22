@@ -26,8 +26,9 @@ async def invalid_argument(ctx, command):
                 "unban": "**(mention)**",
                 "invite": "(max_age) (max_uses) (temporary) (unique) (reason)",
                 "font_list": "",
-                "avatar (mention)": "Get the Discord Avatar from a user.",
-                "faceit_finder **(steam_url)**": "Find a FaceIt account by Steam identifier."}
+                "avatar": "Mention another User to get his Avatar. Nothing if you want your Avatar.",
+                "faceit_finder": "Steam URL or ID",
+                "set_auto_role": "Mention a Role"}
 
     embed = Embed(title="Ungültige Parameter",
                   description=f"Die Werte die du an den Command `${command}` übergeben hast sind ungültig.",
