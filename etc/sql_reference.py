@@ -336,3 +336,47 @@ def get_welcome_role(guild):
         role = discord.utils.get(guild.roles, id=int(data[0][0].decode()))
 
     return role
+
+
+def get_disabled_commands(guild_id):
+    sql = "SELECT DISABLED_COMMANDS FROM CONFIG WHERE SERVER = %s"
+    val = (str(guild_id),)
+
+    cur_main.execute(sql, val)
+
+    data = cur_main.fetchall()
+
+    return [x for x in data[0][0].decode().split(";") if x != ""] if data else []
+
+
+def disable_command(guild_id, command):
+    disabled_commands = get_disabled_commands(guild_id)
+
+    if command not in disabled_commands:
+        disabled_commands.append(str(command).lower())
+
+    sql = "UPDATE CONFIG SET DISABLED_COMMANDS = %s WHERE SERVER = %s"
+
+    val_1 = (";".join(disabled_commands), guild_id,)
+
+    cur_main.execute(sql, val_1)
+    conn_main.commit()
+
+
+def enable_command(guild_id, command):
+    disabled_commands = get_disabled_commands(guild_id)
+
+    if isinstance(command, str):
+        if command.lower() in disabled_commands:
+            disabled_commands.remove(command.lower())
+
+    elif isinstance(command, list):
+        for cmd in command:
+            if cmd in disabled_commands:
+                disabled_commands.remove(command.lower())
+
+    sql = "UPDATE CONFIG SET DISABLED_COMMANDS = %s WHERE SERVER = %s"
+    val_1 = (";".join(disabled_commands), guild_id,)
+
+    cur_main.execute(sql, val_1)
+    conn_main.commit()
