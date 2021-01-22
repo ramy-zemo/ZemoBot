@@ -115,20 +115,21 @@ class Listeners(commands.Cog):
         prefix = get_prefix(ctx.guild.id)
         log_message(ctx.guild.id, str(date.today()), ctx)
 
-        ctx.content = ctx.content.replace(prefix, disabled_prefix)
+        ctx.content = ctx.content.replace(prefix, self.bot.command_prefix)
 
-        if str(ctx.content).startswith(disabled_prefix):
+        if str(ctx.content).startswith(self.bot.command_prefix):
             disabled_commands = get_disabled_commands(ctx.guild.id)
-            if ctx.content.replace(disabled_prefix, "") not in disabled_commands:
+            if ctx.content.replace(self.bot.command_prefix, "") not in disabled_commands:
                 await self.bot.process_commands(ctx)
                 await ctx.add_reaction("🔁")
-                if str(ctx.content) != disabled_prefix + "stats":
+                if str(ctx.content) != self.bot.command_prefix + "stats":
                     await self.ranking.add_xp(self, ctx, ctx.author, 25, ctx.guild.id)
         else:
             await self.ranking.add_xp(self, ctx, ctx.author, 5, ctx.guild.id)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
+        prefix = get_prefix(payload.guild_id)
         if str(payload.member) == str(self.bot.user):
             return
 
@@ -137,8 +138,10 @@ class Listeners(commands.Cog):
             message = await discord.utils.get(guild.channels, id=payload.channel_id).fetch_message(payload.message_id)
 
             if str(message.author) == str(payload.member):
-                await self.ranking.add_xp(self, discord.utils.get(guild.channels, id=payload.channel_id),
-                                          message.author, 25, payload.guild_id)
+                message.content = message.content.replace(prefix, self.bot.command_prefix)
+                if message.content != self.bot.command_prefix + "stats":
+                    await self.ranking.add_xp(self, discord.utils.get(guild.channels, id=payload.channel_id),
+                                              message.author, 25, payload.guild_id)
                 again = await self.bot.process_commands(message)
 
     @tasks.loop(seconds=10)

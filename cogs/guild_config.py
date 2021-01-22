@@ -29,7 +29,19 @@ class GuildConfig(commands.Cog):
     @commands.command()
     async def enable_command(self, ctx, command):
         if command in self.bot.user_commands:
-            print(enable_command(ctx.guild.id, command))
+            enable_command(ctx.guild.id, command)
+        else:
+            embed = Embed(color=0x1acdee,
+                          description="Command nicht gefunden. Bitte gib den Command ohne Prefix ein.")
+            embed.set_author(name="Zemo Bot")
+            embed.set_thumbnail(url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+            await ctx.send(embed=embed)
+
+    @commands.is_owner()
+    @commands.command()
+    async def disable_command(self, ctx, command):
+        if command in self.bot.user_commands:
+            disable_command(ctx.guild.id, command)
         else:
             embed = Embed(color=0x1acdee,
                           description="Command nicht gefunden. Bitte gib den Command ohne Prefix ein.")
