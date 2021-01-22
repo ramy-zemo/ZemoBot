@@ -8,6 +8,7 @@ from discord.ext.commands import CommandNotFound, MissingPermissions
 from discord.ext.commands.errors import MemberNotFound, RoleNotFound
 from etc.sql_reference import database_setup, log_message, get_user_voice_time, get_server, get_welcome_role
 from etc.sql_reference import change_msg_welcome_channel, setup_config, add_user_voice_time, deactivate_guild
+from etc.sql_reference import get_prefix
 from etc.sql_reference import insert_user_voice_time, get_main_channel, get_invites_to_user, log_invite, activate_guild
 from etc.error_handling import invalid_argument
 
@@ -110,12 +111,19 @@ class Listeners(commands.Cog):
         if ctx.author == self.bot.user:
             return
 
+        disabled_prefix = "prefix_not_set_wvAfKULVKgApPPO"
+        prefix = get_prefix(ctx.guild.id)
         log_message(ctx.guild.id, str(date.today()), ctx)
 
-        if str(ctx.content) == "$stats":
+        ctx.content = ctx.content.replace(prefix, disabled_prefix)
+
+        if str(ctx.content) == disabled_prefix:
+            print(2)
+            await self.bot.process_commands(ctx)
             return await ctx.add_reaction("🔁")
 
-        if str(ctx.content).startswith("$"):
+        if str(ctx.content).startswith(disabled_prefix):
+            await self.bot.process_commands(ctx)
             await ctx.add_reaction("🔁")
             await self.ranking.add_xp(self, ctx, ctx.author, 25, ctx.guild.id)
         else:

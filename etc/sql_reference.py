@@ -313,6 +313,17 @@ def get_welcome_role_id(guild_id):
     return data[0][0].decode() if data else []
 
 
+def get_prefix(guild_id):
+    sql = "SELECT PREFIX FROM CONFIG WHERE SERVER = %s"
+    val = (str(guild_id),)
+
+    cur_main.execute(sql, val)
+
+    data = cur_main.fetchall()
+
+    return data[0][0].decode() if data else []
+
+
 def get_welcome_role(guild):
     sql = "SELECT WELCOME_ROLE FROM CONFIG WHERE SERVER = %s"
     val = (str(guild.id),)

@@ -17,7 +17,7 @@ handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(me
 logger.addHandler(handler)
 
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix="$", intents=intents, help_command=None,
+bot = commands.Bot(command_prefix="prefix_not_set_wvAfKULVKgApPPO", intents=intents, help_command=None,
                    description="Nice multipurpose Bot, coded by Ramo")
 
 for filename in os.listdir("cogs"):
