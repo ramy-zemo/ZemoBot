@@ -54,9 +54,10 @@ class Font(commands.Cog):
 
         text_ascii = "\n".join(text.split("\n")[1:-1])
 
-        text_discord = "```\n" + text_ascii +  f"\n\nFont: {font} , Keyword: {keyword}" +"```"
+        text_discord = "```\n" + text_ascii +  f"\n\nFont: {font}, Keyword: {keyword}" +"```"
 
         await ctx.send(text_discord)
+
 
 def setup(bot):
     bot.add_cog(Font(bot))
