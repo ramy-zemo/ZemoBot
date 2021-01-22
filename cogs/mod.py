@@ -115,10 +115,14 @@ class Auszeit(commands.Cog):
 
     @has_permissions(ban_members=True)
     @commands.command()
-    async def unban(self, ctx, *args):
-        to_unban = ctx.guild.get_member(int(str(args[0]).strip("<>!@")))
-        await ctx.guild.unban(to_unban)
-        await ctx.send(ctx.message.author.mention + f"Habebe ist erledigt. {to_unban} wurde entbannt.")
+    async def unban(self, ctx, user, *args):
+        for ban_user in await ctx.guild.bans():
+            if str(ban_user.user.name).lower() == user.lower():
+                await ctx.guild.unban(ban_user.user)
+                await ctx.send(ctx.message.author.mention + f" Habebe ist erledigt. {user} wurde entbannt.")
+                break
+        else:
+            await ctx.send("Nutzer nicht gefunden.")
 
 
 def setup(bot):
