@@ -37,7 +37,7 @@ class Info(commands.Cog):
             'level': {"$trashtalk_stats": "Show your Trashtalk Stats.",
                       "$trashtalk_reset": "Reset your Trashtalk Stats.",
                       "$trashtalk_list": "Show Trashtalk Words.",
-                      "$stats": "Get your statistics.", "$invite": "List of your successful invites.",
+                      "$stats (member)": "Get your statistics.", "$invite": "List of your successful invites.",
                       "$info": "Get your Userinformation.", "$rank": "List of Top 5 Server Ranks"},
             'fun': {"$trashtalk (*mention)": "Trashtalk people.", "$trashtalk_add": "Add Words to trashtalk.",
                     "$ping": "Check if bot is alive.",
@@ -74,7 +74,7 @@ class Info(commands.Cog):
             embed.set_thumbnail(url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
 
             for count, option in enumerate(plugins[category]):
-                embed.add_field(name="`" + option + "`", value=plugins[category][option], inline=False)
+                embed.add_field(name=option, value=plugins[category][option], inline=False)
 
             await ctx.send(embed=embed)
 
