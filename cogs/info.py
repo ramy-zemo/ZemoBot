@@ -54,7 +54,8 @@ class Info(commands.Cog):
                     "$ban (*mention)": "Ban Members", "$unban (*mention)": "Unban Members",
                     "$invite (max_age) (max_uses) (temporary) (unique) (reason)": "Create Invites."},
             'media': {"$font_list": "Get List of available Fonts.", "$avatar": "Get your own Discord Profile Picture.",
-                      "$avatar (*mention)": "Get the Discord Avatar from another user."},
+                      "$avatar (*mention)": "Get the Discord Avatar from another user.",
+                      "$server_info": "Get some Server Statistics."},
             'search': {"$faceit_finder (steam_url)": "Find a FaceIt account by Steam identifier."}
         }
 
