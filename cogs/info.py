@@ -104,6 +104,10 @@ class Info(commands.Cog):
                          icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
         await ctx.send(embed=embed)
 
+    @commands.command()
+    async def ping(self, ctx):
+        await ctx.send(f'Pong!  :ping_pong:  In {round(self.bot.latency * 100, 2)} ms')
+
 
 def setup(bot):
     bot.add_cog(Info(bot))
