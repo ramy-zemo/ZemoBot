@@ -118,7 +118,6 @@ class Listeners(commands.Cog):
         ctx.content = ctx.content.replace(prefix, disabled_prefix)
 
         if str(ctx.content) == disabled_prefix:
-            print(2)
             await self.bot.process_commands(ctx)
             return await ctx.add_reaction("🔁")
 
@@ -155,10 +154,7 @@ class Listeners(commands.Cog):
         elif isinstance(error, MissingPermissions):
             return await ctx.send(":hammer: Du bist leider nicht berechtigt diesen Command zu nutzen. :hammer:")
 
-        elif isinstance(error, MemberNotFound):
-            return await invalid_argument(ctx, ctx.message.content.split()[0][1:])
-
-        elif isinstance(error, RoleNotFound):
+        elif isinstance(error, MemberNotFound) or isinstance(error, RoleNotFound):
             return await invalid_argument(ctx, ctx.message.content.split()[0][1:])
 
         raise error
