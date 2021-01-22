@@ -8,7 +8,7 @@ from discord.ext.commands import CommandNotFound, MissingPermissions
 from discord.ext.commands.errors import MemberNotFound, RoleNotFound
 from etc.sql_reference import database_setup, log_message, get_user_voice_time, get_server, get_welcome_role
 from etc.sql_reference import change_msg_welcome_channel, setup_config, add_user_voice_time, deactivate_guild
-from etc.sql_reference import get_prefix
+from etc.sql_reference import get_prefix, get_disabled_commands
 from etc.sql_reference import insert_user_voice_time, get_main_channel, get_invites_to_user, log_invite, activate_guild
 from etc.error_handling import invalid_argument
 
@@ -117,14 +117,13 @@ class Listeners(commands.Cog):
 
         ctx.content = ctx.content.replace(prefix, disabled_prefix)
 
-        if str(ctx.content) == disabled_prefix:
-            await self.bot.process_commands(ctx)
-            return await ctx.add_reaction("🔁")
-
         if str(ctx.content).startswith(disabled_prefix):
-            await self.bot.process_commands(ctx)
-            await ctx.add_reaction("🔁")
-            await self.ranking.add_xp(self, ctx, ctx.author, 25, ctx.guild.id)
+            disabled_commands = get_disabled_commands(ctx.guild.id)
+            if ctx.content.replace(disabled_prefix, "") not in disabled_commands:
+                await self.bot.process_commands(ctx)
+                await ctx.add_reaction("🔁")
+                if str(ctx.content) != disabled_prefix + "stats":
+                    await self.ranking.add_xp(self, ctx, ctx.author, 25, ctx.guild.id)
         else:
             await self.ranking.add_xp(self, ctx, ctx.author, 5, ctx.guild.id)
 

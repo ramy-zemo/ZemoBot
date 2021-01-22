@@ -1,6 +1,6 @@
 from discord import Role, Embed
 from discord.ext import commands
-from etc.sql_reference import change_auto_role
+from etc.sql_reference import change_auto_role, change_prefix
 
 
 class GuildConfig(commands.Cog):
@@ -16,6 +16,14 @@ class GuildConfig(commands.Cog):
         embed.set_thumbnail(url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
         await ctx.send(embed=embed)
 
+    @commands.is_owner()
+    @commands.command()
+    async def set_prefix(self, ctx, prefix):
+        change_prefix(ctx.guild.id, prefix)
+        embed = Embed(color=0x1acdee, description=f"Der Befehlsprefix für {ctx.guild} wurde erfolgreich zu {prefix} geändert.")
+        embed.set_author(name="Zemo Bot")
+        embed.set_thumbnail(url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+        await ctx.send(embed=embed)
 
 def setup(bot):
     bot.add_cog(GuildConfig(bot))
