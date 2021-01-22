@@ -338,6 +338,17 @@ def get_welcome_role(guild):
     return role
 
 
+def get_welcome_message(guild_id):
+    sql = "SELECT WELCOME_TEXT FROM CONFIG WHERE SERVER = %s"
+    val = (str(guild_id),)
+
+    cur_main.execute(sql, val)
+
+    data = cur_main.fetchall()
+
+    return data[0][0].decode() if data else []
+
+
 def get_disabled_commands(guild_id):
     sql = "SELECT DISABLED_COMMANDS FROM CONFIG WHERE SERVER = %s"
     val = (str(guild_id),)
