@@ -332,10 +332,12 @@ def get_welcome_role(guild):
 
     data = cur_main.fetchall()
 
+    role = ""
+
     if data:
         role = discord.utils.get(guild.roles, id=int(data[0][0].decode()))
 
-    return role
+    return role if role else 0
 
 
 def get_welcome_message(guild_id):

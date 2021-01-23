@@ -8,7 +8,7 @@ from discord.ext.commands import CommandNotFound, MissingPermissions
 from discord.ext.commands.errors import MemberNotFound, RoleNotFound
 from etc.sql_reference import database_setup, log_message, get_user_voice_time, get_server, get_welcome_role
 from etc.sql_reference import change_msg_welcome_channel, setup_config, add_user_voice_time, deactivate_guild
-from etc.sql_reference import get_prefix, get_disabled_commands
+from etc.sql_reference import get_prefix, get_disabled_commands, get_welcome_message, get_welcome_channel
 from etc.sql_reference import insert_user_voice_time, get_main_channel, get_invites_to_user, log_invite, activate_guild
 from etc.error_handling import invalid_argument
 
@@ -80,16 +80,16 @@ class Listeners(commands.Cog):
 
         await ctx.add_roles(role)
 
-        channel = discord.utils.get(ctx.guild.channels, name="willkommen")
+        channel = await get_welcome_channel(ctx.guild)
 
         invites_before_join = self.invites[ctx.guild.id]
         invites_after_join = await ctx.guild.invites()
 
         for invite in invites_before_join:
             if invite.uses < self.find_invite_by_code(invites_after_join, invite.code).uses:
-                if channel is not None:
-                    await channel.send(
-                        f'Selam {ctx.mention}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!\n Eingeladen von: {invite.inviter.mention}')
+                welcome_message = get_welcome_message(ctx.guild.id)
+
+                await channel.send(welcome_message)
 
                 self.invites[ctx.guild.id] = invites_after_join
 
