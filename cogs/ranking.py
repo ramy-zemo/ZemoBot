@@ -94,7 +94,7 @@ class Ranking(commands.Cog):
         if not member:
             level = await self.get_lvl(ctx, str(ctx.author))
             rank = await self.get_rank(ctx, str(ctx.author))
-            await create_level_image(ctx, "TTTTTTTT", ctx.author.avatar_url, level, rank)
+            await create_level_image(ctx, ctx.author, ctx.author.avatar_url, level, rank)
         else:
             level = await self.get_lvl(ctx, member)
             rank = await self.get_rank(ctx, member)
