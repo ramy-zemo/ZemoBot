@@ -5,7 +5,7 @@ from datetime import date
 from cogs.ranking import Ranking
 from itertools import cycle
 from discord.ext.commands import CommandNotFound, MissingPermissions
-from discord.ext.commands.errors import MemberNotFound, RoleNotFound
+from discord.ext.commands.errors import MemberNotFound, RoleNotFound, NotOwner
 from etc.sql_reference import database_setup, log_message, get_user_voice_time, get_server, get_welcome_role
 from etc.sql_reference import change_msg_welcome_channel, setup_config, add_user_voice_time, deactivate_guild
 from etc.sql_reference import get_prefix, get_disabled_commands, get_welcome_message, get_welcome_channel
@@ -44,7 +44,7 @@ class Listeners(commands.Cog):
                     insert_user_voice_time(member, minutes)
 
             except KeyError:
-                print("Join Time unknowwn")
+                pass
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
@@ -111,7 +111,6 @@ class Listeners(commands.Cog):
         if ctx.author == self.bot.user:
             return
 
-        disabled_prefix = "prefix_not_set_wvAfKULVKgApPPO"
         prefix = get_prefix(ctx.guild.id)
         log_message(ctx.guild.id, str(date.today()), ctx)
 
@@ -142,7 +141,7 @@ class Listeners(commands.Cog):
                 if message.content != self.bot.command_prefix + "stats":
                     await self.ranking.add_xp(self, discord.utils.get(guild.channels, id=payload.channel_id),
                                               message.author, 25, payload.guild_id)
-                again = await self.bot.process_commands(message)
+                await self.bot.process_commands(message)
 
     @tasks.loop(seconds=10)
     async def change_status(self):
@@ -153,7 +152,7 @@ class Listeners(commands.Cog):
         if isinstance(error, CommandNotFound):
             return await ctx.send(":question: Unbekannter Befehl :question:")
 
-        elif isinstance(error, MissingPermissions):
+        elif isinstance(error, MissingPermissions) or isinstance(error, NotOwner):
             return await ctx.send(":hammer: Du bist leider nicht berechtigt diesen Command zu nutzen. :hammer:")
 
         elif isinstance(error, MemberNotFound) or isinstance(error, RoleNotFound):

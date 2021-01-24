@@ -17,7 +17,6 @@ class Trashtalk(commands.Cog):
         if len(daten) < 10:
             users_to_tt = [ctx.message.guild.get_member(int(str(x).strip("<>!@"))) for x in args]
             with open("trashtalk.txt") as file:
-
                 text = file.readlines()
 
                 for user in users_to_tt:
@@ -27,7 +26,7 @@ class Trashtalk(commands.Cog):
                     except:
                         return await ctx.send(f"Trashtalk an {user.mention} fehlgeschlagen.")
 
-                    log_trashtalk(ctx, datum, ctx.message.author, user)
+                    log_trashtalk(ctx.guild.id, datum, ctx.message.author, user)
         else:
             await ctx.send(f"{ctx.message.author.mention} du hast dein Trash Limit für heute erreicht.")
 

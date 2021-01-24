@@ -37,6 +37,3 @@ async def invalid_argument(ctx, command):
 
     embed.set_author(name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
     await ctx.send(embed=embed)
-
-
-

@@ -1,8 +1,8 @@
 from io import BytesIO
 from PIL import Image, ImageFont, ImageDraw, ImageOps
 from discord.ext import commands
-from etc.sql_reference import get_main_channel, setup_db, get_server_ranks, get_xp_from_user, update_user_xp
-from etc.sql_reference import insert_user_xp, update_user_xp
+from ZemoBot.etc.sql_reference import get_main_channel, setup_db, get_server_ranks, get_xp_from_user, update_user_xp
+from ZemoBot.etc.sql_reference import insert_user_xp, update_user_xp
 import requests
 import discord
 from icecream import ic
@@ -65,21 +65,23 @@ class Ranking(commands.Cog):
 
             img.paste(pb, (130, 75))
 
-            # Create Font
-            font = ImageFont.truetype('fonts/CORBEL.TTF', 115)
-            font_lvl = ImageFont.truetype('fonts/micross.ttf', 130)
+            # Font Positions
+            level_positions = {1: (290, 585), 2: (220, 585), 3: (170, 585), 4: (175, 600), 5: (175, 600), 6: (175, 600)}
+            nxt_level_positions = {1: (1950, 585), 2: (1950, 585), 3: (1950, 585), 4: (1950, 600), 5: (1925, 600), 6: (1925, 600)}
+
+            # Font Sizes
+            level_size = {1: 130, 2: 130, 3: 130, 4: 110, 5: 100, 6: 88}
 
             # Print Name
             draw = ImageDraw.Draw(img)
-            draw.text((760, 130), f"Level: {level}\nRank: #{rank}\n{name}", (26, 205, 238), font=font_lvl)
-            # draw.text((650, 350), name, (68, 180, 132), font=font)
+            draw.text((800, 130), f"Rank: #{rank}\n{name}", (26, 205, 238), font=ImageFont.truetype('fonts/micross.ttf', 130))
 
             # Print Lvl
-            level_show = draw.text((100, 585), f"Level: {level}", (26, 205, 238), font=font_lvl)
-            nxt_level_show = draw.text((1950, 585), f"{level + 1}", (26, 205, 238), font=font_lvl)
+            level_show = draw.text(level_positions[len(str(level))], f"Level: {level}", (26, 205, 238), font=ImageFont.truetype('fonts/micross.ttf', level_size[len(str(level))]))
+            nxt_level_show = draw.text(nxt_level_positions[len(str(level))], f"{level + 1}", (26, 205, 238), font=ImageFont.truetype('fonts/micross.ttf', level_size[len(str(level))]))
 
             # Print XP
-            level_show = draw.text((830, 775), f"XP: {xp_current} / {xp_next_lvl}", (68, 180, 132), font=font)
+            level_show = draw.text((830, 775), f"XP: {xp_current} / {xp_next_lvl}", (68, 180, 132), font=ImageFont.truetype('fonts/CORBEL.TTF', 115))
 
             with BytesIO() as output:
                 img.save(output, format="PNG")
