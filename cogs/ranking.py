@@ -72,15 +72,18 @@ class Ranking(commands.Cog):
 
             # Draw Name
             draw = ImageDraw.Draw(img)
-            draw.text((680, 175), f"Rank: #{rank} Level: {level}\n{name}", (224, 209, 43), font=ImageFont.truetype('fonts/micross.ttf', 130))
+            draw.text((680, 175), f"Rank: #{rank} Level: {level}\n{name}", (224, 209, 43),
+                      font=ImageFont.truetype('fonts/micross.ttf', 130))
 
             # Draw Lvl
-            draw.text(level_positions[len(str(level))], f"{level}", (237, 33, 83), font=ImageFont.truetype('fonts/micross.ttf', 130))
-            draw.text(nxt_level_positions[len(str(level))], f"{level + 1}", (237, 33, 83), font=ImageFont.truetype('fonts/micross.ttf', 130))
+            draw.text(level_positions[len(str(level))], f"{level}", (224, 209, 43),
+                      font=ImageFont.truetype('fonts/micross.ttf', 130))
+            draw.text(nxt_level_positions[len(str(level))], f"{level + 1}", (224, 209, 43),
+                      font=ImageFont.truetype('fonts/micross.ttf', 130))
 
             # Draw XP
-            x = (830 - int((int(len(xp_string) - 12) * 25)), 775)
-            draw.text(x, xp_string, (68, 180, 132), font=ImageFont.truetype('fonts/CORBEL.TTF', 115))
+            xp_position = (830 - int((int(len(xp_string) - 12) * 25)), 775)
+            draw.text(xp_position, xp_string, (68, 180, 132), font=ImageFont.truetype('fonts/CORBEL.TTF', 115))
 
             with BytesIO() as output:
                 img.save(output, format="PNG")
@@ -185,7 +188,8 @@ class Ranking(commands.Cog):
 
         if old_level != new_level:
             channel = await get_main_channel(ctx)
-            await channel.send(f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
+            await channel.send(
+                f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
 
     async def get_xp(self, ctx, user):
         xp_data = get_xp_from_user(ctx.guild.id, user)
