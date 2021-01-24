@@ -152,7 +152,7 @@ def get_user_messages(user):
 def get_user_voice_time(user):
     cur_main.execute("SELECT minutes from VOICE WHERE user=%s", (str(user),))
     data = cur_main.fetchall()
-    return data[0][0] if data else 0
+    return data[0][0] if data and data[0][0] else 0
 
 
 def add_user_voice_time(user, minutes):
@@ -254,10 +254,10 @@ def change_msg_welcome_channel(guild_id, main_channel, welcome_channel):
 
 
 def setup_config(guild_id, main_channel, welcome_channel):
-    sql = "INSERT INTO CONFIG (ACTIVE, SERVER, SPRACHE, PREFIX, MESSAGE_CHANNEL, WELCOME_TEXT, WELCOME_CHANNEL) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    sql = "INSERT INTO CONFIG (ACTIVE, SERVER, SPRACHE, PREFIX, MESSAGE_CHANNEL, WELCOME_TEXT, WELCOME_CHANNEL, DISABLED_COMMANDS) VALUES (%s, %s, %s, %s, %s, %s, %s. %s)"
     val = ("True", str(guild_id), "german", "$", str(main_channel.id),
            'Selam {member}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!\n Eingeladen von: {inviter}',
-           str(welcome_channel.id))
+           str(welcome_channel.id), "")
 
     cur_main.execute(sql, val)
     conn_main.commit()
@@ -310,7 +310,7 @@ def get_welcome_role_id(guild_id):
 
     data = cur_main.fetchall()
 
-    return data[0][0].decode() if data else []
+    return data[0][0].decode() if data and data[0][0] else []
 
 
 def get_prefix(guild_id):
@@ -321,7 +321,7 @@ def get_prefix(guild_id):
 
     data = cur_main.fetchall()
 
-    return data[0][0].decode() if data else []
+    return data[0][0].decode() if data and data[0][0] else "$"
 
 
 def get_welcome_role(guild):
@@ -334,7 +334,7 @@ def get_welcome_role(guild):
 
     role = ""
 
-    if data:
+    if data and data[0][0]:
         role = discord.utils.get(guild.roles, id=int(data[0][0].decode()))
 
     return role if role else 0
@@ -348,7 +348,7 @@ def get_welcome_message(guild_id):
 
     data = cur_main.fetchall()
 
-    return data[0][0].decode() if data else []
+    return data[0][0].decode() if data and data[0][0] else []
 
 
 def get_disabled_commands(guild_id):
@@ -359,7 +359,7 @@ def get_disabled_commands(guild_id):
 
     data = cur_main.fetchall()
 
-    return [x for x in data[0][0].decode().split(";") if x != ""] if data else []
+    return [x for x in data[0][0].decode().split(";") if x != ""] if data and data[0][0] else []
 
 
 def disable_command(guild_id, command):

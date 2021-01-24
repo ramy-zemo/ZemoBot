@@ -39,13 +39,12 @@ class Ranking(commands.Cog):
     @commands.command()
     async def stats(self, ctx, member: discord.Member = 0):
         async def create_level_image(ctx, name, url, level, rank):
-            user = name
             name = str(name)
             role = ctx.message.author.roles
 
             xp_current_lvl = await self.lvl_xp(level)
             xp_next_lvl = await self.lvl_xp(level + 1)
-            xp_current = await self.get_xp(ctx, user)
+            xp_current = await self.get_xp(ctx, name)
 
             step = xp_next_lvl - xp_current_lvl
             state = xp_current - xp_current_lvl
@@ -65,23 +64,23 @@ class Ranking(commands.Cog):
 
             img.paste(pb, (130, 75))
 
+            xp_string = f"XP: {xp_current} / {xp_next_lvl}"
+
             # Font Positions
-            level_positions = {1: (290, 585), 2: (220, 585), 3: (170, 585), 4: (175, 600), 5: (175, 600), 6: (175, 600)}
-            nxt_level_positions = {1: (1950, 585), 2: (1950, 585), 3: (1950, 585), 4: (1950, 600), 5: (1925, 600), 6: (1925, 600)}
+            level_positions = {1: (430, 585), 2: (355, 585), 3: (300, 585), 4: (230, 585)}
+            nxt_level_positions = {1: (1720, 585), 2: (1705, 585), 3: (1700, 585), 4: (1700, 585)}
 
-            # Font Sizes
-            level_size = {1: 130, 2: 130, 3: 130, 4: 110, 5: 100, 6: 88}
-
-            # Print Name
+            # Draw Name
             draw = ImageDraw.Draw(img)
-            draw.text((800, 130), f"Rank: #{rank}\n{name}", (26, 205, 238), font=ImageFont.truetype('fonts/micross.ttf', 130))
+            draw.text((680, 175), f"Rank: #{rank} Level: {level}\n{name}", (224, 209, 43), font=ImageFont.truetype('fonts/micross.ttf', 130))
 
-            # Print Lvl
-            level_show = draw.text(level_positions[len(str(level))], f"Level: {level}", (26, 205, 238), font=ImageFont.truetype('fonts/micross.ttf', level_size[len(str(level))]))
-            nxt_level_show = draw.text(nxt_level_positions[len(str(level))], f"{level + 1}", (26, 205, 238), font=ImageFont.truetype('fonts/micross.ttf', level_size[len(str(level))]))
+            # Draw Lvl
+            draw.text(level_positions[len(str(level))], f"{level}", (237, 33, 83), font=ImageFont.truetype('fonts/micross.ttf', 130))
+            draw.text(nxt_level_positions[len(str(level))], f"{level + 1}", (237, 33, 83), font=ImageFont.truetype('fonts/micross.ttf', 130))
 
-            # Print XP
-            level_show = draw.text((830, 775), f"XP: {xp_current} / {xp_next_lvl}", (68, 180, 132), font=ImageFont.truetype('fonts/CORBEL.TTF', 115))
+            # Draw XP
+            x = (830 - int((int(len(xp_string) - 12) * 25)), 775)
+            draw.text(x, xp_string, (68, 180, 132), font=ImageFont.truetype('fonts/CORBEL.TTF', 115))
 
             with BytesIO() as output:
                 img.save(output, format="PNG")
