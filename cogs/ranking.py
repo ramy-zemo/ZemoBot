@@ -72,8 +72,9 @@ class Ranking(commands.Cog):
 
             # Draw Name
             draw = ImageDraw.Draw(img)
-            draw.text((680, 175), f"Rank: #{rank} Level: {level}\n{name}", (224, 209, 43),
-                      font=ImageFont.truetype('fonts/micross.ttf', 130))
+            name_level_size = 130 if len(name) <= 19 else 130 - (len(name) - 19) * 5
+            draw.text((680, 175), f"Rank: #{rank} Level: {level}", (224, 209, 43), font=ImageFont.truetype('fonts/micross.ttf', name_level_size))
+            draw.text((680, 330), f"{name}", (224, 209, 43), font=ImageFont.truetype('fonts/micross.ttf', name_level_size))
 
             # Draw Lvl
             draw.text(level_positions[len(str(level))], f"{level}", (224, 209, 43),
@@ -93,7 +94,7 @@ class Ranking(commands.Cog):
         if not member:
             level = await self.get_lvl(ctx, str(ctx.author))
             rank = await self.get_rank(ctx, str(ctx.author))
-            await create_level_image(ctx, ctx.author, ctx.author.avatar_url, level, rank)
+            await create_level_image(ctx, "TTTTTTTT", ctx.author.avatar_url, level, rank)
         else:
             level = await self.get_lvl(ctx, member)
             rank = await self.get_rank(ctx, member)
