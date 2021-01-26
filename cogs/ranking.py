@@ -1,8 +1,8 @@
 from io import BytesIO
 from PIL import Image, ImageFont, ImageDraw, ImageOps
 from discord.ext import commands
-from ZemoBot.etc.sql_reference import get_main_channel, setup_db, get_server_ranks, get_xp_from_user, update_user_xp
-from ZemoBot.etc.sql_reference import insert_user_xp, update_user_xp
+from etc.sql_reference import get_main_channel, setup_db, get_server_ranks, get_xp_from_user, update_user_xp
+from etc.sql_reference import insert_user_xp, update_user_xp
 import requests
 import discord
 from icecream import ic

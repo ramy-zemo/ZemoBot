@@ -1,6 +1,6 @@
 from discord.ext import commands
 import discord
-from ZemoBot.etc.error_handling import invalid_argument
+from etc.error_handling import invalid_argument
 from requests import get
 from dotenv import load_dotenv
 import os

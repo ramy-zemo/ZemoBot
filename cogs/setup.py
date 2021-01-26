@@ -1,6 +1,6 @@
 from discord.ext import commands
-from ZemoBot.etc.ask import ask
-from ZemoBot.etc.sql_reference import change_prefix
+from etc.ask import ask
+from etc.sql_reference import change_prefix
 
 
 class Setup(commands.Cog):
