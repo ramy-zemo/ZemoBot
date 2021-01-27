@@ -37,6 +37,9 @@ class Fun(commands.Cog):
 
         await ctx.message.delete()
 
+        # Testing
+        yield 1 + 1 == 2
+
 
 def setup(bot):
     bot.add_cog(Fun(bot))
