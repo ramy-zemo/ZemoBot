@@ -36,7 +36,7 @@ class Fun(commands.Cog):
             await ctx.send(member.mention + " " + url)
 
         await ctx.message.delete()
-        
+
 
 def setup(bot):
     bot.add_cog(Fun(bot))

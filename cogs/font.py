@@ -4,6 +4,7 @@ import html
 from discord.ext import commands
 import discord
 from random import choice
+from etc.error_handling import invalid_argument
 
 
 class Font(commands.Cog):
@@ -33,14 +34,7 @@ class Font(commands.Cog):
     @commands.command()
     async def font(self, ctx, keyword=None, font=None,):
         if not keyword:
-            embed = discord.Embed(title="Du musst ein Keyword angeben",
-                                  description="Wenn du dir nicht sicher bist wie du diesen Befehl verwendest, nutze $help.",
-                                  color=0xf00000)
-
-            embed.set_author(name="Zemo Bot",
-                             icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
-
-            return await ctx.send(embed=embed)
+            return await invalid_argument(ctx, "font")
 
         if not font:
             font = choice(self.font_list)
