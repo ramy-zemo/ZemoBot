@@ -117,10 +117,8 @@ class Listeners(commands.Cog):
         ctx.content = ctx.content.replace(prefix, self.bot.command_prefix)
 
         if str(ctx.content).startswith(self.bot.command_prefix):
-            print("No")
             disabled_commands = get_disabled_commands(ctx.guild.id)
             if ctx.content.replace(self.bot.command_prefix, "") not in disabled_commands:
-                print("yes")
                 await self.bot.process_commands(ctx)
                 await ctx.add_reaction("🔁")
                 if str(ctx.content) != self.bot.command_prefix + "stats" and str(ctx.content).replace(self.bot.command_prefix, "") in self.bot.user_commands:
