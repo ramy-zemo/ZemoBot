@@ -39,6 +39,21 @@ class Ranking(commands.Cog):
     @commands.command()
     async def stats(self, ctx, member: discord.Member = 0):
         async def create_level_image(ctx, name, url, level, rank):
+            colors = {range(0, 10): (155, 155, 155), range(10, 20): (192, 41, 66), range(20, 30): (217, 91, 67),
+                      range(30, 40): (254, 204, 35), range(40, 50): (70, 122, 60), range(50, 60): (78, 141, 219),
+                      range(60, 70): (118, 82, 201), range(70, 80): (194, 82, 201), range(80, 90): (84, 36, 55),
+                      range(90, 100): (153, 124, 82)}
+
+            for color_range in colors:
+                if level <= 100 and level in color_range:
+                    color = colors[color_range]
+                    break
+                elif 1000 > level > 100 and level - int(str(level)[0]) * 100 in color_range:
+                    color = colors[color_range]
+                    break
+            else:
+                color = (155, 155, 155),
+
             name = str(name)
             role = ctx.message.author.roles
 
@@ -67,19 +82,19 @@ class Ranking(commands.Cog):
             xp_string = f"XP: {xp_current} / {xp_next_lvl}"
 
             # Font Positions
-            level_positions = {1: (430, 585), 2: (355, 585), 3: (300, 585), 4: (230, 585)}
+            level_positions = {1: (410, 585), 2: (355, 585), 3: (300, 585), 4: (230, 585)}
             nxt_level_positions = {1: (1720, 585), 2: (1705, 585), 3: (1700, 585), 4: (1700, 585)}
 
             # Draw Name
             draw = ImageDraw.Draw(img)
             name_level_size = 130 if len(name) <= 19 else 130 - (len(name) - 19) * 5
-            draw.text((680, 175), f"Rank: #{rank} Level: {level}", (224, 209, 43), font=ImageFont.truetype('fonts/micross.ttf', name_level_size))
-            draw.text((680, 330), f"{name}", (224, 209, 43), font=ImageFont.truetype('fonts/micross.ttf', name_level_size))
+            draw.text((680, 175), f"Rank: #{rank} Level: {level}", color, font=ImageFont.truetype('fonts/micross.ttf', name_level_size))
+            draw.text((680, 330), f"{name}", color, font=ImageFont.truetype('fonts/micross.ttf', name_level_size))
 
             # Draw Lvl
-            draw.text(level_positions[len(str(level))], f"{level}", (224, 209, 43),
+            draw.text(level_positions[len(str(level))], f"{level}", color,
                       font=ImageFont.truetype('fonts/micross.ttf', 130))
-            draw.text(nxt_level_positions[len(str(level))], f"{level + 1}", (224, 209, 43),
+            draw.text(nxt_level_positions[len(str(level))], f"{level + 1}", color,
                       font=ImageFont.truetype('fonts/micross.ttf', 130))
 
             # Draw XP
