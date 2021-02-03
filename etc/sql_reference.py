@@ -1,6 +1,7 @@
 import discord
 import mysql.connector
 import os
+from icecream import ic
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -151,7 +152,7 @@ def get_user_messages(user):
 def get_user_voice_time(user):
     cur_main.execute("SELECT minutes from VOICE WHERE user=%s", (str(user),))
     data = cur_main.fetchall()
-    return data[0][0].decode() if data else 0
+    return data[0][0] if data and data[0][0] else 0
 
 
 def add_user_voice_time(user, minutes):
@@ -253,10 +254,10 @@ def change_msg_welcome_channel(guild_id, main_channel, welcome_channel):
 
 
 def setup_config(guild_id, main_channel, welcome_channel):
-    sql = "INSERT INTO CONFIG (ACTIVE, SERVER, SPRACHE, PREFIX, MESSAGE_CHANNEL, WELCOME_TEXT, WELCOME_CHANNEL) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    sql = "INSERT INTO CONFIG (ACTIVE, SERVER, SPRACHE, PREFIX, MESSAGE_CHANNEL, WELCOME_TEXT, WELCOME_CHANNEL, DISABLED_COMMANDS) VALUES (%s, %s, %s, %s, %s, %s, %s. %s)"
     val = ("True", str(guild_id), "german", "$", str(main_channel.id),
            'Selam {member}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!\n Eingeladen von: {inviter}',
-           str(welcome_channel.id))
+           str(welcome_channel.id), "")
 
     cur_main.execute(sql, val)
     conn_main.commit()
@@ -290,4 +291,105 @@ def change_prefix(guild_id, prefix):
 
 def clear_categories():
     cur_main.execute("""TRUNCATE TABLE config;""")
+    conn_main.commit()
+
+
+def change_auto_role(guild_id, role_id):
+    sql = "UPDATE CONFIG SET WELCOME_ROLE = %s WHERE SERVER = %s"
+    val = (str(role_id), str(guild_id))
+
+    cur_main.execute(sql, val)
+    conn_main.commit()
+
+
+def get_welcome_role_id(guild_id):
+    sql = "SELECT WELCOME_ROLE FROM CONFIG WHERE SERVER = %s"
+    val = (str(guild_id),)
+
+    cur_main.execute(sql, val)
+
+    data = cur_main.fetchall()
+
+    return data[0][0].decode() if data and data[0][0] else []
+
+
+def get_prefix(guild_id):
+    sql = "SELECT PREFIX FROM CONFIG WHERE SERVER = %s"
+    val = (str(guild_id),)
+
+    cur_main.execute(sql, val)
+
+    data = cur_main.fetchall()
+
+    return data[0][0].decode() if data and data[0][0] else "$"
+
+
+def get_welcome_role(guild):
+    sql = "SELECT WELCOME_ROLE FROM CONFIG WHERE SERVER = %s"
+    val = (str(guild.id),)
+
+    cur_main.execute(sql, val)
+
+    data = cur_main.fetchall()
+
+    role = ""
+
+    if data and data[0][0]:
+        role = discord.utils.get(guild.roles, id=int(data[0][0].decode()))
+
+    return role if role else 0
+
+
+def get_welcome_message(guild_id):
+    sql = "SELECT WELCOME_TEXT FROM CONFIG WHERE SERVER = %s"
+    val = (str(guild_id),)
+
+    cur_main.execute(sql, val)
+
+    data = cur_main.fetchall()
+
+    return data[0][0].decode() if data and data[0][0] else []
+
+
+def get_disabled_commands(guild_id):
+    sql = "SELECT DISABLED_COMMANDS FROM CONFIG WHERE SERVER = %s"
+    val = (str(guild_id),)
+
+    cur_main.execute(sql, val)
+
+    data = cur_main.fetchall()
+
+    return [x for x in data[0][0].decode().split(";") if x != ""] if data and data[0][0] else []
+
+
+def disable_command(guild_id, command):
+    disabled_commands = get_disabled_commands(guild_id)
+
+    if command not in disabled_commands:
+        disabled_commands.append(str(command).lower())
+
+    sql = "UPDATE CONFIG SET DISABLED_COMMANDS = %s WHERE SERVER = %s"
+
+    val_1 = (";".join(disabled_commands), guild_id,)
+
+    cur_main.execute(sql, val_1)
+    conn_main.commit()
+
+
+def enable_command(guild_id, command):
+    disabled_commands = get_disabled_commands(guild_id)
+
+    if isinstance(command, str):
+        if command.lower() in disabled_commands:
+            disabled_commands.remove(command.lower())
+
+    elif isinstance(command, list):
+        for cmd in command:
+            if cmd in disabled_commands:
+                disabled_commands.remove(command.lower())
+
+    sql = "UPDATE CONFIG SET DISABLED_COMMANDS = %s WHERE SERVER = %s"
+    val_1 = (";".join(disabled_commands), guild_id,)
+
+    cur_main.execute(sql, val_1)
     conn_main.commit()

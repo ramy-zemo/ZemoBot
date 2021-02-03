@@ -1,4 +1,5 @@
 from discord.ext import commands
+from discord import Member
 from datetime import date
 from etc.sql_reference import get_user_trashtalk, log_trashtalk, reset_trashtalk
 
@@ -16,7 +17,6 @@ class Trashtalk(commands.Cog):
         if len(daten) < 10:
             users_to_tt = [ctx.message.guild.get_member(int(str(x).strip("<>!@"))) for x in args]
             with open("trashtalk.txt") as file:
-
                 text = file.readlines()
 
                 for user in users_to_tt:
@@ -26,7 +26,7 @@ class Trashtalk(commands.Cog):
                     except:
                         return await ctx.send(f"Trashtalk an {user.mention} fehlgeschlagen.")
 
-                    log_trashtalk(ctx, datum, ctx.message.author, user)
+                    log_trashtalk(ctx.guild.id, datum, ctx.message.author, user)
         else:
             await ctx.send(f"{ctx.message.author.mention} du hast dein Trash Limit für heute erreicht.")
 
@@ -44,19 +44,19 @@ class Trashtalk(commands.Cog):
             await ctx.message.author.send("```\n" + ''.join(file.readlines()) + "\n```")
 
     @commands.command()
-    async def trashtalk_stats(self, ctx, *args):
+    async def trashtalk_stats(self, ctx, member: Member = 0, *args):
         datum = str(date.today())
-        try:
+        if not member:
             result = get_user_trashtalk(ctx.guild.id, ctx.message.author)
-            today = [x[1] for x in result if x[1] == datum]
+        else:
+            result = get_user_trashtalk(ctx.guild.id, member)
 
-            if args:
-                return len(result)
-            else:
-                await ctx.send(f"All time: {len(result)}, Today: {len(today)}")
+        today = [x[1] for x in result if x[1] == datum]
 
-        except sqlite3.OperationalError:
-            await ctx.send("Bisher sind keine Daten vorhanden.")
+        if args:
+            return len(result)
+        else:
+            await ctx.send(f"All time: {len(result)}, Today: {len(today)}")
 
     @commands.command()
     async def trashtalk_reset(self, ctx, *args):

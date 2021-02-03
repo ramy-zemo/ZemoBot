@@ -5,6 +5,7 @@ from etc.sql_reference import get_main_channel, setup_db, get_server_ranks, get_
 from etc.sql_reference import insert_user_xp, update_user_xp
 import requests
 import discord
+from icecream import ic
 
 
 class Ranking(commands.Cog):
@@ -36,15 +37,29 @@ class Ranking(commands.Cog):
             await ctx.send("Bisher sind leider nicht genügend Daten vorhanden.")
 
     @commands.command()
-    async def stats(self, ctx):
+    async def stats(self, ctx, member: discord.Member = 0):
         async def create_level_image(ctx, name, url, level, rank):
-            user = name
+            colors = {range(0, 10): (155, 155, 155), range(10, 20): (192, 41, 66), range(20, 30): (217, 91, 67),
+                      range(30, 40): (254, 204, 35), range(40, 50): (70, 122, 60), range(50, 60): (78, 141, 219),
+                      range(60, 70): (118, 82, 201), range(70, 80): (194, 82, 201), range(80, 90): (84, 36, 55),
+                      range(90, 100): (153, 124, 82)}
+
+            for color_range in colors:
+                if level <= 100 and level in color_range:
+                    color = colors[color_range]
+                    break
+                elif 1000 > level > 100 and level - int(str(level)[0]) * 100 in color_range:
+                    color = colors[color_range]
+                    break
+            else:
+                color = (155, 155, 155),
+
             name = str(name)
             role = ctx.message.author.roles
 
             xp_current_lvl = await self.lvl_xp(level)
             xp_next_lvl = await self.lvl_xp(level + 1)
-            xp_current = await self.get_xp(ctx, user)
+            xp_current = await self.get_xp(ctx, name)
 
             step = xp_next_lvl - xp_current_lvl
             state = xp_current - xp_current_lvl
@@ -64,30 +79,41 @@ class Ranking(commands.Cog):
 
             img.paste(pb, (130, 75))
 
-            # Create Font
-            font = ImageFont.truetype('fonts/CORBEL.TTF', 115)
-            font_lvl = ImageFont.truetype('fonts/micross.ttf', 130)
+            xp_string = f"XP: {xp_current} / {xp_next_lvl}"
 
-            # Print Name
+            # Font Positions
+            level_positions = {1: (410, 585), 2: (355, 585), 3: (300, 585), 4: (230, 585)}
+            nxt_level_positions = {1: (1720, 585), 2: (1705, 585), 3: (1700, 585), 4: (1700, 585)}
+
+            # Draw Name
             draw = ImageDraw.Draw(img)
-            draw.text((760, 130), f"Level: {level}\nRank: #{rank}\n{name}", (26, 205, 238), font=font_lvl)
-            # draw.text((650, 350), name, (68, 180, 132), font=font)
+            name_level_size = 130 if len(name) <= 19 else 130 - (len(name) - 19) * 5
+            draw.text((680, 175), f"Rank: #{rank} Level: {level}", color, font=ImageFont.truetype('fonts/micross.ttf', name_level_size))
+            draw.text((680, 330), f"{name}", color, font=ImageFont.truetype('fonts/micross.ttf', name_level_size))
 
-            # Print Lvl
-            level_show = draw.text((100, 585), f"Level: {level}", (26, 205, 238), font=font_lvl)
-            nxt_level_show = draw.text((1950, 585), f"{level + 1}", (26, 205, 238), font=font_lvl)
+            # Draw Lvl
+            draw.text(level_positions[len(str(level))], f"{level}", color,
+                      font=ImageFont.truetype('fonts/micross.ttf', 130))
+            draw.text(nxt_level_positions[len(str(level))], f"{level + 1}", color,
+                      font=ImageFont.truetype('fonts/micross.ttf', 130))
 
-            # Print XP
-            level_show = draw.text((830, 775), f"XP: {xp_current} / {xp_next_lvl}", (68, 180, 132), font=font)
+            # Draw XP
+            xp_position = (830 - int((int(len(xp_string) - 12) * 25)), 775)
+            draw.text(xp_position, xp_string, (68, 180, 132), font=ImageFont.truetype('fonts/CORBEL.TTF', 115))
 
             with BytesIO() as output:
                 img.save(output, format="PNG")
                 output.seek(0)
                 await ctx.send(file=discord.File(fp=output, filename="image.png"))
 
-        level = await self.get_lvl(ctx, str(ctx.author))
-        rank = await self.get_rank(ctx, str(ctx.author))
-        await create_level_image(ctx, ctx.author, ctx.author.avatar_url, level, rank)
+        if not member:
+            level = await self.get_lvl(ctx, str(ctx.author))
+            rank = await self.get_rank(ctx, str(ctx.author))
+            await create_level_image(ctx, ctx.author, ctx.author.avatar_url, level, rank)
+        else:
+            level = await self.get_lvl(ctx, member)
+            rank = await self.get_rank(ctx, member)
+            await create_level_image(ctx, member, member.avatar_url, level, rank)
 
     async def lvl_xp(self, lvl):
         if lvl == 0:
@@ -112,14 +138,17 @@ class Ranking(commands.Cog):
 
     @commands.is_owner()
     @commands.command()
-    async def set_xp(self, ctx, user, amout):
-        update_user_xp(ctx.guild.id, user, amout)
+    async def set_xp(self, ctx, user: discord.Member, amout):
+        if get_xp_from_user(ctx.guild.id, user):
+            update_user_xp(ctx.guild.id, user, amout)
+        else:
+            insert_user_xp(ctx.guild.id, user, amout)
 
     @commands.is_owner()
     @commands.command()
-    async def add_xp(self, ctx, user, xp):
+    async def add_xp(self, ctx, user, xp, guild_id):
         async def get_xp(ctx, user):
-            data = get_xp_from_user(ctx, user)
+            data = get_xp_from_user(guild_id, user)
             if data:
                 return data[0][2]
             else:
@@ -157,7 +186,7 @@ class Ranking(commands.Cog):
             member = user
 
         user = str(user)
-        user_xp = get_xp_from_user(ctx, user)
+        user_xp = get_xp_from_user(guild_id, user)
 
         if user_xp:
             old_level = await xp_lvl(user_xp[0][2])
@@ -165,20 +194,21 @@ class Ranking(commands.Cog):
             new_level = await xp_lvl(int(uxp) + int(xp))
             new_xp = int(await get_xp(ctx, user)) + int(xp)
 
-            update_user_xp(ctx.guild.id, user, new_xp)
+            update_user_xp(guild_id, user, new_xp)
 
         else:
             old_level = 0
             new_level = await xp_lvl(int(xp))
 
-            insert_user_xp(ctx.guild.id, user, xp)
+            insert_user_xp(guild_id, user, xp)
 
         if old_level != new_level:
-            channel = await get_main_channel(ctx.guild)
-            await channel.send(f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
+            channel = await get_main_channel(ctx)
+            await channel.send(
+                f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
 
     async def get_xp(self, ctx, user):
-        xp_data = get_xp_from_user(ctx, user)
+        xp_data = get_xp_from_user(ctx.guild.id, user)
         if xp_data:
             return xp_data[0][2]
         else:

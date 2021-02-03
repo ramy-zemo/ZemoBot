@@ -5,9 +5,12 @@ from datetime import date
 from cogs.ranking import Ranking
 from itertools import cycle
 from discord.ext.commands import CommandNotFound, MissingPermissions
-from etc.sql_reference import database_setup, log_message, get_user_voice_time, get_server
+from discord.ext.commands.errors import MemberNotFound, RoleNotFound, NotOwner
+from etc.sql_reference import database_setup, log_message, get_user_voice_time, get_server, get_welcome_role
 from etc.sql_reference import change_msg_welcome_channel, setup_config, add_user_voice_time, deactivate_guild
+from etc.sql_reference import get_prefix, get_disabled_commands, get_welcome_message, get_welcome_channel
 from etc.sql_reference import insert_user_voice_time, get_main_channel, get_invites_to_user, log_invite, activate_guild
+from etc.error_handling import invalid_argument
 
 
 class Listeners(commands.Cog):
@@ -30,7 +33,7 @@ class Listeners(commands.Cog):
                 if round(time * -1) <= 60:
                     return
 
-                await self.ranking.add_xp(self, member, member, round(round(time * -1) * 0.05))
+                await self.ranking.add_xp(self, member, member, round(round(time * -1) * 0.05), member.guild.id)
 
                 minutes = int(round(time * - 1) / 60)
 
@@ -41,7 +44,7 @@ class Listeners(commands.Cog):
                     insert_user_voice_time(member, minutes)
 
             except KeyError:
-                print("Join Time unknowwn")
+                pass
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
@@ -73,28 +76,28 @@ class Listeners(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, ctx):
         datum = str(date.today())
-        role = discord.utils.get(ctx.guild.roles, name="KANKA")
+        role = get_welcome_role(ctx.guild)
 
         await ctx.add_roles(role)
 
-        channel = discord.utils.get(ctx.guild.channels, name="willkommen")
+        channel = await get_welcome_channel(ctx.guild)
 
         invites_before_join = self.invites[ctx.guild.id]
         invites_after_join = await ctx.guild.invites()
 
         for invite in invites_before_join:
             if invite.uses < self.find_invite_by_code(invites_after_join, invite.code).uses:
-                if channel is not None:
-                    await channel.send(
-                        f'Selam {ctx.mention}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!\n Eingeladen von: {invite.inviter.mention}')
+                welcome_message = get_welcome_message(ctx.guild.id)
+
+                await channel.send(welcome_message)
 
                 self.invites[ctx.guild.id] = invites_after_join
 
                 if len(get_invites_to_user(ctx.guild.id, ctx)) == 0:
                     log_invite(ctx.guild.id, datum, str(invite.inviter), str(ctx))
-                    await self.ranking.add_xp(self, ctx, invite.inviter, 200)
+                    await self.ranking.add_xp(self, ctx, invite.inviter, 200, ctx.guild.id)
 
-        await self.ranking.add_xp(self, ctx, ctx, 20)
+        await self.ranking.add_xp(self, ctx, ctx, 20, ctx.guild.id)
 
     @commands.Cog.listener()
     async def on_member_remove(self, ctx):
@@ -108,19 +111,24 @@ class Listeners(commands.Cog):
         if ctx.author == self.bot.user:
             return
 
+        prefix = get_prefix(ctx.guild.id)
         log_message(ctx.guild.id, str(date.today()), ctx)
 
-        if str(ctx.content) == "$stats":
-            return await ctx.add_reaction("🔁")
+        ctx.content = ctx.content.replace(prefix, self.bot.command_prefix)
 
-        if str(ctx.content).startswith("$"):
-            await ctx.add_reaction("🔁")
-            await self.ranking.add_xp(self, ctx, ctx.author, 25)
+        if str(ctx.content).startswith(self.bot.command_prefix):
+            disabled_commands = get_disabled_commands(ctx.guild.id)
+            if ctx.content.replace(self.bot.command_prefix, "") not in disabled_commands:
+                await self.bot.process_commands(ctx)
+                await ctx.add_reaction("🔁")
+                if str(ctx.content) != self.bot.command_prefix + "stats" and str(ctx.content).replace(self.bot.command_prefix, "") in self.bot.user_commands:
+                    await self.ranking.add_xp(self, ctx, ctx.author, 25, ctx.guild.id)
         else:
-            await self.ranking.add_xp(self, ctx, ctx.author, 5)
+            await self.ranking.add_xp(self, ctx, ctx.author, 5, ctx.guild.id)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
+        prefix = get_prefix(payload.guild_id)
         if str(payload.member) == str(self.bot.user):
             return
 
@@ -129,9 +137,11 @@ class Listeners(commands.Cog):
             message = await discord.utils.get(guild.channels, id=payload.channel_id).fetch_message(payload.message_id)
 
             if str(message.author) == str(payload.member):
-                await self.ranking.add_xp(self, discord.utils.get(guild.channels, id=payload.channel_id),
-                                          message.author, 25)
-                again = await self.bot.process_commands(message)
+                message.content = message.content.replace(prefix, self.bot.command_prefix)
+                if message.content != self.bot.command_prefix + "stats":
+                    await self.ranking.add_xp(self, discord.utils.get(guild.channels, id=payload.channel_id),
+                                              message.author, 25, payload.guild_id)
+                await self.bot.process_commands(message)
 
     @tasks.loop(seconds=10)
     async def change_status(self):
@@ -142,8 +152,11 @@ class Listeners(commands.Cog):
         if isinstance(error, CommandNotFound):
             return await ctx.send(":question: Unbekannter Befehl :question:")
 
-        elif isinstance(error, MissingPermissions):
+        elif isinstance(error, MissingPermissions) or isinstance(error, NotOwner):
             return await ctx.send(":hammer: Du bist leider nicht berechtigt diesen Command zu nutzen. :hammer:")
+
+        elif isinstance(error, MemberNotFound) or isinstance(error, RoleNotFound):
+            return await invalid_argument(ctx, ctx.message.content.split()[0][1:])
 
         raise error
 

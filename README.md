@@ -46,6 +46,7 @@ Currently available commands (will be extended continuously):
 
 `$twitch_setup (Owner only command)` -> Setup Twitch Streamer, to enable live notifications.
 
+
 `$faceit_finder (steam_url)` -> Find a FaceIt account by Steam identifier.
 
 ## Debug Commands
@@ -53,3 +54,7 @@ Currently available commands (will be extended continuously):
 `$show_roles` -> Print Roles and Role IDs from a Guild
 
 `$show_channels` -> Print Channels and Channels IDs from a Guild
+
+`$set_xp (member) (amout)` -> Set User xp
+
+
