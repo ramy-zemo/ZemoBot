@@ -1,7 +1,8 @@
 # ZemoBot
-
+<p align="center">
+<img src="https://raw.githubusercontent.com/ramy-zemo/ZemoBot/stable/img/coin/Coin_Head.gif" height=200><br>
 Nice Discord Bot in progress
-
+</p>
 
 ## Commands
 
@@ -45,8 +46,8 @@ Currently available commands (will be extended continuously):
 
 `$twitch_setup (Owner only command)` -> Setup Twitch Streamer, to enable live notifications.
 
-`$avatar (member)` -> Get your own Discord Profile Picture.
 
+`$faceit_finder (steam_url)` -> Find a FaceIt account by Steam identifier.
 
 ## Debug Commands
 
@@ -55,4 +56,5 @@ Currently available commands (will be extended continuously):
 `$show_channels` -> Print Channels and Channels IDs from a Guild
 
 `$set_xp (member) (amout)` -> Set User xp
+
 
