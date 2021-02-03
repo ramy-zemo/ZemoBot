@@ -5,7 +5,6 @@ from etc.sql_reference import get_main_channel, setup_db, get_server_ranks, get_
 from etc.sql_reference import insert_user_xp, update_user_xp
 import requests
 import discord
-from icecream import ic
 
 
 class Ranking(commands.Cog):

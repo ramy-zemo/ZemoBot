@@ -13,5 +13,6 @@ class W2G(commands.Cog):
         yt = requests.post("https://w2g.tv/rooms/create.json", data=headers)
         await ctx.send("https://w2g.tv/rooms/" + json.loads(yt.content.decode())["streamkey"])
 
+
 def setup(bot):
     bot.add_cog(W2G(bot))

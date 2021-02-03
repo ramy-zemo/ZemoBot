@@ -81,8 +81,6 @@ class Twitch(commands.Cog):
         except:
             return []
 
-    @commands.command()
-    @commands.is_owner()
     async def twitch_notify(self, guild_id):
         data = await self.get_data()
 

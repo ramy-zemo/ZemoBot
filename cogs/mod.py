@@ -5,7 +5,7 @@ from discord.ext.commands import has_permissions
 from etc.error_handling import invalid_argument
 
 
-class Auszeit(commands.Cog):
+class Mod(commands.Cog):
     def __init__(self, bot):
         self.timeout_roles = [768172546860253194, 768172546104229899]
         self.bot = bot
@@ -131,4 +131,4 @@ class Auszeit(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Auszeit(bot))
+    bot.add_cog(Mod(bot))

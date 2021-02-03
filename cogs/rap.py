@@ -7,11 +7,9 @@ import datetime
 class Rap(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.check.start()
+        self.check_rap_date.start()
+        self.done = []
 
-        self.done= []
-
-    @commands.command()
     async def gds(self):
         channels = []
         for guild in self.bot.guilds:
@@ -20,12 +18,11 @@ class Rap(commands.Cog):
         return channels
 
     @tasks.loop(seconds=30.0)
-    async def check(self):
+    async def check_rap_date(self):
         now = datetime.datetime.now()
         if datetime.datetime.now().strftime("%A") == "Friday" and int(now.hour) == 00 and int(now.minute) > 5:
             await self.rap()
 
-    @commands.command()
     async def rap(self):
         today = str(datetime.datetime.now().strftime("%d.%m.%Y"))
         if today not in self.done:
