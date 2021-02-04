@@ -9,7 +9,7 @@ from math import ceil
 class Mafia(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        
+
     @commands.command()
     async def mafia(self, ctx, *args):
         guild = ctx.message.guild

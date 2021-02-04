@@ -1,6 +1,6 @@
-import discord
 import asyncio
-import re
+
+import discord
 
 
 async def ask_for_thumbs(bot, ctx, title, question):
@@ -18,7 +18,8 @@ async def ask_for_thumbs(bot, ctx, title, question):
         await request.add_reaction(emoji)
 
     def check(reaction, author):
-        return str(reaction.emoji) in ['👍', '👎'] and str(author) != str(bot.user) and str(author) == str(ctx.message.author)
+        return str(reaction.emoji) in ['👍', '👎'] and str(author) != str(bot.user) and str(author) == str(
+            ctx.message.author)
 
     try:
         reaction, user = await bot.wait_for('reaction_add', timeout=300, check=check)
@@ -30,7 +31,8 @@ async def ask_for_thumbs(bot, ctx, title, question):
     return reaction.emoji == '👍'
 
 
-async def ask(author, ask_type, question, text_channel, bot, options=0, max_answers=9999, range_int=[0, 100], msg_type="text", reaction_type="usual", msg_max_length=0, msg_description=""):
+async def ask(author, ask_type, question, text_channel, bot, options=0, max_answers=9999, range_int=[0, 100],
+              msg_type="text", reaction_type="usual", msg_max_length=0, msg_description=""):
     class InvalidInt(Exception):
         pass
 

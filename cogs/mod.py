@@ -5,7 +5,7 @@ from discord.ext.commands import has_permissions
 from etc.error_handling import invalid_argument
 
 
-class Auszeit(commands.Cog):
+class Mod(commands.Cog):
     def __init__(self, bot):
         self.timeout_roles = [768172546860253194, 768172546104229899]
         self.bot = bot
@@ -124,6 +124,11 @@ class Auszeit(commands.Cog):
         else:
             await ctx.send("Nutzer nicht gefunden.")
 
+    @commands.command()
+    async def invite_bot(self, ctx):
+        await ctx.meessage.author.send("https://discord.com/oauth2/authorize?client_id=776629369447252018&scope=bot&permissions=2147483639")
+        await ctx.meessage.author.send("Danke, dass du den Bot nutzen möchtest.")
+
 
 def setup(bot):
-    bot.add_cog(Auszeit(bot))
+    bot.add_cog(Mod(bot))

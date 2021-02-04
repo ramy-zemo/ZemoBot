@@ -208,7 +208,8 @@ def database_setup():
     cur_main.execute('CREATE TABLE IF NOT EXISTS MESSAGE ( server TEXT, datum TEXT, von TEXT, nachricht TEXT)')
     cur_main.execute('CREATE TABLE IF NOT EXISTS TRASHTALK ( server TEXT, datum TEXT, von TEXT, an TEXT)')
     cur_main.execute('CREATE TABLE IF NOT EXISTS VOICE ( user TEXT, minutes INT)')
-    cur_main.execute('CREATE TABLE IF NOT EXISTS PARTNER ( server TEXT, user TEXT)')
+    cur_main.execute('CREATE TABLE IF NOT EXISTS PARTNER (status TEXT, server TEXT, user TEXT, category TEXT,'
+                     ' games TEXT, languages TEXT, gender TEXT, age TEXT, sexuality TEXT, region TEXT, interests TEXT)')
     cur_main.execute('CREATE TABLE IF NOT EXISTS CONFIG ( ACTIVE TEXT, SERVER TEXT, SPRACHE TEXT, PREFIX TEXT,'
                      ' MESSAGE_CHANNEL TEXT, WELCOME_TEXT TEXT, WELCOME_ROLE TEXT,'
                      ' WELCOME_CHANNEL TEXT, DISABLED_COMMANDS TEXT, TWITCH_USERNAME TEXT)')
