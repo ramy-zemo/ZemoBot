@@ -1,5 +1,5 @@
-from discord.ext import commands
 import discord
+from discord.ext import commands
 from etc.ask import ask
 
 
@@ -31,14 +31,59 @@ class Partner(commands.Cog):
         await user.add_roles(text_role)
 
         welcome_message = await text_channel.send(f"Willkommen {user.mention}")
+        await text_channel.send(f"[WARNUNG] Die Partner Funktion befindet sich noch in der Beta,"
+                                f" daher kann es teilweise zu Fehlfunktionen kommen. {user.mention}")
 
         category_option = await ask(ctx.message.author, "reaction_add", "Was suchst du?", text_channel, self.bot,
                                     ["1. Gaming", "2. Dating", "3. Friends"], 1, )
 
-        age_option = await ask(ctx.message.author, "message", "Wie alt bist du?", text_channel, self.bot, range_int=[14, 70],
-                               msg_type="int", max_answers=1)
-        print(age_option)
-        print(category_option)
+        # age_option = await ask(ctx.message.author, "message", "Wie alt bist du?", text_channel, self.bot, range_int=[14, 70], msg_type="int", max_answers=1)
+        # print(age_option)
+
+        category_option_methods = [self.gaming, self.dating, self.friends]
+
+        await category_option_methods[category_option[0] - 1](text_channel, user, guild, text_role)
+
+    async def gaming(self, channel, user, guild, text_role):
+        available_games = ["League of Legends", "Among Us", "Apex Legends", "Fortnite",
+                           "Playerunknown's Battlegrounds", "Tom Clancy's Rainbow Six Siege",
+                           "Counter-Strike: Global Offensive", "Minecraft", "Call of Duty", "Grand Theft Auto"]
+
+        available_languages = ["Chinese", "Spanish", "English", "Hindi", "Arabic", "Russian", "German", "French",
+                               "Bosnian / Serbian / Croatian", "Hungarian"]
+
+        games = await ask(user, "reaction_add", "For which game are you looking for a partner?", channel, self.bot,
+                          options=[str(count + 1) + ". " + x for count, x in enumerate(available_games)])
+
+        languages = await ask(user, "reaction_add", "What languages do you speak?", channel, self.bot,
+                              options=[str(count + 1) + ". " + x for count, x in enumerate(available_languages)])
+
+        await self.write_partner(status="initial", server=str(guild.id), user=str(user), category="gaming",
+                                 games=str(games), languages=str(languages))
+
+    async def dating(self, channel, user, guild, text_role):
+        available_regions = ["Africa", "Asia", "Europe", "North America", "South America", "Australia"]
+        available_interests = ["Swimming", "Cooking", "Gaming", "Sports", "Listening to music", "Playing soccer",
+                               "Reading", "Programming", "Traveling", "Photographing"]
+
+        gender = await ask(user, "reaction_add", "Please choose your gender:", channel, self.bot,
+                           options=["1. Men", "2. Woman"])
+
+        age = await ask(user, "message", "How old are you?", channel, self.bot, range_int=[14, 70], msg_type="int",
+                        max_answers=1)
+
+        region = await ask(user, "reaction_add", "Where do you live?", channel, self.bot,
+                           options=[str(count + 1) + ". " + x for count, x in enumerate(available_regions)],
+                           max_answers=1)
+
+        interests = await ask(user, "reaction_add", "What are your interests?", channel, self.bot,
+                              options=[str(count + 1) + ". " + x for count, x in enumerate(available_interests)])
+
+    async def friends(self, channel, user, guild, text_role):
+        print("3")
+
+    async def write_partner(self, **kwargs):
+        pass
 
 
 def setup(bot):
