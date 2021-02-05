@@ -103,15 +103,16 @@ async def get_main_channel(ctx):
 
     if channel_db:
         channel = discord.utils.get(guild.channels, id=int(channel_db[0][0].decode()))
+        print(channel)
         if not channel:
             main_channel = await guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
-            change_msg_welcome_channel(guild, main_channel, main_channel)
+            change_msg_welcome_channel(guild.id, main_channel, main_channel)
             return main_channel
         else:
             return channel
     else:
         main_channel = await guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
-        change_msg_welcome_channel(guild, main_channel, main_channel)
+        change_msg_welcome_channel(guild.id, main_channel, main_channel)
         return main_channel
 
 
@@ -133,13 +134,13 @@ async def get_welcome_channel(ctx):
         channel = discord.utils.get(guild.channels, id=int(channel_db[0][0].decode()))
         if not channel:
             welcome_channel = await guild.create_text_channel(name="willkommen", overwrites=overwrites_main)
-            change_msg_welcome_channel(guild, welcome_channel, welcome_channel)
+            change_msg_welcome_channel(guild.id, welcome_channel, welcome_channel)
             return welcome_channel
         else:
             return channel
     else:
         welcome_channel = await guild.create_text_channel(name="willkommen", overwrites=overwrites_main)
-        change_msg_welcome_channel(guild, welcome_channel, welcome_channel)
+        change_msg_welcome_channel(guild.id, welcome_channel, welcome_channel)
         return welcome_channel
 
 

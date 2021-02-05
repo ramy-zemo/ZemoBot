@@ -42,11 +42,11 @@ def setup_partner_db():
     cur_main.execute("ALTER TABLE USER_GAMES ADD FOREIGN KEY (user_id) REFERENCES PARTNER_GAMES (user_id)")
     cur_main.execute("ALTER TABLE USER_LANGUAGES ADD FOREIGN KEY (user_id) REFERENCES PARTNER_GAMES (user_id)")
     cur_main.execute("ALTER TABLE USER_GAMES ADD FOREIGN KEY (game_id) REFERENCES GAMES (game_id)")
-    cur_main.execute("ALTER TABLE USER_LANGUAGES ADD FOREIGN KEY (language_id) REFERENCES INTERESTS (interest_id)")
     cur_main.execute("ALTER TABLE USER_LANGUAGES ADD FOREIGN KEY (user_id) REFERENCES PARTNER_FRIEND (user_id)")
     cur_main.execute("ALTER TABLE USER_INTERESTS ADD FOREIGN KEY (user_id) REFERENCES PARTNER_DATING (user_id)")
-    cur_main.execute("ALTER TABLE USER_INTERESTS ADD FOREIGN KEY (interest_id) REFERENCES LANGUAGES (language_id)")
     cur_main.execute("ALTER TABLE USER_INTERESTS ADD FOREIGN KEY (user_id) REFERENCES PARTNER_FRIEND (user_id)")
+    cur_main.execute("ALTER TABLE USER_INTERESTS ADD FOREIGN KEY (user_id) REFERENCES INTERESTS (interest_id)")
+    cur_main.execute("ALTER TABLE USER_LANGUAGES ADD FOREIGN KEY (language_id) REFERENCES LANGUAGES (language_id)")
 
     # Insertions
     available_languages = [('chinese',), ('spanish',), ('english',), ('hindi',), ('arabic',), ('russian',), ('german',),
@@ -68,4 +68,24 @@ def setup_partner_db():
     conn_main.commit()
 
 
-setup_partner_db()
+#setup_partner_db()
+
+
+def insert_gaming(server, user, games, languages, status="initial"):
+    sql = "INSERT INTO PARTNER_GAMES (status, server, user) VALUES (%s, %s, %s);"
+    val = (str(status), str(server), str(user))
+
+    cur_main.execute(sql, val)
+    conn_main.commit()
+
+    cur_main.execute("SELECT LAST_INSERT_ID();")
+    user_id = cur_main.fetchone()[0]
+    print([(user_id, x) for x in languages])
+
+    cur_main.executemany("INSERT INTO user_games (user_id, game_id) VALUES (%s, %s)", [(user_id, x) for x in games])
+    cur_main.executemany("INSERT INTO user_languages (user_id, language_id) VALUES (%s, %s)",
+                         [(user_id, x) for x in languages])
+    conn_main.commit()
+
+
+insert_gaming(1231231232, "Ramo#3413", [1, 3, 4], [1, 2, 3])
