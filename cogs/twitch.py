@@ -16,7 +16,6 @@ class Twitch(commands.Cog):
         self.bot = bot
         self.username = ""
         self.done_notifiys = {}
-        self.token = os.getenv('TWITCH_Authorization')
         self.twitch_loop.start()
 
     @tasks.loop(seconds=5.0)
@@ -67,12 +66,14 @@ class Twitch(commands.Cog):
             return await ctx.send('Ungültiger Twitch Nutzername.\n')
 
     async def get_data(self):
-        headers = {"client-id": os.getenv('TWITCH_CLIENT_ID'), "Authorization": f"Bearer {self.token}"}
+        token_req = requests.post(f"https://id.twitch.tv/oauth2/token?client_id={os.getenv('TWITCH_CLIENT_ID')}&client_secret={os.getenv('TWITCH_CLIENT_SECRET')}&grant_type=client_credentials")
+        token = json.loads(token_req.content.decode())["access_token"]
+        headers = {"client-id": os.getenv('TWITCH_CLIENT_ID'), "Authorization": f"Bearer {token}"}
 
         x = requests.get(f"https://api.twitch.tv/helix/search/channels?query={self.username}", headers=headers)
 
         try:
-            data = json.loads(x.content.decode())["data"][0]
+            data = [x for x in json.loads(x.content.decode())["data"] if x["broadcaster_login"].lower() == self.username.lower()][0]
         except IndexError:
             return []
 
@@ -84,7 +85,7 @@ class Twitch(commands.Cog):
     async def twitch_notify(self, guild_id):
         data = await self.get_data()
 
-        embed = discord.Embed(title=f"{data['display_name']} ist nun Online auf Twitch",
+        embed = discord.Embed(title=f"{data['display_name']} ist nun Live auf Twitch",
                               description=f"{data['title']}\n{f'https://www.twitch.tv/{self.username}'}\n",
                               url=f"https://www.twitch.tv/{self.username}",
                               color=0x9244ff)

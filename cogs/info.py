@@ -68,7 +68,8 @@ class Info(commands.Cog):
             'media': {"font_list": "Get List of available Fonts.",
                       "avatar (mention)": "Get a Discord Profile Picture.",
                       "server_info": "Get some Server Statistics."},
-            'search': {"faceit_finder (steam_url)": "Find a FaceIt account by Steam identifier."}
+            'search': {"faceit_finder (steam_url)": "Find a FaceIt account by Steam identifier.",
+                       "google (member) (text)": "Creates a Google it Yourself Link and shortens it, if shortener API is available."}
         }
 
         if not args:
