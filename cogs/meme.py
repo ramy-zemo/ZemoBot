@@ -327,6 +327,7 @@ class Meme(commands.Cog):
                 return await invalid_argument(ctx, command="gen_meme")
 
         meme = random.choice(self.available_memes)
+
         try:
             top_text = string[:string.index(",")]
         except:
@@ -337,7 +338,7 @@ class Meme(commands.Cog):
 
         if "," in string:
             bottom_text = string[string.index(",") + 1:]
-        elif "," in string:
+        elif ";" in string:
             bottom_text = string[string.index(";") + 1:]
         else:
             bottom_text = " "
