@@ -43,7 +43,7 @@ def get_all_twitch_data():
 def get_twitch_username(guild_id):
     cur_main.execute('SELECT TWITCH_USERNAME FROM CONFIG WHERE SERVER = %s', ([str(guild_id)]))
     data = cur_main.fetchall()
-    return [] if not data else data[0][0].decode()
+    return [] if not data or data[0][0] is None else data[0][0].decode()
 
 
 def update_twitch_username(guild_id, username):
@@ -103,7 +103,6 @@ async def get_main_channel(ctx):
 
     if channel_db:
         channel = discord.utils.get(guild.channels, id=int(channel_db[0][0].decode()))
-        print(channel)
         if not channel:
             main_channel = await guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
             change_msg_welcome_channel(guild.id, main_channel, main_channel)

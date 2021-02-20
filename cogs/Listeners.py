@@ -1,6 +1,6 @@
-from discord.ext import tasks, commands
-from time import perf_counter
 import discord
+from discord import DMChannel
+
 from datetime import date
 from cogs.ranking import Ranking
 from itertools import cycle
@@ -11,6 +11,8 @@ from etc.sql_reference import change_msg_welcome_channel, setup_config, add_user
 from etc.sql_reference import get_prefix, get_disabled_commands, get_welcome_message, get_welcome_channel
 from etc.sql_reference import insert_user_voice_time, get_main_channel, get_invites_to_user, log_invite, activate_guild
 from etc.error_handling import invalid_argument
+from discord.ext import tasks, commands
+from time import perf_counter
 
 
 class Listeners(commands.Cog):
@@ -111,6 +113,9 @@ class Listeners(commands.Cog):
         if ctx.author == self.bot.user:
             return
 
+        if isinstance(ctx.channel, DMChannel):
+            return await ctx.channel.send("Aktuell sind Commands nicht per DM möglich.")
+
         prefix = get_prefix(ctx.guild.id)
         log_message(ctx.guild.id, str(date.today()), ctx)
 
@@ -156,7 +161,7 @@ class Listeners(commands.Cog):
             return await ctx.send(":hammer: Du bist leider nicht berechtigt diesen Command zu nutzen. :hammer:")
 
         elif isinstance(error, MemberNotFound) or isinstance(error, RoleNotFound):
-            return await invalid_argument(ctx, ctx.message.content.split()[0][1:])
+            return await invalid_argument(ctx, ctx.message.content.split()[0].replace(self.bot.command_prefix, ""))
 
         raise error
 

@@ -1,5 +1,6 @@
 import logging
 import os
+
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -16,8 +17,8 @@ handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(me
 logger.addHandler(handler)
 
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix="prefix_not_set_wvAfKULVKgApPPO", intents=intents, help_command=None,
-                   description="Nice multipurpose Bot, coded by Ramo")
+bot = commands.Bot(command_prefix="prefix_not_set_wvAfKULVKgApPPO", intents=intents,
+                   help_command=None, description="Nice multipurpose Bot, coded by Ramo")
 
 bot.user_commands = ["trashtalk", "trashtalk_stats", "trashtalk_reset", "trashtalk_list", "trashtalk_add", "mafia",
                      "ping", "stats", "auszeit", "meme", "font", "font_list", "invite", "w2g", "info", "trump",

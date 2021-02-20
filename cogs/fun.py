@@ -24,16 +24,21 @@ class Fun(commands.Cog):
             return await invalid_argument(ctx, "avatar")
 
     @commands.command()
-    async def google(self, ctx, member: discord.Member, *args):
+    async def google(self, ctx, member: discord.Member = "", *args):
+        try:
+            mention = member.mention
+        except:
+            mention = ""
+
         url = str("https://lmgtfy.app/?q=" + '+'.join(args) + "&iie=1")
 
         if os.getenv("BITLY_API"):
             shortener = bitlyshortener.Shortener(tokens=[os.getenv("BITLY_API")], max_cache_size=256)
             short_url = shortener.shorten_urls([url])
-            await ctx.send(member.mention + " " + short_url[0])
+            await ctx.send(mention + " " + short_url[0])
 
         else:
-            await ctx.send(member.mention + " " + url)
+            await ctx.send(mention + " " + url)
 
         await ctx.message.delete()
 

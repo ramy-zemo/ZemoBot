@@ -309,7 +309,7 @@ class Meme(commands.Cog):
                     try:
                         string = self.old_memes[str(member)]
                     except:
-                        return await invalid_argument(ctx, command="gen_meme")
+                        return await ctx.send(f"Es wurde leider kein altes Meme von {str(member)} gefunden.")
 
                 else:
                     string = str(ctx.message.author)
@@ -327,13 +327,19 @@ class Meme(commands.Cog):
                 return await invalid_argument(ctx, command="gen_meme")
 
         meme = random.choice(self.available_memes)
+
         try:
             top_text = string[:string.index(",")]
         except:
-            top_text = ' '.join(args)
+            try:
+                top_text = string[:string.index(";")]
+            except:
+                top_text = ' '.join(args)
 
         if "," in string:
             bottom_text = string[string.index(",") + 1:]
+        elif ";" in string:
+            bottom_text = string[string.index(";") + 1:]
         else:
             bottom_text = " "
 
