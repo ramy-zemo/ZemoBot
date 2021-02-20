@@ -25,7 +25,12 @@ class Twitch(commands.Cog):
 
         for guild_data in to_check:
             guild_id = guild_data[0]
-            self.username = guild_data[1]
+
+            if guild_data[1]:
+                self.username = guild_data[1]
+            else:
+                continue
+
             data = await self.get_data()
             if not data:
                 return
