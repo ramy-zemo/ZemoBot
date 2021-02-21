@@ -50,6 +50,7 @@ class Listeners(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         main_channel = await get_main_channel(guild)
+
         if get_server(guild.id):
             activate_guild(guild.id)
         else:
@@ -79,9 +80,10 @@ class Listeners(commands.Cog):
         datum = str(date.today())
         role = get_welcome_role(ctx.guild)
 
-        await ctx.add_roles(role)
+        if role:
+            await ctx.add_roles(role)
 
-        channel = await get_welcome_channel(ctx.guild)
+        channel = await get_main_channel(ctx.guild)
 
         invites_before_join = self.invites[ctx.guild.id]
         invites_after_join = await ctx.guild.invites()
@@ -89,9 +91,12 @@ class Listeners(commands.Cog):
         for invite in invites_before_join:
             if invite.uses < self.find_invite_by_code(invites_after_join, invite.code).uses:
                 welcome_message = get_welcome_message(ctx.guild.id)
+                default_welcome_message = f'Selam {ctx.mention}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!\nEingeladen von: {invite.inviter.mention}'
 
-                await channel.send(welcome_message)
-
+                if welcome_message:
+                    await channel.send(welcome_message.format(member=ctx.mention, inviter=invite.inviter.mention))
+                else:
+                    await channel.send(default_welcome_message)
                 self.invites[ctx.guild.id] = invites_after_join
 
                 if len(get_invites_to_user(ctx.guild.id, ctx)) == 0:
