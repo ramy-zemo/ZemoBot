@@ -72,8 +72,13 @@ class GuildConfig(commands.Cog):
 
         if all([True if param in available_parameters else False for param in parameters_in_string]):
             set_welcome_message(ctx.guild.id, message)
+            embed = Embed(color=0x00ff00,
+                          description="Willkommensnachricht erfolgreich geändert.")
+            embed.set_author(name="Zemo Bot")
+            embed.set_thumbnail(url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+            await ctx.send(embed=embed)
         else:
-            embed = Embed(color=0x1acdee,
+            embed = Embed(color=0xff0000,
                           description="Falsche Parameter übergeben. Mögliche Parameter:\n {member} {inviter}")
             embed.set_author(name="Zemo Bot")
             embed.set_thumbnail(url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")

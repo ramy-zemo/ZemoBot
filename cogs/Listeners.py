@@ -101,7 +101,8 @@ class Listeners(commands.Cog):
 
                 if len(get_invites_to_user(ctx.guild.id, ctx)) == 0:
                     log_invite(ctx.guild.id, datum, str(invite.inviter), str(ctx))
-                    await self.ranking.add_xp(self, ctx, invite.inviter, 200, ctx.guild.id)
+                    if str(invite.inviter) != str(self.bot.user):
+                        await self.ranking.add_xp(self, ctx, invite.inviter, 200, ctx.guild.id)
 
         await self.ranking.add_xp(self, ctx, ctx, 20, ctx.guild.id)
 

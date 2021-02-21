@@ -25,7 +25,7 @@ bot.user_commands = ["trashtalk", "trashtalk_stats", "trashtalk_reset", "trashta
                      "trump_img", "gen_meme", "twitch_setup", "show_roles", "show_channels", "set_xp", "avatar", "help",
                      "invite_bot", "ban", "kick", "unban", "faceit_finder", "set_auto_role", "google", "set_prefix",
                      "enable_command", "disable_command", "invites", "server_info", "partner", "coin", "pick_number",
-                     "setup_db", "rank", "add_xp", "get_rank", "setup", "setup_twitch"]
+                     "setup_db", "rank", "add_xp", "get_rank", "setup", "setup_twitch", "set_welcome_message"]
 
 for filename in os.listdir("cogs"):
     if filename.endswith(".py") and filename != "__init__.py":

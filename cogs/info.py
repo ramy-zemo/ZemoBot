@@ -74,7 +74,8 @@ class Info(commands.Cog):
             'config': {"set_auto_role (*mention_role)": "Determine the role that each new member automatically receives.",
                        "set_prefix (*prefix)": "Determine the Bot Prefix on your Server.",
                        "enable_command (*command)": "Enable the use of a specific command on your server.",
-                       "disable_command (*command)": "Disable the use of a specific command on your server."}
+                       "disable_command (*command)": "Disable the use of a specific command on your server.",
+                       "set_welcome_message (*message)": ""}
         }
 
         if not args:
