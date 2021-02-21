@@ -21,7 +21,7 @@ bot = commands.Bot(command_prefix="prefix_not_set_wvAfKULVKgApPPO", intents=inte
                    help_command=None, description="Nice multipurpose Bot, coded by Ramo")
 
 bot.user_commands = ["trashtalk", "trashtalk_stats", "trashtalk_reset", "trashtalk_list", "trashtalk_add", "mafia",
-                     "ping", "stats", "auszeit", "meme", "font", "font_list", "invite", "w2g", "info", "trump",
+                     "ping", "stats", "auszeit", "meme", "font", "font_list", "create_invite", "w2g", "info", "trump",
                      "trump_img", "gen_meme", "twitch_setup", "show_roles", "show_channels", "set_xp", "avatar", "help",
                      "invite_bot", "ban", "kick", "unban", "faceit_finder", "set_auto_role", "google", "set_prefix",
                      "enable_command", "disable_command", "invites", "server_info", "partner", "coin", "pick_number",

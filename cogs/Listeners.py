@@ -1,5 +1,4 @@
 import discord
-from discord import DMChannel
 
 from datetime import date
 from cogs.ranking import Ranking
@@ -113,7 +112,7 @@ class Listeners(commands.Cog):
         if ctx.author == self.bot.user:
             return
 
-        if isinstance(ctx.channel, DMChannel):
+        if isinstance(ctx.channel, discord.DMChannel):
             return await ctx.channel.send("Aktuell sind Commands nicht per DM möglich.")
 
         prefix = get_prefix(ctx.guild.id)

@@ -1,10 +1,11 @@
 import datetime
+
 import discord
 import psutil
 from discord.ext import commands
 from etc.error_handling import invalid_argument
-from etc.sql_reference import get_user_messages, get_user_voice_time, get_user_trashtalk, get_user_invites, get_prefix
 from etc.sql_reference import get_disabled_commands
+from etc.sql_reference import get_user_messages, get_user_voice_time, get_user_trashtalk, get_user_invites, get_prefix
 
 
 class Info(commands.Cog):
@@ -43,9 +44,9 @@ class Info(commands.Cog):
             'level': {"trashtalk_stats": "Show your Trashtalk Stats.",
                       "trashtalk_reset": "Reset your Trashtalk Stats.",
                       "trashtalk_list": "Show Trashtalk Words.",
-                      "stats (member)": "Get your statistics.",
+                      "stats (mention)": "Get your statistics.",
                       "invites": "List of your successful invites.",
-                      "info (member)": "Get your Userinformation.",
+                      "info (mention)": "Get your Userinformation.",
                       "rank": "List of Top 5 Server Ranks"},
             'fun': {"trashtalk (*mention)": "Trashtalk people.",
                     "trashtalk_add": "Add Words to trashtalk.",
@@ -63,13 +64,17 @@ class Info(commands.Cog):
                     "kick (*mention)": "Kick Members.",
                     "ban (*mention)": "Ban Members",
                     "unban (*mention)": "Unban Members",
-                    "invite (max_age) (max_uses) (temporary) (unique) (reason)": "Create Invites.",
+                    "create_invite (max_age) (max_uses) (temporary) (unique) (reason)": "Create Invites.",
                     "invite_bot": "Get an invite to invite the Bot to another server."},
             'media': {"font_list": "Get List of available Fonts.",
                       "avatar (mention)": "Get a Discord Profile Picture.",
                       "server_info": "Get some Server Statistics."},
             'search': {"faceit_finder (steam_url)": "Find a FaceIt account by Steam identifier.",
-                       "google (member) (text)": "Creates a Google it Yourself Link and shortens it, if shortener API is available."}
+                       "google (mention) (text)": "Creates a Google it Yourself Link and shortens it, if shortener API is available."},
+            'config': {"set_auto_role (*mention_role)": "Determine the role that each new member automatically receives.",
+                       "set_prefix (*prefix)": "Determine the Bot Prefix on your Server.",
+                       "enable_command (*command)": "Enable the use of a specific command on your server.",
+                       "disable_command (*command)": "Disable the use of a specific command on your server."}
         }
 
         if not args:
@@ -82,6 +87,7 @@ class Info(commands.Cog):
             embed.add_field(name="Moderation", value=f"`{prefix}help Mod` ", inline=True)
             embed.add_field(name="Media", value=f"`{prefix}help Media` ", inline=True)
             embed.add_field(name="Search", value=f"`{prefix}help Search` ", inline=True)
+            embed.add_field(name="Config", value=f"`{prefix}help Config` ", inline=True)
             await ctx.send(embed=embed)
 
         elif len(args) == 1 and args[0].lower() in plugins:
@@ -108,11 +114,14 @@ class Info(commands.Cog):
 
     @commands.command()
     async def server_info(self, ctx):
-        embed = discord.Embed(title="Server Infos", description="Informationen des Discord Bot Servers:", color=0x1acdee)
+        embed = discord.Embed(title="Server Infos", description="Informationen des Discord Bot Servers:",
+                              color=0x1acdee)
 
         embed.add_field(name="CPU Percent:", value=psutil.cpu_percent(interval=1), inline=False)
         embed.add_field(name="RAM Total:", value=round(psutil.virtual_memory()[0] / 1000000000, 2), inline=False)
-        embed.add_field(name="Boot Time:", value=datetime.datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d %H:%M:%S"), inline=False)
+        embed.add_field(name="Boot Time:",
+                        value=datetime.datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d %H:%M:%S"),
+                        inline=False)
         embed.add_field(name="Processes running:", value=str(len(psutil.pids())), inline=False)
 
         embed.set_author(name="Zemo Bot",

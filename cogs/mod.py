@@ -7,7 +7,6 @@ from etc.error_handling import invalid_argument
 
 class Mod(commands.Cog):
     def __init__(self, bot):
-        self.timeout_roles = [768172546860253194, 768172546104229899]
         self.bot = bot
 
     @commands.command()
@@ -19,7 +18,7 @@ class Mod(commands.Cog):
 
     @has_permissions(create_instant_invite=True)
     @commands.command()
-    async def invite(self, ctx, max_age=0, max_uses=0, temporary=False, unique=False, reason="", ):
+    async def create_invite(self, ctx, max_age=0, max_uses=0, temporary=False, unique=False, reason="", ):
         await ctx.send(
             await ctx.channel.create_invite(max_age=max_age, max_uses=max_uses, temporary=temporary, unique=unique,
                                             reason=reason))
@@ -30,69 +29,66 @@ class Mod(commands.Cog):
         non_removable_roles = [discord.utils.get(ctx.message.guild.roles, name="Server Booster"),
                                discord.utils.get(ctx.message.guild.roles, name="@everyone")]
 
-        author_roles = ctx.message.author.roles
-        timeout_roles = [discord.utils.get(ctx.message.guild.roles, id=x) for x in self.timeout_roles]
         voice_before_game = []
-        if any([True for x in author_roles if x in timeout_roles]):
-            users_to_timeout = member
-            seconds_to_kick = int(args[0])
+        users_to_timeout = member
+        seconds_to_kick = int(args[0])
 
-            if seconds_to_kick < 30:
-                return await invalid_argument(ctx, "auszeit")
+        if seconds_to_kick < 30:
+            return await invalid_argument(ctx, "auszeit")
 
-            banned_role = await ctx.message.guild.create_role(name="banned")
-            await banned_role.edit(colour=0xff0000)
+        banned_role = await ctx.message.guild.create_role(name="banned")
+        await banned_role.edit(colour=0xff0000)
 
-            overwrites_auszeit = {
-                ctx.message.guild.default_role: discord.PermissionOverwrite(read_messages=False),
-                banned_role: discord.PermissionOverwrite(read_messages=True, read_message_history=True)
-            }
+        overwrites_auszeit = {
+            ctx.message.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            banned_role: discord.PermissionOverwrite(read_messages=True, read_message_history=True)
+        }
 
-            auszeit_channel = await ctx.message.guild.create_text_channel('auszeit', overwrites=overwrites_auszeit)
+        auszeit_channel = await ctx.message.guild.create_text_channel('auszeit', overwrites=overwrites_auszeit)
 
-            voice_channel = await ctx.message.guild.create_voice_channel('auszeit', overwrites=overwrites_auszeit)
+        voice_channel = await ctx.message.guild.create_voice_channel('auszeit', overwrites=overwrites_auszeit)
 
-            # Check if User is in Voice channel
-            in_voice = users_to_timeout.voice
-            if in_voice is not None:
-                voice_before_game.append(ctx.message.author.voice.channel)
-                await users_to_timeout.edit(voice_channel=voice_channel)
+        # Check if User is in Voice channel
+        in_voice = users_to_timeout.voice
+        if in_voice is not None:
+            voice_before_game.append(ctx.message.author.voice.channel)
+            await users_to_timeout.edit(voice_channel=voice_channel)
 
-            # Delete old Roles and save them
-            roles_before = {}
-            real_role = []
+        # Delete old Roles and save them
+        roles_before = {}
+        real_role = []
 
-            for role in users_to_timeout.roles:
-                if role not in non_removable_roles:
-                    real_role.append(role)
+        for role in users_to_timeout.roles:
+            if role not in non_removable_roles:
+                real_role.append(role)
 
-            roles_before[users_to_timeout] = real_role
+        roles_before[users_to_timeout] = real_role
 
-            await users_to_timeout.remove_roles(*real_role)
-            await users_to_timeout.add_roles(discord.utils.get(ctx.message.guild.roles, name="banned"))
+        await users_to_timeout.remove_roles(*real_role)
+        await users_to_timeout.add_roles(discord.utils.get(ctx.message.guild.roles, name="banned"))
 
-            await asyncio.sleep(5)
+        await asyncio.sleep(5)
 
-            await auszeit_channel.send("https://www.youtube.com/watch?v=NPvFkXVi5mM")
+        await auszeit_channel.send("https://www.youtube.com/watch?v=NPvFkXVi5mM")
 
-            embed = discord.Embed(title="Auszeit", color=0xff0000)
-            embed.set_author(name="Zemo Bot",
-                             icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
-            embed.add_field(name="Deine Auszeit", value="Digga wie gehts auf der Stillen Treppe?", inline=False)
-            embed.set_footer(text="Piss dich digga")
-            await auszeit_channel.send(embed=embed)
-            await auszeit_channel.send("Digga willkommen auf der Stillen Treppe." + users_to_timeout.mention)
+        embed = discord.Embed(title="Auszeit", color=0xff0000)
+        embed.set_author(name="Zemo Bot",
+                         icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+        embed.add_field(name="Deine Auszeit", value="Digga wie gehts auf der Stillen Treppe?", inline=False)
+        embed.set_footer(text="Piss dich digga")
+        await auszeit_channel.send(embed=embed)
+        await auszeit_channel.send("Digga willkommen auf der Stillen Treppe." + users_to_timeout.mention)
 
-            await asyncio.sleep(seconds_to_kick)
+        await asyncio.sleep(seconds_to_kick)
 
-            await users_to_timeout.remove_roles(banned_role)
-            await users_to_timeout.add_roles(*roles_before[users_to_timeout])
+        await users_to_timeout.remove_roles(banned_role)
+        await users_to_timeout.add_roles(*roles_before[users_to_timeout])
 
-            if in_voice is not None:
-                await users_to_timeout.edit(voice_channel=voice_before_game[0])
+        if in_voice is not None:
+            await users_to_timeout.edit(voice_channel=voice_before_game[0])
 
-            await auszeit_channel.delete()
-            await voice_channel.delete()
+        await auszeit_channel.delete()
+        await voice_channel.delete()
 
     @has_permissions(kick_members=True)
     @commands.command()
