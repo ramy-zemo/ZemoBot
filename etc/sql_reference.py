@@ -256,9 +256,7 @@ def change_msg_welcome_channel(guild_id, main_channel, welcome_channel):
 
 def setup_config(guild_id, main_channel, welcome_channel):
     sql = "INSERT INTO CONFIG (ACTIVE, SERVER, SPRACHE, PREFIX, MESSAGE_CHANNEL, WELCOME_TEXT, WELCOME_CHANNEL, DISABLED_COMMANDS) VALUES (%s, %s, %s, %s, %s, %s, %s. %s)"
-    val = ("True", str(guild_id), "german", "$", str(main_channel.id),
-           'Selam {member}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!\n Eingeladen von: {inviter}',
-           str(welcome_channel.id), "")
+    val = ("True", str(guild_id), "german", "$", str(main_channel.id), '', str(welcome_channel.id), "")
 
     cur_main.execute(sql, val)
     conn_main.commit()
@@ -349,7 +347,16 @@ def get_welcome_message(guild_id):
 
     data = cur_main.fetchall()
 
-    return data[0][0].decode() if data and data[0][0] else []
+    return data[0][0].decode() if data and data[0][0] else ""
+
+
+def set_welcome_message(guild_id, welcome_msg):
+    sql = "UPDATE CONFIG SET WELCOME_TEXT = %s WHERE SERVER = %s"
+    val = (str(welcome_msg), str(guild_id))
+
+    cur_main.execute(sql, val)
+
+    conn_main.commit()
 
 
 def get_disabled_commands(guild_id):
