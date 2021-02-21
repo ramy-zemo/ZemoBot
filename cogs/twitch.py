@@ -17,6 +17,11 @@ class Twitch(commands.Cog):
         self.username = ""
         self.done_notifications = {}
         self.twitch_loop.start()
+        self.get_twitch_token()
+
+    def get_twitch_token(self):
+        token_req = requests.post(f"https://id.twitch.tv/oauth2/token?client_id={os.getenv('TWITCH_CLIENT_ID')}&client_secret={os.getenv('TWITCH_CLIENT_SECRET')}&grant_type=client_credentials")
+        self.token = json.loads(token_req.content.decode())["access_token"]
 
     @tasks.loop(seconds=5.0)
     async def twitch_loop(self):
@@ -70,21 +75,22 @@ class Twitch(commands.Cog):
             return await ctx.send('Ungültiger Twitch Nutzername.\n')
 
     async def get_data(self):
-        token_req = requests.post(f"https://id.twitch.tv/oauth2/token?client_id={os.getenv('TWITCH_CLIENT_ID')}&client_secret={os.getenv('TWITCH_CLIENT_SECRET')}&grant_type=client_credentials")
-        token = json.loads(token_req.content.decode())["access_token"]
-        headers = {"client-id": os.getenv('TWITCH_CLIENT_ID'), "Authorization": f"Bearer {token}"}
-
-        channel_query = requests.get(f"https://api.twitch.tv/helix/search/channels?query={self.username}", headers=headers)
-
         try:
-            data = [x for x in json.loads(channel_query.content.decode())["data"] if x["broadcaster_login"].lower() == self.username.lower()][0]
-        except IndexError:
-            return []
+            headers = {"client-id": os.getenv('TWITCH_CLIENT_ID'), "Authorization": f"Bearer {self.token}"}
 
-        try:
-            return data if data['display_name'].lower() == self.username.lower() else []
+            channel_query = requests.get(f"https://api.twitch.tv/helix/search/channels?query={self.username}", headers=headers)
+
+            try:
+                data = [x for x in json.loads(channel_query.content.decode())["data"] if x["broadcaster_login"].lower() == self.username.lower()][0]
+            except IndexError:
+                return []
+
+            try:
+                return data if data['display_name'].lower() == self.username.lower() else []
+            except:
+                return []
         except:
-            return []
+            self.get_twitch_token()
 
     async def twitch_notify(self, guild_id):
         data = await self.get_data()

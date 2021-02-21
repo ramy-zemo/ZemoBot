@@ -9,24 +9,22 @@ class Trashtalk(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def trashtalk(self, ctx, *args):
+    async def trashtalk(self, ctx, member: Member):
         datum = str(date.today())
         result = get_user_trashtalk(ctx.guild.id, ctx.message.author)
         daten = [x[0] for x in result if x[0] == datum]
 
         if len(daten) < 10:
-            users_to_tt = [ctx.message.guild.get_member(int(str(x).strip("<>!@"))) for x in args]
             with open("trashtalk.txt") as file:
                 text = file.readlines()
 
-                for user in users_to_tt:
-                    try:
-                        for t in text:
-                            await user.send(t)
-                    except:
-                        return await ctx.send(f"Trashtalk an {user.mention} fehlgeschlagen.")
+                try:
+                    for t in text:
+                        await member.send(t)
+                except:
+                    return await ctx.send(f"Trashtalk an {member.mention} fehlgeschlagen.")
 
-                    log_trashtalk(ctx.guild.id, datum, ctx.message.author, user)
+                log_trashtalk(ctx.guild.id, datum, ctx.message.author, member)
         else:
             await ctx.send(f"{ctx.message.author.mention} du hast dein Trash Limit für heute erreicht.")
 
