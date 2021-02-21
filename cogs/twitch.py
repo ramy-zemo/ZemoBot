@@ -75,11 +75,13 @@ class Twitch(commands.Cog):
             return await ctx.send('Ungültiger Twitch Nutzername.\n')
 
     async def get_data(self):
-        try:
-            headers = {"client-id": os.getenv('TWITCH_CLIENT_ID'), "Authorization": f"Bearer {self.token}"}
+        headers = {"client-id": os.getenv('TWITCH_CLIENT_ID'), "Authorization": f"Bearer {self.token}"}
 
-            channel_query = requests.get(f"https://api.twitch.tv/helix/search/channels?query={self.username}", headers=headers)
+        channel_query = requests.get(f"https://api.twitch.tv/helix/search/channels?query={self.username}", headers=headers)
 
+        print(channel_query.status_code)
+
+        if channel_query.status_code == 200:
             try:
                 data = [x for x in json.loads(channel_query.content.decode())["data"] if x["broadcaster_login"].lower() == self.username.lower()][0]
             except IndexError:
@@ -89,7 +91,7 @@ class Twitch(commands.Cog):
                 return data if data['display_name'].lower() == self.username.lower() else []
             except:
                 return []
-        except:
+        else:
             self.get_twitch_token()
 
     async def twitch_notify(self, guild_id):
