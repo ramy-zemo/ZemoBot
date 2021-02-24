@@ -7,6 +7,8 @@ import json
 import discord
 import asyncio
 import os
+from time import sleep
+
 
 load_dotenv()
 
@@ -25,7 +27,6 @@ class Twitch(commands.Cog):
 
     @tasks.loop(seconds=5.0)
     async def twitch_loop(self):
-        await asyncio.sleep(5)
         to_check = get_all_twitch_data()
 
         for guild_data in to_check:
@@ -78,8 +79,6 @@ class Twitch(commands.Cog):
         headers = {"client-id": os.getenv('TWITCH_CLIENT_ID'), "Authorization": f"Bearer {self.token}"}
 
         channel_query = requests.get(f"https://api.twitch.tv/helix/search/channels?query={self.username}", headers=headers)
-
-        print(channel_query.status_code)
 
         if channel_query.status_code == 200:
             try:

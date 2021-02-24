@@ -29,7 +29,7 @@ def decode_data(data):
 
 
 def get_server(guild_id):
-    cur_main.execute('SELECT ACTIVE FROM CONFIG WHERE SERVER = %s', ([str(guild_id)]))
+    cur_main.execute('SELECT ACTIVE FROM CONFIG WHERE GUILD_ID = %s', ([str(guild_id)]))
     data = cur_main.fetchall()
     return [] if not data else data[0][0].decode()
 
@@ -203,16 +203,33 @@ async def get_user_invites(guild_id, user, ctx=0):
 
 
 def database_setup():
-    cur_main.execute('CREATE TABLE IF NOT EXISTS INVITES ( server TEXT, datum TEXT, von TEXT, an TEXT)')
-    cur_main.execute('CREATE TABLE IF NOT EXISTS LEVEL ( server TEXT, user TEXT, xp INT)')
-    cur_main.execute('CREATE TABLE IF NOT EXISTS MESSAGE ( server TEXT, datum TEXT, von TEXT, nachricht TEXT)')
-    cur_main.execute('CREATE TABLE IF NOT EXISTS TRASHTALK ( server TEXT, datum TEXT, von TEXT, an TEXT)')
-    cur_main.execute('CREATE TABLE IF NOT EXISTS VOICE ( user TEXT, minutes INT)')
-    cur_main.execute('CREATE TABLE IF NOT EXISTS PARTNER (status TEXT, server TEXT, user TEXT, category TEXT,'
-                     ' games TEXT, languages TEXT, gender TEXT, age TEXT, sexuality TEXT, region TEXT, interests TEXT)')
-    cur_main.execute('CREATE TABLE IF NOT EXISTS CONFIG ( ACTIVE TEXT, SERVER TEXT, SPRACHE TEXT, PREFIX TEXT,'
-                     ' MESSAGE_CHANNEL TEXT, WELCOME_TEXT TEXT, WELCOME_ROLE TEXT,'
-                     ' WELCOME_CHANNEL TEXT, DISABLED_COMMANDS TEXT, TWITCH_USERNAME TEXT)')
+    cur_main.execute("CREATE TABLE IF NOT EXISTS `CONFIG` ( `ID` INT PRIMARY KEY AUTO_INCREMENT, `ACTIVE` boolean,"
+                     " `GUILD_ID` INT, `SPRACHE` TEXT, `PREFIX` TEXT, `MESSAGE_CHANNEL_ID` INT,"
+                     " `WELCOME_CHANNEL_ID` INT, `WELCOME_MESSAGE` TEXT, `WELCOME_ROLE_ID` INT,"
+                     " `TWITCH_USERNAME` TEXT);")
+
+    cur_main.execute("CREATE TABLE IF NOT EXISTS `INVITES` ( `ID` INT, `DATE` DATE, `FROM_USER_ID` INT,"
+                     " `TO_USER_ID` INT, CONSTRAINT `INVITE_SERVER` FOREIGN KEY (ID) REFERENCES CONFIG (ID));")
+
+    cur_main.execute("CREATE TABLE IF NOT EXISTS `LEVEL` ( `ID` INT, `USER_ID` INT, `XP` INT,"
+                     " CONSTRAINT `LEVEL_SERVER` FOREIGN KEY (ID) REFERENCES CONFIG (ID));")
+
+    cur_main.execute("CREATE TABLE IF NOT EXISTS `MESSAGE` ( `ID` INT, `DATE` DATE, `USER_ID` INT, `MESSAGE` TEXT,"
+                     " CONSTRAINT `MESSAGE_SERVER` FOREIGN KEY (ID) REFERENCES CONFIG (ID));")
+
+    cur_main.execute("CREATE TABLE IF NOT EXISTS `TRASHTALK` ( `ID` INT, `DATE` DATE, `FROM_USER_ID` INT,"
+                     " `TO_USER_ID` INT, CONSTRAINT `TRASHTALK_SERVER` FOREIGN KEY (ID) REFERENCES CONFIG (ID));")
+
+    cur_main.execute("CREATE TABLE IF NOT EXISTS `VOICE` ( `ID` INT, `USER_ID` INT, `minutes` INT,"
+                     " CONSTRAINT `VOICE_SERVER` FOREIGN KEY (ID) REFERENCES CONFIG (ID));")
+
+    cur_main.execute("CREATE TABLE IF NOT EXISTS `COMMANDS` ( `ID` INT PRIMARY KEY AUTO_INCREMENT, `COMMAND` TEXT,"
+                     " `PARAMETERS` TEXT, `DESCRIPTION` TEXT);")
+
+    cur_main.execute("CREATE TABLE IF NOT EXISTS `DISABLED_COMMANDS` ( `ID` INT, `COMMAND_ID` INT,"
+                     " CONSTRAINT `DISABLED_COMMANDS_COMMANDS` FOREIGN KEY (ID) REFERENCES CONFIG (ID),"
+                     " CONSTRAINT `DISABLED_COMMANDS_COMMANDS` FOREIGN KEY (COMMAND_ID) REFERENCES COMMANDS (ID));")
+
     conn_main.commit()
 
 
@@ -255,8 +272,8 @@ def change_msg_welcome_channel(guild_id, main_channel, welcome_channel):
 
 
 def setup_config(guild_id, main_channel, welcome_channel):
-    sql = "INSERT INTO CONFIG (ACTIVE, SERVER, SPRACHE, PREFIX, MESSAGE_CHANNEL, WELCOME_TEXT, WELCOME_CHANNEL, DISABLED_COMMANDS) VALUES (%s, %s, %s, %s, %s, %s, %s. %s)"
-    val = ("True", str(guild_id), "german", "$", str(main_channel.id), '', str(welcome_channel.id), "")
+    sql = "INSERT INTO CONFIG (ACTIVE, SERVER, SPRACHE, PREFIX, MESSAGE_CHANNEL, WELCOME_TEXT, WELCOME_CHANNEL, DISABLED_COMMANDS) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+    val = ("True", str(guild_id), "german", "$", str(main_channel.id), "", str(welcome_channel.id), "")
 
     cur_main.execute(sql, val)
     conn_main.commit()

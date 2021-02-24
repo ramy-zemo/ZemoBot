@@ -75,7 +75,7 @@ class Info(commands.Cog):
                        "set_prefix (*prefix)": "Determine the Bot Prefix on your Server.",
                        "enable_command (*command)": "Enable the use of a specific command on your server.",
                        "disable_command (*command)": "Disable the use of a specific command on your server.",
-                       "set_welcome_message (*message)": ""}
+                       "set_welcome_message (*message)": "Set Welcome message for new members. Available parameters in message: {member} {inviter}"}
         }
 
         if not args:

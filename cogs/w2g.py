@@ -6,6 +6,7 @@ import json
 class W2G(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.commands = []
 
     @commands.command(aliases=["watch2gether"])
     async def w2g(self, ctx, url=""):
