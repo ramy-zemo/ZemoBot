@@ -1,0 +1,71 @@
+CREATE TABLE IF NOT EXISTS `CONFIG`
+(
+    `ID`              INT PRIMARY KEY AUTO_INCREMENT,
+    `ACTIVE`          boolean,
+    `GUILD_ID`        TEXT,
+    `SPRACHE`         TEXT,
+    `PREFIX`          TEXT,
+    `MESSAGE_CHANNEL` INT,
+    `WELCOME_CHANNEL` INT,
+    `WELCOME_TEXT`    INT,
+    `WELCOME_ROLE`    INT,
+    `TWITCH_USERNAME` TEXT
+);
+
+CREATE TABLE IF NOT EXISTS `INVITES`
+(
+    `ID`     INT,
+    `datum`  DATE,
+    `von_id` INT,
+    `an_id`  INT,
+    CONSTRAINT `INVITE_SERVER` FOREIGN KEY (ID) REFERENCES CONFIG (ID)
+);
+
+CREATE TABLE IF NOT EXISTS `LEVEL`
+(
+    `ID`      INT,
+    `user_id` INT,
+    `xp`      INT,
+    CONSTRAINT `LEVEL_SERVER` FOREIGN KEY (ID) REFERENCES CONFIG (ID)
+);
+
+CREATE TABLE IF NOT EXISTS `MESSAGE`
+(
+    `ID`        INT,
+    `datum`     DATE,
+    `von_id`    INT,
+    `nachricht` TEXT,
+    CONSTRAINT `MESSAGE_SERVER` FOREIGN KEY (ID) REFERENCES CONFIG (ID)
+);
+
+CREATE TABLE IF NOT EXISTS `TRASHTALK`
+(
+    `ID`     INT,
+    `datum`  DATE,
+    `von_id` INT,
+    `an_id`  INT,
+    CONSTRAINT `TRASHTALK_SERVER` FOREIGN KEY (ID) REFERENCES CONFIG (ID)
+);
+
+CREATE TABLE IF NOT EXISTS `VOICE`
+(
+    `ID`      INT,
+    `user_id` INT,
+    `minutes` INT,
+    CONSTRAINT `VOICE_SERVER` FOREIGN KEY (ID) REFERENCES CONFIG (ID)
+);
+
+CREATE TABLE IF NOT EXISTS `COMMANDS`
+(
+    `ID`          INT PRIMARY KEY AUTO_INCREMENT,
+    `command`     TEXT,
+    `parameters`  TEXT,
+    `description` TEXT
+);
+
+CREATE TABLE IF NOT EXISTS `DISABLED_COMMANDS`
+(
+    `ID`         INT,
+    `command_id` INT,
+    CONSTRAINT `DISABLED_COMMANDS_COMMANDS` FOREIGN KEY (ID) REFERENCES COMMANDS (ID)
+);

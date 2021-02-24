@@ -30,7 +30,8 @@ async def invalid_argument(ctx, command):
                 "avatar": "Mention another User to get his Avatar. Nothing if you want your Avatar.",
                 "faceit_finder": "Steam URL or ID",
                 "set_auto_role": "Mention a Role",
-                "google": "(member) (text)"}
+                "google": "(member) (text)",
+                "set_welcome_message": "(*message) Available parameters in message: {member} {inviter}"}
 
     prefix = get_prefix(ctx.guild.id)
 
