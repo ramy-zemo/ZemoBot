@@ -1,6 +1,7 @@
 from discord import Role, Embed
 from discord.ext import commands
-from etc.sql_reference import change_auto_role, change_prefix, disable_command, enable_command, set_welcome_message
+from etc.sql_reference import change_auto_role, change_prefix, disable_command, enable_command, get_all_guild_commands
+from etc.sql_reference import change_welcome_message
 import re
 
 
@@ -29,7 +30,7 @@ class GuildConfig(commands.Cog):
     @commands.is_owner()
     @commands.command()
     async def enable_command(self, ctx, command):
-        if command in self.bot.user_commands:
+        if command in get_all_guild_commands(ctx.guild.id):
             enable_command(ctx.guild.id, command)
             embed = Embed(color=0x1acdee,
                           description=f"Command {command} erfolgreich für den Server {ctx.guild} aktiviert.")
@@ -47,7 +48,7 @@ class GuildConfig(commands.Cog):
     @commands.is_owner()
     @commands.command()
     async def disable_command(self, ctx, command):
-        if command in self.bot.user_commands:
+        if command in get_all_guild_commands(ctx.guild.id):
             disable_command(ctx.guild.id, command)
             enable_command(ctx.guild.id, command)
             embed = Embed(color=0x1acdee,
@@ -65,13 +66,13 @@ class GuildConfig(commands.Cog):
 
     @commands.is_owner()
     @commands.command()
-    async def set_welcome_message(self, ctx, *args):
+    async def change_welcome_message(self, ctx, *args):
         message = ' '.join(args)
         parameters_in_string = re.findall("(?<={)(.*)(?=})", message)
         available_parameters = ["member", "inviter"]
 
         if all([True if param in available_parameters else False for param in parameters_in_string]):
-            set_welcome_message(ctx.guild.id, message)
+            change_welcome_message(ctx.guild.id, message)
             embed = Embed(color=0x00ff00,
                           description="Willkommensnachricht erfolgreich geändert.")
             embed.set_author(name="Zemo Bot")

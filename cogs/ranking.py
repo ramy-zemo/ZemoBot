@@ -1,8 +1,8 @@
 from io import BytesIO
 from PIL import Image, ImageFont, ImageDraw, ImageOps
 from discord.ext import commands
-from etc.sql_reference import get_main_channel, setup_db, get_server_ranks, get_xp_from_user, update_user_xp
-from etc.sql_reference import insert_user_xp, update_user_xp
+from etc.sql_reference import get_main_channel, get_server_ranks, get_xp_from_user
+from etc.sql_reference import update_user_xp, insert_user_xp
 import requests
 import discord
 
@@ -11,13 +11,8 @@ class Ranking(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.is_owner()
     @commands.command()
-    async def setup_db(self, ctx):
-        setup_db(ctx, 20)
-
-    @commands.command()
-    async def rank(self, ctx):
+    async def ranking(self, ctx):
         try:
             server_ranks = get_server_ranks(ctx.guild.id)
 
@@ -27,8 +22,8 @@ class Ranking(commands.Cog):
             embed.set_author(name="Zemo Bot",
                              icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
 
-            for x in range(5):
-                embed.add_field(name=f"{data[x][0]}", value=f"Rank: {data[x][1]}", inline=False)
+            for user in range(5):
+                embed.add_field(name=f"{data[user][0]}", value=f"Rank: {data[user][1]}", inline=False)
 
             await ctx.send(embed=embed)
 
@@ -53,12 +48,11 @@ class Ranking(commands.Cog):
             else:
                 color = (155, 155, 155),
 
-            name = str(name)
             role = ctx.message.author.roles
 
             xp_current_lvl = await self.lvl_xp(level)
             xp_next_lvl = await self.lvl_xp(level + 1)
-            xp_current = await self.get_xp(ctx, name)
+            xp_current = get_xp_from_user(ctx.guild.id, name.id)
 
             step = xp_next_lvl - xp_current_lvl
             state = xp_current - xp_current_lvl
@@ -86,7 +80,7 @@ class Ranking(commands.Cog):
 
             # Draw Name
             draw = ImageDraw.Draw(img)
-            name_level_size = 130 if len(name) <= 19 else 130 - (len(name) - 19) * 5
+            name_level_size = 130 if len(str(name)) <= 19 else 130 - (len(str(name)) - 19) * 5
             draw.text((680, 175), f"Rank: #{rank} Level: {level}", color, font=ImageFont.truetype('fonts/micross.ttf', name_level_size))
             draw.text((680, 330), f"{name}", color, font=ImageFont.truetype('fonts/micross.ttf', name_level_size))
 
@@ -106,8 +100,8 @@ class Ranking(commands.Cog):
                 await ctx.send(file=discord.File(fp=output, filename="image.png"))
 
         if not member:
-            level = await self.get_lvl(ctx, str(ctx.author))
-            rank = await self.get_rank(ctx, str(ctx.author))
+            level = await self.get_lvl(ctx, ctx.author)
+            rank = await self.get_rank(ctx, ctx.author)
             await create_level_image(ctx, ctx.author, ctx.author.avatar_url, level, rank)
         else:
             level = await self.get_lvl(ctx, member)
@@ -135,47 +129,10 @@ class Ranking(commands.Cog):
             i += increment
             j += 1
 
-    @commands.is_owner()
-    @commands.command()
     async def set_xp(self, ctx, user: discord.Member, amout):
-        if get_xp_from_user(ctx.guild.id, user):
-            update_user_xp(ctx.guild.id, user, amout)
-        else:
-            insert_user_xp(ctx.guild.id, user, amout)
+        update_user_xp(ctx.guild.id, user, amout)
 
-    @commands.is_owner()
-    @commands.command()
     async def add_xp(self, ctx, user, xp, guild_id):
-        async def get_xp(ctx, user):
-            data = get_xp_from_user(guild_id, user)
-            if data:
-                return data[0][2]
-            else:
-                return 0
-
-        async def xp_lvl(xp):
-            level_person = 0
-            increment = 100
-            level = 0
-            j = 1
-            i = 100
-            xp = int(xp)
-
-            for x in range(100, 55000):
-                level += 1
-
-                if j == 10:
-                    j = 0
-                    increment += 100
-
-                if i <= xp < i + increment:
-                    level_person = level
-
-                i += increment
-                j += 1
-
-            return level_person
-
         if isinstance(user, str):
             try:
                 member = ctx.author
@@ -184,39 +141,28 @@ class Ranking(commands.Cog):
         else:
             member = user
 
-        user = str(user)
-        user_xp = get_xp_from_user(guild_id, user)
+        user = user
+        user_xp = get_xp_from_user(guild_id, user.id)
 
         if user_xp:
-            old_level = await xp_lvl(user_xp[0][2])
-            uxp = await get_xp(ctx, user)
-            new_level = await xp_lvl(int(uxp) + int(xp))
-            new_xp = int(await get_xp(ctx, user)) + int(xp)
+            old_level = await self.xp_lvl(user_xp)
+            new_level = await self.xp_lvl(user_xp + int(xp))
 
-            update_user_xp(guild_id, user, new_xp)
+            insert_user_xp(guild_id, user.id, xp)
 
         else:
             old_level = 0
-            new_level = await xp_lvl(int(xp))
+            new_level = await self.xp_lvl(int(xp))
 
-            insert_user_xp(guild_id, user, xp)
+            insert_user_xp(guild_id, user.id, xp)
 
         if old_level != new_level:
             channel = await get_main_channel(ctx)
-            await channel.send(
-                f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
-
-    async def get_xp(self, ctx, user):
-        xp_data = get_xp_from_user(ctx.guild.id, user)
-        if xp_data:
-            return xp_data[0][2]
-        else:
-            return 0
+            await channel.send(f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
 
     async def get_lvl(self, ctx, user):
-        return await self.xp_lvl(await self.get_xp(ctx, user))
+        return await self.xp_lvl(get_xp_from_user(ctx.guild.id, user.id))
 
-    @commands.command()
     async def get_rank(self, ctx, user):
         ordered_list = get_server_ranks(ctx.guild.id)[::-1]
         x = [count + 1 for count, x in enumerate(ordered_list) if ordered_list[count][1] == user]

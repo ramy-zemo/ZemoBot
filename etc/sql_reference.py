@@ -1,21 +1,26 @@
 import discord
 import mysql.connector
-import os
-from icecream import ic
+
 from dotenv import load_dotenv
+from config import DB_IP, DB_USER, DB_PASSWORD, DB_DATABASE
+
 
 load_dotenv()
 
 conn_main = mysql.connector.connect(
-    host=os.getenv('db_ip'),
-    user=os.getenv('db_user'),
-    password=os.getenv('db_password'),
-    database=os.getenv('db_database')
+    host=DB_IP,
+    user=DB_USER,
+    password=DB_PASSWORD,
+    database=DB_DATABASE
 )
 cur_main = conn_main.cursor()
 
 
-def decode_data(data):
+class InvalidGuild(Exception):
+    pass
+
+
+def decode_data(data) -> list:
     new_data = list()
     for data_set in data:
         entry = list()
@@ -28,73 +33,81 @@ def decode_data(data):
     return new_data
 
 
-def get_server(guild_id):
-    cur_main.execute('SELECT ACTIVE FROM CONFIG WHERE GUILD_ID = %s', ([str(guild_id)]))
+def get_server(guild_id: int) -> bool:
+    cur_main.execute('SELECT ACTIVE FROM CONFIG WHERE GUILD_ID = %s', (guild_id,))
+    data = cur_main.fetchone()
+    return bool(data)
+
+
+def get_all_twitch_data() -> list:
+    cur_main.execute('SELECT GUILD_ID, TWITCH_USERNAME FROM CONFIG')
     data = cur_main.fetchall()
-    return [] if not data else data[0][0].decode()
+    return [entry for entry in decode_data(data) if entry[1]]
 
 
-def get_all_twitch_data():
-    cur_main.execute('SELECT SERVER, TWITCH_USERNAME FROM CONFIG')
-    data = cur_main.fetchall()
-    return decode_data(data)
+def get_twitch_username(guild_id: int) -> str:
+    cur_main.execute('SELECT TWITCH_USERNAME FROM CONFIG WHERE GUILD_ID = %s', (guild_id,))
+    data = cur_main.fetchone()
+    return data[0] if data else ""
 
 
-def get_twitch_username(guild_id):
-    cur_main.execute('SELECT TWITCH_USERNAME FROM CONFIG WHERE SERVER = %s', ([str(guild_id)]))
-    data = cur_main.fetchall()
-    return [] if not data or data[0][0] is None else data[0][0].decode()
-
-
-def update_twitch_username(guild_id, username):
-    cur_main.execute('UPDATE CONFIG SET TWITCH_USERNAME = %s WHERE SERVER = %s', (username, str(guild_id)))
+def update_twitch_username(guild_id: int, twitch_username: str):
+    cur_main.execute('UPDATE CONFIG SET TWITCH_USERNAME = %s WHERE GUILD_ID = %s', (twitch_username, guild_id))
     conn_main.commit()
 
 
-def insert_user_xp(guild_id, user, xp):
-    sql = "INSERT INTO LEVEL (server, user, xp) VALUES (%s, %s, %s)"
-    val_1 = (str(guild_id), str(user), int(xp))
+def insert_user_xp(guild_id: int, user_id: int, xp: int):
+    sql = "INSERT INTO LEVEL (SERVER_ID, USER_ID, XP) VALUES ((SELECT ID FROM CONFIG WHERE GUILD_ID=%s), %s, %s)"
+    val_1 = (guild_id, user_id, xp)
 
-    cur_main.execute(sql, val_1)
-    conn_main.commit()
-
-
-def update_user_xp(guild_id, user, new_xp):
-    sql = "UPDATE LEVEL SET xp=%s WHERE server=%s AND user=%s"
-    val_1 = (new_xp, str(guild_id), str(user))
-
-    cur_main.execute(sql, val_1)
-    conn_main.commit()
-
-
-def get_xp_from_user(guild_id, user):
-    cur_main.execute("SELECT * FROM LEVEL WHERE server=%s AND user=%s", (str(guild_id), str(user)))
-    data = cur_main.fetchall()
-
-    return decode_data(data)
-
-
-def get_server_ranks(guild_id):
-    cur_main.execute("SELECT * FROM LEVEL WHERE server=%s ORDER BY xp ASC", ([str(guild_id)]))
-    data = cur_main.fetchall()
-
-    return decode_data(data)
-
-
-def setup_db(ctx, amout):
-    for user in ctx.guild.users:
-        cur_main.execute("INSERT INTO LEVEL (server, user, xp) VALUES (%s, %s, %s)", ([ctx.guild.id, str(user), amout]))
+    try:
+        cur_main.execute(sql, val_1)
         conn_main.commit()
+    except mysql.connector.errors.IntegrityError:
+        raise InvalidGuild
 
 
-async def get_main_channel(ctx):
+def get_xp_from_user(guild_id: int, user_id: int) -> int:
+    cur_main.execute("SELECT SUM(XP) FROM LEVEL WHERE SERVER_ID=(SELECT ID FROM CONFIG WHERE GUILD_ID=%s) AND USER_ID=%s", (guild_id, user_id))
+    data = cur_main.fetchone()
+
+    return data[0] if data else 0
+
+
+def get_server_ranks(guild_id: int) -> list:
+    sql = "SELECT * FROM LEVEL WHERE SERVER_ID=(SELECT ID FROM CONFIG WHERE GUILD_ID=%s) ORDER BY XP ASC"
+    val = (guild_id,)
+
+    cur_main.execute(sql, val)
+    data = cur_main.fetchall()
+
+    new = {}
+    done_users = []
+
+    for entry in decode_data(data):
+        if entry[1] in done_users:
+            continue
+
+        for second in decode_data(data):
+            if second[0] == entry[0] and second[1] == entry[1]:
+                if second[1] in new:
+                    new[second[1]] += second[2]
+                else:
+                    new[second[1]] = second[2]
+
+        done_users.append(entry[1])
+
+    return [(k, v) for k, v in new.items()]
+
+
+async def get_main_channel(ctx) -> discord.TextChannel:
     try:
         guild = ctx.guild
     except AttributeError:
         guild = ctx
 
-    cur_main.execute("SELECT MESSAGE_CHANNEL FROM CONFIG WHERE server=%s", ([guild.id]))
-    channel_db = cur_main.fetchall()
+    cur_main.execute("SELECT MESSAGE_CHANNEL_ID FROM CONFIG WHERE GUILD_ID=%s", (guild.id,))
+    channel_db = cur_main.fetchone()
 
     overwrites_main = {
         guild.default_role: discord.PermissionOverwrite(read_messages=True, read_message_history=True,
@@ -102,26 +115,26 @@ async def get_main_channel(ctx):
     }
 
     if channel_db:
-        channel = discord.utils.get(guild.channels, id=int(channel_db[0][0].decode()))
+        channel = discord.utils.get(guild.channels, id=int(channel_db[0]))
         if not channel:
             main_channel = await guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
-            change_msg_welcome_channel(guild.id, main_channel, main_channel)
+            change_msg_welcome_channel(guild.id, main_channel.id, main_channel.id)
             return main_channel
         else:
             return channel
     else:
         main_channel = await guild.create_text_channel(name="zemo bot", overwrites=overwrites_main)
-        change_msg_welcome_channel(guild.id, main_channel, main_channel)
+        change_msg_welcome_channel(guild.id, main_channel.id, main_channel.id)
         return main_channel
 
 
-async def get_welcome_channel(ctx):
+async def get_welcome_channel(ctx) -> discord.TextChannel:
     try:
         guild = ctx.guild
     except AttributeError:
         guild = ctx
 
-    cur_main.execute("SELECT WELCOME_CHANNEL FROM CONFIG WHERE server=%s", ([guild.id]))
+    cur_main.execute("SELECT WELCOME_CHANNEL_ID FROM CONFIG WHERE GUILD_ID=%s", (guild.id,))
     channel_db = cur_main.fetchall()
 
     overwrites_main = {
@@ -130,291 +143,267 @@ async def get_welcome_channel(ctx):
     }
 
     if channel_db:
-        channel = discord.utils.get(guild.channels, id=int(channel_db[0][0].decode()))
+        channel = discord.utils.get(guild.channels, id=int(channel_db[0][0]))
         if not channel:
             welcome_channel = await guild.create_text_channel(name="willkommen", overwrites=overwrites_main)
-            change_msg_welcome_channel(guild.id, welcome_channel, welcome_channel)
+            change_msg_welcome_channel(guild.id, welcome_channel.id, welcome_channel.id)
             return welcome_channel
         else:
             return channel
     else:
         welcome_channel = await guild.create_text_channel(name="willkommen", overwrites=overwrites_main)
-        change_msg_welcome_channel(guild.id, welcome_channel, welcome_channel)
+        change_msg_welcome_channel(guild.id, welcome_channel.id, welcome_channel.id)
         return welcome_channel
 
 
-def get_user_messages(user):
-    cur_main.execute("SELECT * from MESSAGE WHERE von=%s", (str(user),))
+def get_user_messages(user_id: int) -> list:
+    cur_main.execute("SELECT * from MESSAGE WHERE USER_ID=%s", (user_id,))
     data = cur_main.fetchall()
     return decode_data(data)
 
 
-def get_user_voice_time(user):
-    cur_main.execute("SELECT minutes from VOICE WHERE user=%s", (str(user),))
-    data = cur_main.fetchall()
-    return data[0][0] if data and data[0][0] else 0
+def get_user_voice_time(user_id: int) -> int:
+    cur_main.execute("SELECT SUM(MINUTES) from VOICE WHERE USER_ID=%s", (user_id,))
+    data = cur_main.fetchone()
+    return data[0] if data else 0
 
 
-def add_user_voice_time(user, minutes):
-    cur_main.execute("UPDATE VOICE SET minutes = minutes + %s WHERE user=%s", ([minutes, str(user)]))
+def add_user_voice_time(user_id: int, minutes: int, guild_id: int):
+    sql = "INSERT INTO VOICE (SERVER_ID, USER_ID, MINUTES) VALUES ((SELECT ID FROM CONFIG WHERE GUILD_ID=%s), %s, %s)"
+    val = (guild_id, user_id, minutes)
+
+    cur_main.execute(sql, val)
     conn_main.commit()
 
 
-def insert_user_voice_time(user, minutes):
-    cur_main.execute("INSERT INTO VOICE (user, minutes) VALUES (%s , %s)", ([str(user), minutes]))
-    conn_main.commit()
+def get_user_trashtalk(guild_id: int, user_id: int) -> list:
+    sql = "SELECT * FROM TRASHTALK_LOG WHERE SERVER_ID=(SELECT ID FROM CONFIG WHERE GUILD_ID=%s) AND FROM_USER_ID=%s"
+    val = (guild_id, user_id)
 
-
-def get_user_trashtalk(guild_id, user):
-    cur_main.execute(f"SELECT * FROM TrashTalk WHERE server=%s AND von=%s", [str(guild_id), str(user)])
-    data = cur_main.fetchall()
-    return decode_data(data)
-
-
-def reset_trashtalk(guild_id, user):
-    try:
-        cur_main.execute(f"DELETE FROM TrashTalk WHERE server=%s AND von=%s", (str(guild_id), str(user)))
-        conn_main.commit()
-        return 1
-
-    except:
-        return 0
-
-
-def get_invites_to_user(guild_id, invite_to):
-    cur_main.execute("SELECT * FROM INVITES WHERE server = %s AND an=%s", ([str(guild_id), str(invite_to)]))
+    cur_main.execute(sql, val)
     data = cur_main.fetchall()
     return decode_data(data)
 
 
-async def get_user_invites(guild_id, user, ctx=0):
-    cur_main.execute("SELECT * FROM INVITES WHERE server=%s AND von=%s", ([str(guild_id), str(user)]))
+def reset_trashtalk(guild_id: int, user_id: int):
+    sql = "DELETE FROM TRASHTALK_LOG WHERE SERVER_ID=(SELECT ID FROM CONFIG WHERE GUILD_ID=%s) AND FROM_USER_ID=%s"
+    val = (guild_id, user_id)
 
-    invites = len(cur_main.fetchall())
-    if ctx == 0:
-        return invites
-
-    else:
-        embed = discord.Embed(title="Invites",
-                              description=f"Du hast bereits erfolgreich {invites} Personen eingeladen.", color=0x1acdee)
-        embed.set_author(name="Zemo Bot",
-                         icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
-        await ctx.send(embed=embed)
-
-
-def database_setup():
-    cur_main.execute("CREATE TABLE IF NOT EXISTS `CONFIG` ( `ID` INT PRIMARY KEY AUTO_INCREMENT, `ACTIVE` boolean,"
-                     " `GUILD_ID` INT, `SPRACHE` TEXT, `PREFIX` TEXT, `MESSAGE_CHANNEL_ID` INT,"
-                     " `WELCOME_CHANNEL_ID` INT, `WELCOME_MESSAGE` TEXT, `WELCOME_ROLE_ID` INT,"
-                     " `TWITCH_USERNAME` TEXT);")
-
-    cur_main.execute("CREATE TABLE IF NOT EXISTS `INVITES` ( `ID` INT, `DATE` DATE, `FROM_USER_ID` INT,"
-                     " `TO_USER_ID` INT, CONSTRAINT `INVITE_SERVER` FOREIGN KEY (ID) REFERENCES CONFIG (ID));")
-
-    cur_main.execute("CREATE TABLE IF NOT EXISTS `LEVEL` ( `ID` INT, `USER_ID` INT, `XP` INT,"
-                     " CONSTRAINT `LEVEL_SERVER` FOREIGN KEY (ID) REFERENCES CONFIG (ID));")
-
-    cur_main.execute("CREATE TABLE IF NOT EXISTS `MESSAGE` ( `ID` INT, `DATE` DATE, `USER_ID` INT, `MESSAGE` TEXT,"
-                     " CONSTRAINT `MESSAGE_SERVER` FOREIGN KEY (ID) REFERENCES CONFIG (ID));")
-
-    cur_main.execute("CREATE TABLE IF NOT EXISTS `TRASHTALK` ( `ID` INT, `DATE` DATE, `FROM_USER_ID` INT,"
-                     " `TO_USER_ID` INT, CONSTRAINT `TRASHTALK_SERVER` FOREIGN KEY (ID) REFERENCES CONFIG (ID));")
-
-    cur_main.execute("CREATE TABLE IF NOT EXISTS `VOICE` ( `ID` INT, `USER_ID` INT, `minutes` INT,"
-                     " CONSTRAINT `VOICE_SERVER` FOREIGN KEY (ID) REFERENCES CONFIG (ID));")
-
-    cur_main.execute("CREATE TABLE IF NOT EXISTS `COMMANDS` ( `ID` INT PRIMARY KEY AUTO_INCREMENT, `COMMAND` TEXT,"
-                     " `PARAMETERS` TEXT, `DESCRIPTION` TEXT);")
-
-    cur_main.execute("CREATE TABLE IF NOT EXISTS `DISABLED_COMMANDS` ( `ID` INT, `COMMAND_ID` INT,"
-                     " CONSTRAINT `DISABLED_COMMANDS_COMMANDS` FOREIGN KEY (ID) REFERENCES CONFIG (ID),"
-                     " CONSTRAINT `DISABLED_COMMANDS_COMMANDS` FOREIGN KEY (COMMAND_ID) REFERENCES COMMANDS (ID));")
-
+    cur_main.execute(sql, val)
     conn_main.commit()
 
 
-def log_message(server, date, message):
-    sql = "INSERT INTO MESSAGE (server, datum, von, nachricht) VALUES (%s, %s, %s, %s)"
-    val_1 = (str(server), str(date), str(message.author), str(message.content))
+def get_invites_to_user(guild_id: int, invite_to_user_id: int) -> list:
+    sql = "SELECT * FROM INVITES WHERE SERVER_ID=(SELECT ID FROM CONFIG WHERE GUILD_ID=%s) AND TO_USER_ID=%s"
+    val = (guild_id, invite_to_user_id)
 
-    cur_main.execute(sql, val_1)
+    cur_main.execute(sql, val)
+    data = cur_main.fetchall()
+    return decode_data(data)
+
+
+async def get_user_invites(guild_id: int, user_id: int) -> list:
+    sql = "SELECT * FROM INVITES WHERE SERVER_ID=(SELECT ID FROM CONFIG WHERE GUILD_ID=%s) AND FROM_USER_ID=%s"
+    val = (guild_id, user_id)
+
+    cur_main.execute(sql, val)
+    invites = cur_main.fetchall()
+    return invites
+
+
+def log_message(guild_id: int, date: str, user_id: int, message: str):
+    sql = "INSERT INTO MESSAGE (SERVER_ID, DATE, USER_ID, MESSAGE) VALUES ((SELECT ID FROM CONFIG WHERE GUILD_ID=%s), %s, %s, %s)"
+    val = (guild_id, date, user_id, message)
+
+    cur_main.execute(sql, val)
     conn_main.commit()
 
-    return 1
 
+def log_invite(guild_id: int, date: str, from_user_id: int, to_user_id: int):
+    sql = "INSERT INTO INVITES (SERVER_ID, DATE, FROM_USER_ID, TO_USER_ID) VALUES ((SELECT ID FROM CONFIG WHERE GUILD_ID=%s), %s, %s, %s)"
+    val = (guild_id, date, from_user_id, to_user_id)
 
-def log_invite(server, datum, von, an):
-    sql = "INSERT INTO INVITES (server, datum, von, an) VALUES (%s, %s, %s, %s)"
-    val_1 = (server, datum, von, an)
-
-    cur_main.execute(sql, val_1)
+    cur_main.execute(sql, val)
     conn_main.commit()
 
-    return 1
+
+def log_trashtalk(guild_id: int, datum: str, from_user_id: int, to_user_id: int):
+    sql = "INSERT INTO TRASHTALK_LOG (SERVER_ID, DATE, FROM_USER_ID, TO_USER_ID) VALUES ((SELECT ID FROM CONFIG WHERE GUILD_ID=%s), %s, %s, %s)"
+    val = (guild_id, datum, from_user_id, to_user_id)
+
+    cur_main.execute(sql, val)
+    conn_main.commit()
 
 
-def log_trashtalk(guild_id, datum, von, an):
-    sql = "INSERT INTO TrashTalk (server, datum, von, an) VALUES (%s, %s, %s, %s)"
-    val_1 = (str(guild_id), datum, str(von), str(an))
+def change_msg_welcome_channel(guild_id: int, main_channel_id: int, welcome_channel_id: int):
+    sql = "UPDATE CONFIG SET MESSAGE_CHANNEL_ID=%s, WELCOME_CHANNEL_ID=%s WHERE GUILD_ID=%s"
+    val_1 = (main_channel_id, welcome_channel_id, guild_id)
 
     cur_main.execute(sql, val_1)
     conn_main.commit()
 
 
-def change_msg_welcome_channel(guild_id, main_channel, welcome_channel):
-    sql = "UPDATE CONFIG SET MESSAGE_CHANNEL=%s, WELCOME_CHANNEL = %s WHERE server=%s"
-    val_1 = (str(main_channel.id), str(welcome_channel.id), str(guild_id))
-
-    cur_main.execute(sql, val_1)
-    conn_main.commit()
-
-    return 1
-
-
-def setup_config(guild_id, main_channel, welcome_channel):
-    sql = "INSERT INTO CONFIG (ACTIVE, SERVER, SPRACHE, PREFIX, MESSAGE_CHANNEL, WELCOME_TEXT, WELCOME_CHANNEL, DISABLED_COMMANDS) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-    val = ("True", str(guild_id), "german", "$", str(main_channel.id), "", str(welcome_channel.id), "")
-
-    cur_main.execute(sql, val)
-    conn_main.commit()
-
-    return 1
-
-
-def activate_guild(guild_id):
-    sql = "UPDATE CONFIG SET ACTIVE = %s WHERE SERVER = %s"
-    val = ("True", str(guild_id))
+def setup_config(guild_id: int, main_channel_id: int, welcome_channel_id: int):
+    sql = "INSERT INTO CONFIG (ACTIVE, GUILD_ID, LANGUAGE, PREFIX, MESSAGE_CHANNEL_ID, WELCOME_CHANNEL_ID) VALUES (%s, %s, %s, %s, %s, %s)"
+    val = (True, guild_id, "german", "$", main_channel_id, welcome_channel_id)
 
     cur_main.execute(sql, val)
     conn_main.commit()
 
 
-def deactivate_guild(guild_id):
-    sql = "UPDATE CONFIG SET ACTIVE = %s WHERE SERVER = %s"
-    val = ("False", str(guild_id))
+def activate_guild(guild_id: int):
+    sql = "UPDATE CONFIG SET ACTIVE = TRUE WHERE GUILD_ID = %s"
+    val = (guild_id,)
 
     cur_main.execute(sql, val)
     conn_main.commit()
 
 
-def change_prefix(guild_id, prefix):
-    sql = "UPDATE CONFIG SET PREFIX = %s WHERE SERVER = %s"
-    val = (prefix, str(guild_id))
+def deactivate_guild(guild_id: int):
+    sql = "UPDATE CONFIG SET ACTIVE = FALSE WHERE GUILD_ID = %s"
+    val = (guild_id,)
 
     cur_main.execute(sql, val)
     conn_main.commit()
 
 
-def clear_categories():
-    cur_main.execute("""TRUNCATE TABLE config;""")
-    conn_main.commit()
-
-
-def change_auto_role(guild_id, role_id):
-    sql = "UPDATE CONFIG SET WELCOME_ROLE = %s WHERE SERVER = %s"
-    val = (str(role_id), str(guild_id))
+def change_prefix(guild_id: int, prefix: str):
+    sql = "UPDATE CONFIG SET PREFIX = %s WHERE GUILD_ID = %s"
+    val = (prefix, guild_id)
 
     cur_main.execute(sql, val)
     conn_main.commit()
 
 
-def get_welcome_role_id(guild_id):
-    sql = "SELECT WELCOME_ROLE FROM CONFIG WHERE SERVER = %s"
+def delete_all_configs():
+    cur_main.execute("TRUNCATE TABLE config;")
+    conn_main.commit()
+
+
+def change_auto_role(guild_id: int, role_id: int):
+    sql = "UPDATE CONFIG SET WELCOME_ROLE_ID = %s WHERE GUILD_ID = %s"
+    val = (role_id, guild_id)
+
+    cur_main.execute(sql, val)
+    conn_main.commit()
+
+
+def get_welcome_role_id(guild_id: int) -> int:
+    sql = "SELECT WELCOME_ROLE_ID FROM CONFIG WHERE GUILD_ID=%s"
     val = (str(guild_id),)
 
     cur_main.execute(sql, val)
 
-    data = cur_main.fetchall()
+    data = cur_main.fetchone()
 
-    return data[0][0].decode() if data and data[0][0] else []
-
-
-def get_prefix(guild_id):
-    sql = "SELECT PREFIX FROM CONFIG WHERE SERVER = %s"
-    val = (str(guild_id),)
-
-    cur_main.execute(sql, val)
-
-    data = cur_main.fetchall()
-
-    return data[0][0].decode() if data and data[0][0] else "$"
+    return data[0]if data else 0
 
 
-def get_welcome_role(guild):
-    sql = "SELECT WELCOME_ROLE FROM CONFIG WHERE SERVER = %s"
-    val = (str(guild.id),)
+def get_prefix(guild_id: int) -> int:
+    sql = "SELECT PREFIX FROM CONFIG WHERE GUILD_ID=%s"
+    val = (guild_id,)
 
     cur_main.execute(sql, val)
+    data = cur_main.fetchone()
+    return data[0]if data else 0
 
-    data = cur_main.fetchall()
+
+def get_welcome_role(guild: discord.guild):
+    sql = "SELECT WELCOME_ROLE_ID FROM CONFIG WHERE GUILD_ID=%s"
+    val = (guild.id,)
+
+    cur_main.execute(sql, val)
+    data = cur_main.fetchone()
 
     role = ""
 
-    if data and data[0][0]:
-        role = discord.utils.get(guild.roles, id=int(data[0][0].decode()))
+    if data and data[0]:
+        role = discord.utils.get(guild.roles, id=int(data[0]))
 
     return role if role else 0
 
 
-def get_welcome_message(guild_id):
-    sql = "SELECT WELCOME_TEXT FROM CONFIG WHERE SERVER = %s"
-    val = (str(guild_id),)
+def get_welcome_message(guild_id: int) -> str:
+    sql = "SELECT WELCOME_MESSAGE FROM CONFIG WHERE GUILD_ID=%s"
+    val = (guild_id,)
 
     cur_main.execute(sql, val)
 
-    data = cur_main.fetchall()
+    data = cur_main.fetchone()
 
-    return data[0][0].decode() if data and data[0][0] else ""
+    return data[0] if data and data[0] else ""
 
 
-def set_welcome_message(guild_id, welcome_msg):
-    sql = "UPDATE CONFIG SET WELCOME_TEXT = %s WHERE SERVER = %s"
-    val = (str(welcome_msg), str(guild_id))
+def check_command_status_for_guild(guild_id: int, command: str):
+    sql = "SELECT * FROM DISABLED_COMMANDS WHERE COMMAND_ID=(SELECT ID FROM COMMANDS WHERE COMMAND=%s) AND SERVER_ID=(SELECT ID FROM CONFIG WHERE GUILD_ID=%s)"
+    val = (command, guild_id)
+
+    cur_main.execute(sql, val)
+    data = cur_main.fetchone()
+    return not data
+
+
+def disable_command(guild_id: int, command: str):
+    cur_main.execute("SELECT ID FROM COMMANDS WHERE COMMAND=%s", (command,))
+    command_in_db = cur_main.fetchone()
+
+    if command_in_db:
+        sql = "INSERT INTO DISABLED_COMMANDS (SERVER_ID, COMMAND_ID) VALUES ((SELECT ID FROM CONFIG WHERE GUILD_ID=%s), %s)"
+        val = (guild_id, command_in_db[0])
+
+        cur_main.execute(sql, val)
+        conn_main.commit()
+
+
+def enable_command(guild_id: int, command: str):
+    if check_command_status_for_guild(guild_id, command):
+        return
+
+    sql = "DELETE FROM DISABLED_COMMANDS WHERE COMMAND_ID=(SELECT ID FROM COMMANDS WHERE COMMAND=%s) AND SERVER_ID=(SELECT ID FROM CONFIG WHERE GUILD_ID=%s)"
+    val = (command, guild_id)
+
+    cur_main.execute(sql, val)
+    conn_main.commit()
+
+
+def change_welcome_message(guild_id: int, welcome_msg: str):
+    sql = "UPDATE CONFIG SET WELCOME_MESSAGE=%s WHERE GUILD_ID=%s"
+    val = (welcome_msg, guild_id)
 
     cur_main.execute(sql, val)
 
     conn_main.commit()
 
 
-def get_disabled_commands(guild_id):
-    sql = "SELECT DISABLED_COMMANDS FROM CONFIG WHERE SERVER = %s"
-    val = (str(guild_id),)
+def get_all_disabled_commands_from_guild(guild_id: int) -> list:
+    cur_main.execute("SELECT COMMAND_ID FROM DISABLED_COMMANDS WHERE SERVER_ID=(SELECT ID FROM CONFIG WHERE GUILD_ID=%s)", (guild_id,))
+    command_ids = cur_main.fetchall()
+    data = []
+
+    for command_id in command_ids:
+        cur_main.execute("SELECT COMMAND FROM COMMANDS WHERE ID=%s", command_id)
+        data.append(cur_main.fetchone()[0])
+
+    return data
+
+
+def update_user_xp(guild_id: int, user_id: int, xp: int):
+    cur_main.execute("DELETE FROM LEVEL WHERE SERVER_ID=(SELECT ID FROM CONFIG WHERE GUILD_ID=%s) AND USER_ID=%s", (guild_id, user_id))
+    conn_main.commit()
+
+    sql = "INSERT INTO LEVEL (SERVER_ID, USER_ID, XP) VALUES ((SELECT ID FROM CONFIG WHERE GUILD_ID=%s), %s, %s)"
+    val = (guild_id, user_id, xp)
 
     cur_main.execute(sql, val)
-
-    data = cur_main.fetchall()
-
-    return [x for x in data[0][0].decode().split(";") if x != ""] if data and data[0][0] else []
-
-
-def disable_command(guild_id, command):
-    disabled_commands = get_disabled_commands(guild_id)
-
-    if command not in disabled_commands:
-        disabled_commands.append(str(command).lower())
-
-    sql = "UPDATE CONFIG SET DISABLED_COMMANDS = %s WHERE SERVER = %s"
-
-    val_1 = (";".join(disabled_commands), guild_id,)
-
-    cur_main.execute(sql, val_1)
     conn_main.commit()
 
 
-def enable_command(guild_id, command):
-    disabled_commands = get_disabled_commands(guild_id)
+def get_all_guild_commands(guild_id: int):
+    cur_main.execute("SELECT CATEGORY_ID, COMMAND FROM COMMANDS WHERE ID NOT IN (SELECT COMMAND_ID FROM DISABLED_COMMANDS WHERE SERVER_ID=(SELECT ID FROM CONFIG WHERE GUILD_ID=%s))", (guild_id,))
+    commands = {command: category for (category, command) in cur_main.fetchall()}
 
-    if isinstance(command, str):
-        if command.lower() in disabled_commands:
-            disabled_commands.remove(command.lower())
+    for command in commands:
+        cur_main.execute("SELECT CATEGORY FROM COMMAND_CATEGORIES WHERE ID=%s", (commands[command],))
+        commands[command] = cur_main.fetchone()[0]
 
-    elif isinstance(command, list):
-        for cmd in command:
-            if cmd in disabled_commands:
-                disabled_commands.remove(command.lower())
-
-    sql = "UPDATE CONFIG SET DISABLED_COMMANDS = %s WHERE SERVER = %s"
-    val_1 = (";".join(disabled_commands), guild_id,)
-
-    cur_main.execute(sql, val_1)
-    conn_main.commit()
+    return commands

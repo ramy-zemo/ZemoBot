@@ -11,7 +11,7 @@ class Trashtalk(commands.Cog):
     @commands.command()
     async def trashtalk(self, ctx, member: Member):
         datum = str(date.today())
-        result = get_user_trashtalk(ctx.guild.id, ctx.message.author)
+        result = get_user_trashtalk(ctx.guild.id, ctx.message.author.id)
         daten = [x[0] for x in result if x[0] == datum]
 
         if len(daten) < 10:
@@ -24,7 +24,7 @@ class Trashtalk(commands.Cog):
                 except:
                     return await ctx.send(f"Trashtalk an {member.mention} fehlgeschlagen.")
 
-                log_trashtalk(ctx.guild.id, datum, ctx.message.author, member)
+                log_trashtalk(ctx.guild.id, datum, ctx.message.author.id, member.id)
         else:
             await ctx.send(f"{ctx.message.author.mention} du hast dein Trash Limit für heute erreicht.")
 
@@ -45,9 +45,9 @@ class Trashtalk(commands.Cog):
     async def trashtalk_stats(self, ctx, member: Member = 0, *args):
         datum = str(date.today())
         if not member:
-            result = get_user_trashtalk(ctx.guild.id, ctx.message.author)
+            result = get_user_trashtalk(ctx.guild.id, ctx.message.author.id)
         else:
-            result = get_user_trashtalk(ctx.guild.id, member)
+            result = get_user_trashtalk(ctx.guild.id, member.id)
 
         today = [x[1] for x in result if x[1] == datum]
 
@@ -59,7 +59,7 @@ class Trashtalk(commands.Cog):
     @commands.command()
     async def trashtalk_reset(self, ctx, *args):
         try:
-            reset_trashtalk(ctx.guild.id, ctx.message.author)
+            reset_trashtalk(ctx.guild.id, ctx.message.author.id)
             await ctx.send(f"Trashtalk für {ctx.message.author.mention} erfolgreich zurückgesetzt.")
         except:
             await ctx.send(f"Nutzer {ctx.message.author.mention} nicht gefunden.")

@@ -2,7 +2,6 @@ import requests
 from bs4 import BeautifulSoup
 import html
 from discord.ext import commands
-import discord
 from random import choice
 from etc.error_handling import invalid_argument
 

@@ -1,6 +1,7 @@
 import requests
 import random
 import discord
+
 from discord.ext import commands
 from io import BytesIO
 from PIL import Image

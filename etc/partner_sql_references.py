@@ -1,15 +1,15 @@
-import os
-
 import mysql.connector
+
 from dotenv import load_dotenv
+from config import DB_IP, DB_USER, DB_PASSWORD, DB_DATABASE
 
 load_dotenv()
 
 conn_main = mysql.connector.connect(
-    host=os.getenv('db_ip'),
-    user=os.getenv('db_user'),
-    password=os.getenv('db_password'),
-    database="Partner"
+    host=DB_IP,
+    user=DB_USER,
+    password=DB_PASSWORD,
+    database=DB_DATABASE
 )
 cur_main = conn_main.cursor()
 

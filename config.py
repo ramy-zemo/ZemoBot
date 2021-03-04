@@ -1,0 +1,8 @@
+DISCORD_TOKEN = "Nzc2NjI5MzY5NDQ3MjUyMDE4.X63qdg.Q7-n5OYOLed6VVVL31fPbzNLFoQ"
+DB_IP = "127.0.0.1"
+DB_USER = "root"
+DB_PASSWORD = "WhateverPassword"
+DB_DATABASE = "main"
+TWITCH_CLIENT_ID = "i1duvle6k8o5qvuzbftkif114szg1f"
+TWITCH_CLIENT_SECRET = "o16aokn7gz8aduxvedm80hobh8s0vx"
+BITLY_API = "d5dcb59a251d76062da3b8a841ec5d9faa31c4c9"

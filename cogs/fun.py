@@ -1,11 +1,9 @@
 from discord.ext import commands
 import discord
 from etc.error_handling import invalid_argument
-from requests import get
 from dotenv import load_dotenv
-import os
 import bitlyshortener
-
+from config import BITLY_API
 
 load_dotenv()
 
@@ -32,8 +30,8 @@ class Fun(commands.Cog):
 
         url = str("https://lmgtfy.app/?q=" + '+'.join(args) + "&iie=1")
 
-        if os.getenv("BITLY_API"):
-            shortener = bitlyshortener.Shortener(tokens=[os.getenv("BITLY_API")], max_cache_size=256)
+        if BITLY_API:
+            shortener = bitlyshortener.Shortener(tokens=[BITLY_API], max_cache_size=256)
             short_url = shortener.shorten_urls([url])
             await ctx.send(mention + " " + short_url[0])
 
