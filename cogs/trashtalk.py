@@ -1,7 +1,8 @@
 from discord.ext import commands
 from discord import Member
 from datetime import date
-from etc.sql_reference import get_user_trashtalk, log_trashtalk, reset_trashtalk
+from sql.trashtalk_log import get_user_trashtalk, log_trashtalk, reset_trashtalk
+from sql.trashtalk import get_trashtalk, add_trashtalk
 
 
 class Trashtalk(commands.Cog):
@@ -15,31 +16,30 @@ class Trashtalk(commands.Cog):
         daten = [x[0] for x in result if x[0] == datum]
 
         if len(daten) < 10:
-            with open("trashtalk.txt") as file:
-                text = file.readlines()
+            messages = get_trashtalk(ctx.guild.id)
+            try:
+                for msg in messages:
+                    await member.send(msg)
+            except:
+                return await ctx.send(f"Trashtalk an {member.mention} fehlgeschlagen.")
 
-                try:
-                    for t in text:
-                        await member.send(t)
-                except:
-                    return await ctx.send(f"Trashtalk an {member.mention} fehlgeschlagen.")
-
-                log_trashtalk(ctx.guild.id, datum, ctx.message.author.id, member.id)
+            log_trashtalk(ctx.guild.id, datum, ctx.message.author.id, member.id)
         else:
             await ctx.send(f"{ctx.message.author.mention} du hast dein Trash Limit für heute erreicht.")
 
     @commands.command()
     async def trashtalk_add(self, ctx, *args):
-        with open("trashtalk.txt", "a") as file:
-            file.write(" ".join(args) + "\n")
-
+        add_trashtalk(ctx.guild.id, str(date.today()), ctx.message.author.id, " ".join(args))
         await ctx.send("Nachricht erfolgreich hinzugefügt!")
 
     @commands.command()
     async def trashtalk_list(self, ctx):
-        with open("trashtalk.txt", "r") as file:
+        messages = get_trashtalk(ctx.guild.id)
 
-            await ctx.message.author.send("```\n" + ''.join(file.readlines()) + "\n```")
+        if messages:
+            await ctx.message.author.send("```\n" + '\n'.join(messages) + "\n```")
+        else:
+            await ctx.message.author.send("Aktuell sind leider keine Daten für diesen Server vorhanden.")
 
     @commands.command()
     async def trashtalk_stats(self, ctx, member: Member = 0, *args):

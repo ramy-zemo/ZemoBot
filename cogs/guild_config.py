@@ -1,8 +1,10 @@
+import re
+
 from discord import Role, Embed
 from discord.ext import commands
-from etc.sql_reference import change_auto_role, change_prefix, disable_command, enable_command, get_all_guild_commands
-from etc.sql_reference import change_welcome_message
-import re
+from sql.config import change_auto_role, change_prefix, change_welcome_message
+from sql.disabled_commands import disable_command, enable_command
+from sql.commands import get_all_guild_commands
 
 
 class GuildConfig(commands.Cog):

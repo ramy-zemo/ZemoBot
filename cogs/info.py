@@ -1,10 +1,15 @@
 import datetime
 import discord
 import psutil
+
 from discord.ext import commands
 from etc.error_handling import invalid_argument
-from etc.sql_reference import get_all_disabled_commands_from_guild
-from etc.sql_reference import get_user_messages, get_user_voice_time, get_user_trashtalk, get_user_invites, get_prefix
+from sql.disabled_commands import get_all_disabled_commands_from_guild
+from sql.message import get_user_messages
+from sql.voice import get_user_voice_time
+from sql.trashtalk_log import get_user_trashtalk
+from sql.invites import get_user_invites
+from sql.config import get_prefix
 
 
 class Info(commands.Cog):

@@ -4,11 +4,14 @@ from datetime import date
 from cogs.ranking import Ranking
 from itertools import cycle
 from discord.ext.commands import CommandNotFound, MissingPermissions
-from discord.ext.commands.errors import MemberNotFound, RoleNotFound, NotOwner
-from etc.sql_reference import  log_message, get_all_guild_commands, get_server, get_welcome_role
-from etc.sql_reference import setup_config, deactivate_guild
-from etc.sql_reference import get_prefix, check_command_status_for_guild, get_welcome_message
-from etc.sql_reference import add_user_voice_time, get_main_channel, get_invites_to_user, log_invite, activate_guild
+from discord.ext.commands.errors import MemberNotFound, RoleNotFound, NotOwner, CommandInvokeError
+from sql.message import log_message
+from sql.commands import get_all_guild_commands
+from sql.disabled_commands import check_command_status_for_guild
+from sql.config import get_server, get_welcome_role, get_prefix, get_welcome_message, setup_config
+from sql.config import activate_guild, deactivate_guild, get_main_channel
+from sql.voice import add_user_voice_time
+from sql.invites import get_invites_to_user, log_invite
 from etc.error_handling import invalid_argument
 from discord.ext import tasks, commands
 from time import perf_counter
@@ -38,7 +41,7 @@ class Listeners(commands.Cog):
 
                 minutes = int(round(time * - 1) / 60)
 
-                add_user_voice_time(member.id, minutes)
+                add_user_voice_time(member.guild.id, member.id, minutes)
 
             except KeyError:
                 pass
@@ -160,6 +163,10 @@ class Listeners(commands.Cog):
 
         elif isinstance(error, MemberNotFound) or isinstance(error, RoleNotFound):
             return await invalid_argument(ctx, ctx.message.content.split()[0].replace(self.bot.command_prefix, ""))
+
+        # elif isinstance(error, CommandInvokeError):
+            # print(error)
+            # return await ctx.send(":hammer: Ich bin leider nicht berechtigt hier Nachrichten zu schreiben. :hammer:")
 
         raise error
 

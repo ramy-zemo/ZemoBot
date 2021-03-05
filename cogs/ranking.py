@@ -1,10 +1,11 @@
+import requests
+import discord
+
 from io import BytesIO
 from PIL import Image, ImageFont, ImageDraw, ImageOps
 from discord.ext import commands
-from etc.sql_reference import get_main_channel, get_server_ranks, get_xp_from_user
-from etc.sql_reference import update_user_xp, insert_user_xp
-import requests
-import discord
+from sql.config import get_main_channel
+from sql.level import get_server_ranks, get_xp_from_user, insert_user_xp, update_user_xp
 
 
 class Ranking(commands.Cog):

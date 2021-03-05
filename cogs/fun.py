@@ -1,8 +1,9 @@
-from discord.ext import commands
 import discord
+import bitlyshortener
+
+from discord.ext import commands
 from etc.error_handling import invalid_argument
 from dotenv import load_dotenv
-import bitlyshortener
 from config import BITLY_API
 
 load_dotenv()
