@@ -1,13 +1,12 @@
-from discord.ext import commands, tasks
-from dotenv import load_dotenv
-from etc.ask import ask_for_thumbs
-from etc.sql_reference import get_main_channel, update_twitch_username, get_twitch_username, get_all_twitch_data
 import requests
 import json
 import discord
-import asyncio
-import os
-from time import sleep
+
+from discord.ext import commands, tasks
+from dotenv import load_dotenv
+from etc.ask import ask_for_thumbs
+from sql.config import get_main_channel, update_twitch_username, get_twitch_username, get_all_twitch_data
+from config import TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET
 
 
 load_dotenv()
@@ -22,7 +21,7 @@ class Twitch(commands.Cog):
         self.get_twitch_token()
 
     def get_twitch_token(self):
-        token_req = requests.post(f"https://id.twitch.tv/oauth2/token?client_id={os.getenv('TWITCH_CLIENT_ID')}&client_secret={os.getenv('TWITCH_CLIENT_SECRET')}&grant_type=client_credentials")
+        token_req = requests.post(f"https://id.twitch.tv/oauth2/token?client_id={TWITCH_CLIENT_ID}&client_secret={TWITCH_CLIENT_SECRET}&grant_type=client_credentials")
         self.token = json.loads(token_req.content.decode())["access_token"]
 
     @tasks.loop(seconds=5.0)
@@ -48,7 +47,7 @@ class Twitch(commands.Cog):
 
     @commands.is_owner()
     @commands.command()
-    async def setup_twitch(self, ctx):
+    async def setup_twitch(self, ctx, username):
         twitch_in_db = get_twitch_username(ctx.guild.id)
 
         if twitch_in_db:
@@ -57,16 +56,7 @@ class Twitch(commands.Cog):
             if not x:
                 return
 
-        await ctx.send("Gib bitte den Nutzernamen des Twitchkontos an:")
-
-        def check(reaction):
-            if str(reaction.author) == str(self.bot.user):
-                return False
-            else:
-                return True
-
-        reaction = await self.bot.wait_for('message', check=check)
-        self.username = reaction.content
+        self.username = username
 
         update_twitch_username(ctx.guild.id, self.username)
 
@@ -76,7 +66,7 @@ class Twitch(commands.Cog):
             return await ctx.send('Ungültiger Twitch Nutzername.\n')
 
     async def get_data(self):
-        headers = {"client-id": os.getenv('TWITCH_CLIENT_ID'), "Authorization": f"Bearer {self.token}"}
+        headers = {"client-id": TWITCH_CLIENT_ID, "Authorization": f"Bearer {self.token}"}
 
         channel_query = requests.get(f"https://api.twitch.tv/helix/search/channels?query={self.username}", headers=headers)
 

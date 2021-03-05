@@ -1,5 +1,5 @@
 from discord import Embed
-from etc.sql_reference import get_prefix
+from sql.config import get_prefix
 
 
 async def invalid_argument(ctx, command):

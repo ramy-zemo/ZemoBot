@@ -1,9 +1,10 @@
 import requests
 import json
+import discord
+
 from discord.ext import commands
 from io import BytesIO
 from PIL import Image
-import discord
 
 
 class Trump(commands.Cog):

@@ -4,11 +4,14 @@ from datetime import date
 from cogs.ranking import Ranking
 from itertools import cycle
 from discord.ext.commands import CommandNotFound, MissingPermissions
-from discord.ext.commands.errors import MemberNotFound, RoleNotFound, NotOwner
-from etc.sql_reference import database_setup, log_message, get_user_voice_time, get_server, get_welcome_role
-from etc.sql_reference import change_msg_welcome_channel, setup_config, add_user_voice_time, deactivate_guild
-from etc.sql_reference import get_prefix, get_disabled_commands, get_welcome_message, get_welcome_channel
-from etc.sql_reference import insert_user_voice_time, get_main_channel, get_invites_to_user, log_invite, activate_guild
+from discord.ext.commands.errors import MemberNotFound, RoleNotFound, NotOwner, CommandInvokeError
+from sql.message import log_message
+from sql.commands import get_all_guild_commands
+from sql.disabled_commands import check_command_status_for_guild
+from sql.config import get_server, get_welcome_role, get_prefix, get_welcome_message, setup_config
+from sql.config import activate_guild, deactivate_guild, get_main_channel
+from sql.voice import add_user_voice_time
+from sql.invites import get_invites_to_user, log_invite
 from etc.error_handling import invalid_argument
 from discord.ext import tasks, commands
 from time import perf_counter
@@ -34,15 +37,11 @@ class Listeners(commands.Cog):
                 if round(time * -1) <= 60:
                     return
 
-                await self.ranking.add_xp(self, member, member, round(round(time * -1) * 0.05), member.guild.id)
+                await self.ranking.add_xp(member, member, round(round(time * -1) * 0.05), member.guild.id)
 
                 minutes = int(round(time * - 1) / 60)
 
-                if get_user_voice_time(member):
-                    add_user_voice_time(member, minutes)
-
-                else:
-                    insert_user_voice_time(member, minutes)
+                add_user_voice_time(member.guild.id, member.id, minutes)
 
             except KeyError:
                 pass
@@ -54,7 +53,7 @@ class Listeners(commands.Cog):
         if get_server(guild.id):
             activate_guild(guild.id)
         else:
-            setup_config(guild.id, main_channel, main_channel)
+            setup_config(guild.id, main_channel.id, main_channel.id)
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
@@ -64,8 +63,6 @@ class Listeners(commands.Cog):
     async def on_ready(self):
         for guild in self.bot.guilds:
             self.invites[guild.id] = await guild.invites()
-
-        database_setup()
 
         self.change_status.start()
         print("Bot {} läuft!".format(self.bot.user))
@@ -99,12 +96,12 @@ class Listeners(commands.Cog):
                     await channel.send(default_welcome_message)
                 self.invites[ctx.guild.id] = invites_after_join
 
-                if len(get_invites_to_user(ctx.guild.id, ctx)) == 0:
-                    log_invite(ctx.guild.id, datum, str(invite.inviter), str(ctx))
+                if len(get_invites_to_user(ctx.guild.id, ctx.id)) == 0:
+                    log_invite(ctx.guild.id, datum, invite.inviter.id, ctx.id)
                     if str(invite.inviter) != str(self.bot.user):
-                        await self.ranking.add_xp(self, ctx, invite.inviter, 200, ctx.guild.id)
+                        await self.ranking.add_xp(ctx, invite.inviter.id, 200, ctx.guild.id)
 
-        await self.ranking.add_xp(self, ctx, ctx, 20, ctx.guild.id)
+        await self.ranking.add_xp(ctx, ctx, 20, ctx.guild.id)
 
     @commands.Cog.listener()
     async def on_member_remove(self, ctx):
@@ -122,19 +119,18 @@ class Listeners(commands.Cog):
             return await ctx.channel.send("Aktuell sind Commands nicht per DM möglich.")
 
         prefix = get_prefix(ctx.guild.id)
-        log_message(ctx.guild.id, str(date.today()), ctx)
+        log_message(ctx.guild.id, str(date.today()), ctx.author.id, ctx.content)
 
         ctx.content = ctx.content.replace(prefix, self.bot.command_prefix)
 
         if str(ctx.content).startswith(self.bot.command_prefix):
-            disabled_commands = get_disabled_commands(ctx.guild.id)
-            if ctx.content.replace(self.bot.command_prefix, "") not in disabled_commands:
+            if check_command_status_for_guild(ctx.guild.id, ctx.content.replace(self.bot.command_prefix, "")):
                 await ctx.add_reaction("🔁")
                 await self.bot.process_commands(ctx)
-                if str(ctx.content) != self.bot.command_prefix + "stats" and str(ctx.content).replace(self.bot.command_prefix, "") in self.bot.user_commands:
-                    await self.ranking.add_xp(self, ctx, ctx.author, 25, ctx.guild.id)
+                if str(ctx.content) != self.bot.command_prefix + "stats" and str(ctx.content).replace(self.bot.command_prefix, "").split()[0] in get_all_guild_commands(ctx.guild.id):
+                    await self.ranking.add_xp(ctx, ctx.author, 25, ctx.guild.id)
         else:
-            await self.ranking.add_xp(self, ctx, ctx.author, 5, ctx.guild.id)
+            await self.ranking.add_xp(ctx, ctx.author, 5, ctx.guild.id)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -149,7 +145,7 @@ class Listeners(commands.Cog):
             if str(message.author) == str(payload.member):
                 message.content = message.content.replace(prefix, self.bot.command_prefix)
                 if message.content != self.bot.command_prefix + "stats":
-                    await self.ranking.add_xp(self, discord.utils.get(guild.channels, id=payload.channel_id),
+                    await self.ranking.add_xp(discord.utils.get(guild.channels, id=payload.channel_id),
                                               message.author, 25, payload.guild_id)
                 await self.bot.process_commands(message)
 
@@ -167,6 +163,10 @@ class Listeners(commands.Cog):
 
         elif isinstance(error, MemberNotFound) or isinstance(error, RoleNotFound):
             return await invalid_argument(ctx, ctx.message.content.split()[0].replace(self.bot.command_prefix, ""))
+
+        # elif isinstance(error, CommandInvokeError):
+            # print(error)
+            # return await ctx.send(":hammer: Ich bin leider nicht berechtigt hier Nachrichten zu schreiben. :hammer:")
 
         raise error
 

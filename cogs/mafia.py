@@ -1,8 +1,9 @@
 import discord
+import asyncio
+
 from discord.ext import commands
 from string import ascii_letters
 from random import choice
-import asyncio
 from math import ceil
 
 

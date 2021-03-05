@@ -1,6 +1,7 @@
-from discord.ext import commands
 import requests
 import json
+
+from discord.ext import commands
 
 
 class W2G(commands.Cog):

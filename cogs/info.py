@@ -1,11 +1,15 @@
 import datetime
-
 import discord
 import psutil
+
 from discord.ext import commands
 from etc.error_handling import invalid_argument
-from etc.sql_reference import get_disabled_commands
-from etc.sql_reference import get_user_messages, get_user_voice_time, get_user_trashtalk, get_user_invites, get_prefix
+from sql.disabled_commands import get_all_disabled_commands_from_guild
+from sql.message import get_user_messages
+from sql.voice import get_user_voice_time
+from sql.trashtalk_log import get_user_trashtalk
+from sql.invites import get_user_invites
+from sql.config import get_prefix
 
 
 class Info(commands.Cog):
@@ -15,13 +19,13 @@ class Info(commands.Cog):
     @commands.command()
     async def info(self, ctx, member: discord.Member = 0):
         if not member:
-            user = str(ctx.message.author)
+            user = ctx.message.author
         else:
             user = member
 
-        messages = len(get_user_messages(user))
-        minutes = get_user_voice_time(user)
-        trashtalk = len(get_user_trashtalk(ctx.guild.id, user))
+        messages = len(get_user_messages(user.id))
+        minutes = get_user_voice_time(user.id)
+        trashtalk = len(get_user_trashtalk(ctx.guild.id, user.id))
 
         embed = discord.Embed(title="Info", description=f"{user} Nutzerinformationen:", color=0x1acdee)
         embed.add_field(name="Nachrichten", value=f"Du hast bisher {messages} Nachrichten versendet.", inline=False)
@@ -39,7 +43,7 @@ class Info(commands.Cog):
     @commands.command()
     async def help(self, ctx, *args):
         prefix = get_prefix(ctx.guild.id)
-        disabled_commands = get_disabled_commands(ctx.guild.id)
+        disabled_commands = get_all_disabled_commands_from_guild(ctx.guild.id)
         plugins = {
             'level': {"trashtalk_stats": "Show your Trashtalk Stats.",
                       "trashtalk_reset": "Reset your Trashtalk Stats.",
@@ -108,10 +112,20 @@ class Info(commands.Cog):
 
     @commands.command()
     async def invites(self, ctx, member="", *args):
-        if args:
-            return await get_user_invites(ctx.guild.id, member)
+        if member:
+            invites = await get_user_invites(ctx.guild.id, member.id)
         else:
-            return await get_user_invites(ctx.guild.id, ctx.message.author, ctx)
+            invites = await get_user_invites(ctx.guild.id, ctx.message.author.id)
+
+        if args:
+            return invites
+        else:
+            embed = discord.Embed(title="Invites",
+                                  description=f"Du hast bereits erfolgreich {invites} Personen eingeladen.",
+                                  color=0x1acdee)
+            embed.set_author(name="Zemo Bot",
+                             icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+            await ctx.send(embed=embed)
 
     @commands.command()
     async def server_info(self, ctx):
@@ -120,10 +134,10 @@ class Info(commands.Cog):
 
         embed.add_field(name="CPU Percent:", value=psutil.cpu_percent(interval=1), inline=False)
         embed.add_field(name="RAM Total:", value=round(psutil.virtual_memory()[0] / 1000000000, 2), inline=False)
+        embed.add_field(name="Processes running:", value=str(len(psutil.pids())), inline=False)
         embed.add_field(name="Boot Time:",
                         value=datetime.datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d %H:%M:%S"),
                         inline=False)
-        embed.add_field(name="Processes running:", value=str(len(psutil.pids())), inline=False)
 
         embed.set_author(name="Zemo Bot",
                          icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")

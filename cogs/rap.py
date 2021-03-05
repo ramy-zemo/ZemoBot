@@ -1,7 +1,8 @@
 import requests
 import json
-from discord.ext import commands, tasks
 import datetime
+
+from discord.ext import commands, tasks
 
 
 class Rap(commands.Cog):
