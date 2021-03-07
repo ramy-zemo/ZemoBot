@@ -13,7 +13,7 @@ class Trump(commands.Cog):
 
     @commands.command()
     async def trump(self, ctx, *args):
-        await ctx.send("```" + json.loads(requests.get("https://www.tronalddump.io/random/quote").content.decode())["value"] + " - Donald Trump" + "```")
+        await ctx.send("```" + requests.get("https://www.tronalddump.io/random/quote").json()["value"] + " - Donald Trump" + "```")
     
     @commands.command()
     async def trump_img(self, ctx, *args):

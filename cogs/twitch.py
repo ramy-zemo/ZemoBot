@@ -22,7 +22,7 @@ class Twitch(commands.Cog):
 
     def get_twitch_token(self):
         token_req = requests.post(f"https://id.twitch.tv/oauth2/token?client_id={TWITCH_CLIENT_ID}&client_secret={TWITCH_CLIENT_SECRET}&grant_type=client_credentials")
-        self.token = json.loads(token_req.content.decode())["access_token"]
+        self.token = token_req.json()["access_token"]
 
     @tasks.loop(seconds=5.0)
     async def twitch_loop(self):
@@ -72,7 +72,7 @@ class Twitch(commands.Cog):
 
         if channel_query.status_code == 200:
             try:
-                data = [x for x in json.loads(channel_query.content.decode())["data"] if x["broadcaster_login"].lower() == self.username.lower()][0]
+                data = [x for x in channel_query.json()["data"] if x["broadcaster_login"].lower() == self.username.lower()][0]
             except IndexError:
                 return []
 
