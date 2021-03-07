@@ -4,7 +4,7 @@ import discord
 from io import BytesIO
 from PIL import Image, ImageFont, ImageDraw, ImageOps
 from discord.ext import commands
-from sql.config import get_main_channel
+from sql.sql_config import get_main_channel
 from sql.level import get_server_ranks, get_xp_from_user, insert_user_xp, update_user_xp
 
 

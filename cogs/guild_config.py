@@ -2,7 +2,7 @@ import re
 
 from discord import Role, Embed
 from discord.ext import commands
-from sql.config import change_auto_role, change_prefix, change_welcome_message
+from sql.sql_config import change_auto_role, change_prefix, change_welcome_message
 from sql.disabled_commands import disable_command, enable_command
 from sql.commands import get_all_guild_commands
 

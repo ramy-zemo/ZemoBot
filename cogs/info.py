@@ -9,7 +9,7 @@ from sql.message import get_user_messages
 from sql.voice import get_user_voice_time
 from sql.trashtalk_log import get_user_trashtalk
 from sql.invites import get_user_invites
-from sql.config import get_prefix
+from sql.sql_config import get_prefix
 from sql.commands import get_all_guild_commands_from_category
 from sql.command_categories import get_all_guild_categories
 

@@ -8,8 +8,8 @@ from discord.ext.commands.errors import MemberNotFound, RoleNotFound, NotOwner, 
 from sql.message import log_message
 from sql.commands import get_all_guild_commands
 from sql.disabled_commands import check_command_status_for_guild
-from sql.config import get_server, get_welcome_role, get_prefix, get_welcome_message, setup_config
-from sql.config import activate_guild, deactivate_guild, get_main_channel
+from sql.sql_config import get_server, get_welcome_role, get_prefix, get_welcome_message, setup_config
+from sql.sql_config import activate_guild, deactivate_guild, get_main_channel
 from sql.voice import add_user_voice_time
 from sql.invites import get_invites_to_user, log_invite
 from sql.admin_commands import get_all_admin_commands

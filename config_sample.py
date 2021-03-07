@@ -1,4 +1,4 @@
-# Rename File to config.py
+# Rename File to sql_config.py
 DISCORD_TOKEN = ""
 ADMIN_IDS = []
 ICON_URL = ""

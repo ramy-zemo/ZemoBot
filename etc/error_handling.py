@@ -1,5 +1,5 @@
 from discord import Embed
-from sql.config import get_prefix
+from sql.sql_config import get_prefix
 from config import ICON_URL
 
 

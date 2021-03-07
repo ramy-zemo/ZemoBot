@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from etc.ask import ask_for_thumbs
-from sql.config import get_main_channel, update_twitch_username, get_twitch_username, get_all_twitch_data
+from sql.sql_config import get_main_channel, update_twitch_username, get_twitch_username, get_all_twitch_data
 from config import TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET
 
 
