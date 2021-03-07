@@ -23,4 +23,3 @@ yarl==1.6.3
 discord~=1.0.1
 mysql~=0.0.2
 bs4~=0.0.1
-discord.py

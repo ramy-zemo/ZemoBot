@@ -7,7 +7,7 @@ def get_all_admin_commands():
 
 
 def create_admin_command(command: str, parameters: str, description: str):
-    sql = "INSERT INTO ADMIN_COMMANDS (COMMAND, PARAMAETERS, DESCRIPTION) VALUES (%s, %s, %s)"
+    sql = "INSERT INTO ADMIN_COMMANDS (COMMAND, PARAMETERS, DESCRIPTION) VALUES (%s, %s, %s)"
     val = (command, parameters, description)
 
     cur_main.execute(sql, val)
