@@ -93,8 +93,8 @@ CONSTRAINT `DISABLED_COMMANDS_COMMANDS` FOREIGN KEY (COMMAND_ID) REFERENCES COMM
 CONSTRAINT `DISABLED_COMMANDS_CONFIG` FOREIGN KEY (SERVER_ID) REFERENCES CONFIG (ID));
 """)
 
-cur_main.execute("""CREATE TABLE IF NOT EXISTS `DEBUG_COMMANDS` (
-`DEBUG_COMMAND_ID` INT PRIMARY KEY AUTO_INCREMENT,
+cur_main.execute("""CREATE TABLE IF NOT EXISTS `ADMIN_COMMANDS` (
+`ADMIN_COMMAND_ID` INT PRIMARY KEY AUTO_INCREMENT,
 `COMMAND` TEXT,
 `PARAMETERS` TEXT,
 `DESCRIPTION` TEXT);
@@ -156,14 +156,15 @@ commands = [(2, "trashtalk", "(*mention)", "Spam users with terms defined on you
             (7, "help", "(category)", "Get a list of available commands."),
             ]
 
-debug_commands = [("show_channels", "", "Print all available channels on your Guild."),
+admin_commands = [("show_channels", "", "Print all available channels on your Guild."),
                   ("show_roles", "", "Print all available roles on your Guild."),
                   ("set_xp", "(mention) (xp)", "Set the Xp of a user"),
                   ("partner", "", "")]
 
-cur_main.executemany("INSERT INTO COMMANDS (CATEGORY_ID, COMMAND, PARAMETERS, DESCRIPTION) VALUES (%s, %s, %s, %s)",
-                     commands)
-cur_main.executemany("INSERT INTO DEBUG_COMMANDS (COMMAND, PARAMETERS, DESCRIPTION) VALUES (%s, %s, %s)",
-                     debug_commands)
+cur_main.executemany("INSERT INTO COMMANDS (CATEGORY_ID, COMMAND, PARAMETERS, DESCRIPTION) VALUES (%s, %s, %s, %s)", commands)
+cur_main.executemany("INSERT INTO ADMIN_COMMANDS (COMMAND, PARAMETERS, DESCRIPTION) VALUES (%s, %s, %s)", admin_commands)
+
+# Zemo Guild
+cur_main.execute("INSERT INTO CONFIG (ACTIVE, GUILD_ID, LANGUAGE, PREFIX, MESSAGE_CHANNEL_ID, WELCOME_CHANNEL_ID) VALUES (%s, %s, %s, %s, %s, %s)", (1, 481248489238429727, "german", "$", 817228906306076723, 817228906306076723))
 
 conn_main.commit()

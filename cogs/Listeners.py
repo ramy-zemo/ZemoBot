@@ -12,6 +12,7 @@ from sql.config import get_server, get_welcome_role, get_prefix, get_welcome_mes
 from sql.config import activate_guild, deactivate_guild, get_main_channel
 from sql.voice import add_user_voice_time
 from sql.invites import get_invites_to_user, log_invite
+from sql.admin_commands import get_all_admin_commands
 from etc.error_handling import invalid_argument
 from discord.ext import tasks, commands
 from time import perf_counter
@@ -38,9 +39,7 @@ class Listeners(commands.Cog):
                     return
 
                 await self.ranking.add_xp(member, member, round(round(time * -1) * 0.05), member.guild.id)
-
                 minutes = int(round(time * - 1) / 60)
-
                 add_user_voice_time(member.guild.id, member.id, minutes)
 
             except KeyError:
@@ -122,13 +121,17 @@ class Listeners(commands.Cog):
         log_message(ctx.guild.id, str(date.today()), ctx.author.id, ctx.content)
 
         ctx.content = ctx.content.replace(prefix, self.bot.command_prefix)
-
         if str(ctx.content).startswith(self.bot.command_prefix):
             if check_command_status_for_guild(ctx.guild.id, ctx.content.replace(self.bot.command_prefix, "")):
                 await ctx.add_reaction("🔁")
                 await self.bot.process_commands(ctx)
                 if str(ctx.content) != self.bot.command_prefix + "stats" and str(ctx.content).replace(self.bot.command_prefix, "").split()[0] in get_all_guild_commands(ctx.guild.id):
                     await self.ranking.add_xp(ctx, ctx.author, 25, ctx.guild.id)
+
+            elif ctx.author.id in self.bot.admin_ids and ctx.content.replace(self.bot.command_prefix, "").split()[0] in get_all_admin_commands():
+                await ctx.add_reaction("🔁")
+                await self.bot.process_commands(ctx)
+
         else:
             await self.ranking.add_xp(ctx, ctx.author, 5, ctx.guild.id)
 

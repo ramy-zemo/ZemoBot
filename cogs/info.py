@@ -10,6 +10,8 @@ from sql.voice import get_user_voice_time
 from sql.trashtalk_log import get_user_trashtalk
 from sql.invites import get_user_invites
 from sql.config import get_prefix
+from sql.commands import get_all_guild_commands_from_category
+from sql.command_categories import get_all_guild_categories
 
 
 class Info(commands.Cog):
@@ -36,74 +38,38 @@ class Info(commands.Cog):
                         inline=False)
         embed.add_field(name="Trashtalk", value=f"""Du hast bereits {trashtalk} mal Trashtalk versendet.""",
                         inline=False)
-        embed.set_author(name="Zemo Bot",
-                         icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+        embed.set_author(name="Zemo Bot", icon_url=self.bot.icon_url)
         await ctx.send(embed=embed)
 
     @commands.command()
     async def help(self, ctx, *args):
         prefix = get_prefix(ctx.guild.id)
         disabled_commands = get_all_disabled_commands_from_guild(ctx.guild.id)
-        plugins = {
-            'level': {"trashtalk_stats": "Show your Trashtalk Stats.",
-                      "trashtalk_reset": "Reset your Trashtalk Stats.",
-                      "trashtalk_list": "Show Trashtalk Words.",
-                      "stats (mention)": "Get your statistics.",
-                      "invites": "List of your successful invites.",
-                      "info (mention)": "Get your Userinformation.",
-                      "rank": "List of Top 5 Server Ranks"},
-            'fun': {"trashtalk (*mention)": "Trashtalk people.",
-                    "trashtalk_add": "Add Words to trashtalk.",
-                    "ping": "Check if bot is alive.",
-                    "meme": "Return random meme from Reddit.",
-                    "font (*keyword) (font)": "Returns ASCII Art, from provided Text.",
-                    "w2g (url)": "Create watch2gether room with provided Link.",
-                    "trump": "Get a random Quote of Trump.",
-                    "trump_img": "Get a random Picture of a Trump Meme.",
-                    "gen_meme (*Top Text, Bottom Text)": "Get a custom Meme."},
-            'games': {"mafia (*mention)": "Start Mafia Game.",
-                      "coin": "Flip a ZEMO Coin.",
-                      "pick_number (minimum) (maximum)": "Pick a random Number from a given Range"},
-            'mod': {"auszeit (*mention) (*seconds)": "Timeout Users.",
-                    "kick (*mention)": "Kick Members.",
-                    "ban (*mention)": "Ban Members",
-                    "unban (*mention)": "Unban Members",
-                    "create_invite (max_age) (max_uses) (temporary) (unique) (reason)": "Create Invites.",
-                    "invite_bot": "Get an invite to invite the Bot to another server."},
-            'media': {"font_list": "Get List of available Fonts.",
-                      "avatar (mention)": "Get a Discord Profile Picture.",
-                      "server_info": "Get some Server Statistics."},
-            'search': {"faceit_finder (steam_url)": "Find a FaceIt account by Steam identifier.",
-                       "google (mention) (text)": "Creates a Google it Yourself Link and shortens it, if shortener API is available."},
-            'config': {"set_auto_role (*mention_role)": "Determine the role that each new member automatically receives.",
-                       "set_prefix (*prefix)": "Determine the Bot Prefix on your Server.",
-                       "enable_command (*command)": "Enable the use of a specific command on your server.",
-                       "disable_command (*command)": "Disable the use of a specific command on your server.",
-                       "set_welcome_message (*message)": "Set Welcome message for new members. Available parameters in message: {member} {inviter}"}
-        }
+
+        plugins = get_all_guild_categories(ctx.guild.id)
 
         if not args:
             embed = discord.Embed(color=0x1acdee)
             embed.set_author(name="Zemo Bot")
             embed.set_thumbnail(url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
-            embed.add_field(name="Level", value=f"`{prefix}help Level` ", inline=True)
-            embed.add_field(name="Fun", value=f"`{prefix}help Fun` ", inline=True)
-            embed.add_field(name="Games", value=f"`{prefix}help Games` ", inline=True)
-            embed.add_field(name="Moderation", value=f"`{prefix}help Mod` ", inline=True)
-            embed.add_field(name="Media", value=f"`{prefix}help Media` ", inline=True)
-            embed.add_field(name="Search", value=f"`{prefix}help Search` ", inline=True)
-            embed.add_field(name="Config", value=f"`{prefix}help Config` ", inline=True)
+            for plugin in plugins:
+                embed.add_field(name=plugin.capitalize(), value=f"`{prefix}help {plugin}` ", inline=True)
             await ctx.send(embed=embed)
 
         elif len(args) == 1 and args[0].lower() in plugins:
             category = args[0].lower()
+
+            command_list = get_all_guild_commands_from_category(ctx.guild.id, category)
+            command_dict = {(command + " " + parameter if parameter else command): description for
+                            command, parameter, description in command_list}
+
             embed = discord.Embed(color=0x1acdee)
             embed.set_author(name="Zemo Bot")
             embed.set_thumbnail(url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
 
-            for count, option in enumerate(plugins[category]):
-                if option not in disabled_commands:
-                    embed.add_field(name=prefix + option, value=plugins[category][option], inline=False)
+            for command in command_dict:
+                if command not in disabled_commands:
+                    embed.add_field(name=prefix + command, value=command_dict[command], inline=False)
 
             await ctx.send(embed=embed)
 
@@ -123,8 +89,7 @@ class Info(commands.Cog):
             embed = discord.Embed(title="Invites",
                                   description=f"Du hast bereits erfolgreich {invites} Personen eingeladen.",
                                   color=0x1acdee)
-            embed.set_author(name="Zemo Bot",
-                             icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+            embed.set_author(name="Zemo Bot", icon_url=self.bot.icon_url)
             await ctx.send(embed=embed)
 
     @commands.command()
@@ -140,7 +105,7 @@ class Info(commands.Cog):
                         inline=False)
 
         embed.set_author(name="Zemo Bot",
-                         icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+                         icon_url=self.bot.icon_url)
         await ctx.send(embed=embed)
 
     @commands.command()

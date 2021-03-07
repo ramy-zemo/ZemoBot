@@ -20,8 +20,7 @@ class Ranking(commands.Cog):
             data = [(server_ranks[1], await self.xp_lvl(server_ranks[2])) for server_ranks in server_ranks[::-1]]
 
             embed = discord.Embed(title="Ranklist", description="List of Top 5 Server Ranks", color=0x1acdee)
-            embed.set_author(name="Zemo Bot",
-                             icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+            embed.set_author(name="Zemo Bot", icon_url=self.bot.icon_url)
 
             for user in range(5):
                 embed.add_field(name=f"{data[user][0]}", value=f"Rank: {data[user][1]}", inline=False)

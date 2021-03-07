@@ -73,8 +73,7 @@ class Mod(commands.Cog):
         await auszeit_channel.send("https://www.youtube.com/watch?v=NPvFkXVi5mM")
 
         embed = discord.Embed(title="Auszeit", color=0xff0000)
-        embed.set_author(name="Zemo Bot",
-                         icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+        embed.set_author(name="Zemo Bot", icon_url=self.bot.icon_url)
         embed.add_field(name="Deine Auszeit", value="Digga wie gehts auf der Stillen Treppe?", inline=False)
         embed.set_footer(text="Piss dich digga")
         await auszeit_channel.send(embed=embed)

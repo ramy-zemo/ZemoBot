@@ -92,7 +92,7 @@ class Twitch(commands.Cog):
                               color=0x9244ff)
         embed.set_thumbnail(url=data["thumbnail_url"])
 
-        embed.set_author(name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+        embed.set_author(name="Zemo Bot", icon_url=self.bot.icon_url)
         channel = await get_main_channel(self.bot.get_guild(guild_id))
         await channel.send(embed=embed)
 

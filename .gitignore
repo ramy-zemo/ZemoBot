@@ -6,6 +6,6 @@ venv/
 cogs/__pycache__/
 etc/__pycache__/
 __pycache__/
-cogs/debug.py
+cogs/admin.py
 playground.py
 config.py

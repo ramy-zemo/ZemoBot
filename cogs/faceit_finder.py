@@ -41,20 +41,20 @@ class Faceit_finder(commands.Cog):
                           color=0x1acdee)
 
             embed.set_author(name="Zemo Bot",
-                             icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+                             icon_url=self.bot.icon_url)
 
             embed.add_field(name="Faceit Account:", value=faceit_url)
 
             embed.set_thumbnail(url=skill_image_url)
 
             await ctx.send(embed=embed)
+
         except:
             embed = Embed(title="Faceit Finder",
                           description="Faceit Account konnte nicht gefunden werden.",
                           color=0x1acdee)
 
-            embed.set_author(name="Zemo Bot",
-                             icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+            embed.set_author(name="Zemo Bot", icon_url=self.bot.icon_url)
 
             await ctx.send(embed=embed)
 
