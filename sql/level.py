@@ -1,4 +1,5 @@
 from sql.general import conn_main, cur_main, decode_data, InvalidGuild
+from mysql.connector.errors import IntegrityError
 
 
 def insert_user_xp(guild_id: int, user_id: int, xp: int):
@@ -8,7 +9,7 @@ def insert_user_xp(guild_id: int, user_id: int, xp: int):
     try:
         cur_main.execute(sql, val_1)
         conn_main.commit()
-    except mysql.connector.errors.IntegrityError:
+    except IntegrityError:
         raise InvalidGuild
 
 
