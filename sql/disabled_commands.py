@@ -1,13 +1,23 @@
-from general import conn_main, cur_main, decode_data, InvalidGuild
+from sql.general import conn_main, cur_main, decode_data, InvalidGuild
 
 
 def check_command_status_for_guild(guild_id: int, command: str):
-    sql = "SELECT * FROM DISABLED_COMMANDS WHERE COMMAND_ID=(SELECT ID FROM COMMANDS WHERE COMMAND=%s) AND SERVER_ID=(SELECT ID FROM CONFIG WHERE GUILD_ID=%s)"
-    val = (command, guild_id)
+    sql = "SELECT ID FROM COMMANDS WHERE COMMAND=%s"
+    val = (command,)
 
     cur_main.execute(sql, val)
     data = cur_main.fetchone()
-    return not data
+
+    if data and data[0]:
+        sql_ = "SELECT * FROM DISABLED_COMMANDS WHERE COMMAND_ID=%s AND SERVER_ID=(SELECT ID FROM CONFIG WHERE GUILD_ID=%s)"
+        val_ = (command, guild_id)
+
+        cur_main.execute(sql_, val_)
+        data_ = cur_main.fetchone()
+        return not data_
+
+    else:
+        return False
 
 
 def disable_command(guild_id: int, command: str):

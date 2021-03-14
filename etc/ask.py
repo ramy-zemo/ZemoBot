@@ -1,14 +1,13 @@
 import asyncio
 import discord
 
+from config import ICON_URL
+
 
 async def ask_for_thumbs(bot, ctx, title, question):
-    embed = discord.Embed(title=title,
-                          description=question,
-                          color=0x1acdee)
+    embed = discord.Embed(title=title, description=question, color=0x1acdee)
 
-    embed.set_author(name="Zemo Bot",
-                     icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+    embed.set_author(name="Zemo Bot", icon_url=ICON_URL)
     embed.set_footer(text="Reagiere auf diese Nachricht um diese Frage zu beantworten.")
 
     request = await ctx.send(embed=embed)
@@ -51,10 +50,8 @@ async def ask(author, ask_type, question, text_channel, bot, options=0, max_answ
         if ask_type == "reaction_add" and reaction_type == "bool":
             embed.description = "1. Ja\n2. Nein"
 
-        embed.set_author(name="Zemo Bot",
-                         icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
-        embed.set_footer(
-            text=f"Reagiere auf diese Nachricht um eine Auswahl zu treffen. Maximale Auswahlmöglichkeiten: {max_answers}")
+        embed.set_author(name="Zemo Bot", icon_url=ICON_URL)
+        embed.set_footer(text=f"Reagiere auf diese Nachricht um eine Auswahl zu treffen. Maximale Auswahlmöglichkeiten: {max_answers}")
 
         request = await text_channel.send(embed=embed)
         sent_messages.append(request)
@@ -124,18 +121,15 @@ async def ask(author, ask_type, question, text_channel, bot, options=0, max_answ
             embed = discord.Embed(title="Zu viele Optionen gewählt",
                                   description=f"Du hast zu viele Optionen gewählt. Wähle maximal {max_answers}",
                                   color=0x1acdee)
-            embed.set_author(name="Zemo Bot",
-                             icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
-            embed.set_footer(
-                text=f"Reagiere auf die nächste Nachricht um eine Auswahl zu treffen. Maximale Auswahlmöglichkeiten: {max_answers}")
+            embed.set_author(name="Zemo Bot", icon_url=ICON_URL)
+            embed.set_footer(text=f"Reagiere auf die nächste Nachricht um eine Auswahl zu treffen. Maximale Auswahlmöglichkeiten: {max_answers}")
             sent_messages.append(await text_channel.send(embed=embed))
             continue
 
         except InvalidInt:
             embed = discord.Embed(title="Ungültige Auswahl", description=f"Die eingegebene Zahl ist nicht gültig.",
                                   color=0x1acdee)
-            embed.set_author(name="Zemo Bot",
-                             icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+            embed.set_author(name="Zemo Bot", icon_url=ICON_URL)
             embed.set_footer(text=f"Die Auswahl muss zwischen {range_int[0]} und {range_int[1]} liegen.")
             sent_messages.append(await text_channel.send(embed=embed))
             continue
@@ -143,8 +137,7 @@ async def ask(author, ask_type, question, text_channel, bot, options=0, max_answ
         except TooLongReaction:
             embed = discord.Embed(title="Ungültige Auswahl", description=f"Deine Antwort ist nicht gültig.",
                                   color=0x1acdee)
-            embed.set_author(name="Zemo Bot",
-                             icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+            embed.set_author(name="Zemo Bot", icon_url=ICON_URL)
             embed.set_footer(text=f"Die Antwort darf maximal {msg_max_length} Zeichen lang sein.")
             sent_messages.append(await text_channel.send(embed=embed))
             continue

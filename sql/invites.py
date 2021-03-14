@@ -1,4 +1,4 @@
-from general import conn_main, cur_main, decode_data, InvalidGuild
+from sql.general import conn_main, cur_main, decode_data, InvalidGuild
 
 
 def log_invite(guild_id: int, date: str, from_user_id: int, to_user_id: int):

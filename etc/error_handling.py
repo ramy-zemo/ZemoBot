@@ -1,5 +1,6 @@
 from discord import Embed
-from sql.config import get_prefix
+from sql.sql_config import get_prefix
+from config import ICON_URL
 
 
 async def invalid_argument(ctx, command):
@@ -40,5 +41,5 @@ async def invalid_argument(ctx, command):
                   color=0x1acdee)
     embed.add_field(name=f"Richtigen Parameter:", value=f"`{commands[command]}`", inline=True)
 
-    embed.set_author(name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+    embed.set_author(name="Zemo Bot", icon_url=ICON_URL)
     await ctx.send(embed=embed)

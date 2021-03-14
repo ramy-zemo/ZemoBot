@@ -29,15 +29,15 @@ class Rap(commands.Cog):
         if today not in self.done:
             url = "https://deinupdate-api.azurewebsites.net/api/v2/news?interests=4"
             x = requests.get(url, headers={"user-agent": "okhttp/4.8.1"})
-            id = [x for x in json.loads(x.content.decode())["items"] if x["title"] == "Alle Rap-Songs, die heute erschienen sind!"][0]["id"]
+            id = [x for x in x.json()["items"] if x["title"] == "Alle Rap-Songs, die heute erschienen sind!"][0]["id"]
             get_item = f"https://deinupdate-api.azurewebsites.net/api/v2/news/{id}"
             x = requests.get(get_item, headers={"user-agent": "okhttp/4.8.1"})
-            items = json.loads(x.content.decode())["content"]
+            items = x.json()["content"]
             item_single = [items[items.index(x) + 1] for count, x in enumerate(items) if items[count]['value'] == 'SINGLES'][0]
 
             channels = await self.gds()
-            for x in channels:
-                await x.send("Alle Rap Songs die heute erschienen sind: \n" + item_single["value"].replace("<em>", "").replace("<br>", "").replace("</em>", "").replace("<i>", "").replace("</i>", ""))
+            for channel in channels:
+                await channel.send("Alle Rap Songs die heute erschienen sind: \n" + item_single["value"].replace("<em>", "").replace("<br>", "").replace("</em>", "").replace("<i>", "").replace("</i>", ""))
 
             self.done.append(today)
 

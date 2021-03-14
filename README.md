@@ -49,7 +49,7 @@ Currently available commands (will be extended continuously):
 
 `$faceit_finder (steam_url)` -> Find a FaceIt account by Steam identifier.
 
-## Debug Commands
+## Admin Commands
 
 `$show_roles` -> Print Roles and Role IDs from a Guild
 

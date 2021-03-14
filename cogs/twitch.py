@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from etc.ask import ask_for_thumbs
-from sql.config import get_main_channel, update_twitch_username, get_twitch_username, get_all_twitch_data
+from sql.sql_config import get_main_channel, update_twitch_username, get_twitch_username, get_all_twitch_data
 from config import TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET
 
 
@@ -22,7 +22,7 @@ class Twitch(commands.Cog):
 
     def get_twitch_token(self):
         token_req = requests.post(f"https://id.twitch.tv/oauth2/token?client_id={TWITCH_CLIENT_ID}&client_secret={TWITCH_CLIENT_SECRET}&grant_type=client_credentials")
-        self.token = json.loads(token_req.content.decode())["access_token"]
+        self.token = token_req.json()["access_token"]
 
     @tasks.loop(seconds=5.0)
     async def twitch_loop(self):
@@ -72,7 +72,7 @@ class Twitch(commands.Cog):
 
         if channel_query.status_code == 200:
             try:
-                data = [x for x in json.loads(channel_query.content.decode())["data"] if x["broadcaster_login"].lower() == self.username.lower()][0]
+                data = [x for x in channel_query.json()["data"] if x["broadcaster_login"].lower() == self.username.lower()][0]
             except IndexError:
                 return []
 
@@ -92,7 +92,7 @@ class Twitch(commands.Cog):
                               color=0x9244ff)
         embed.set_thumbnail(url=data["thumbnail_url"])
 
-        embed.set_author(name="Zemo Bot", icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+        embed.set_author(name="Zemo Bot", icon_url=self.bot.icon_url)
         channel = await get_main_channel(self.bot.get_guild(guild_id))
         await channel.send(embed=embed)
 

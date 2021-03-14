@@ -36,8 +36,7 @@ class Mafia(commands.Cog):
                                   description=f"Du wurdest von {ctx.message.author.mention} eingeladen Mafia zu spielen. Möchtest du mitspielen?",
                                   color=0x1acdee)
 
-            embed.set_author(name="Zemo Bot",
-                             icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+            embed.set_author(name="Zemo Bot", icon_url=self.bot.icon_url)
             embed.set_footer(text="Reagiere auf diese Nachricht um die Einladung annzunehmen.")
             request = await member.send(embed=embed)
 
@@ -58,23 +57,18 @@ class Mafia(commands.Cog):
                 reaction, user = await self.bot.wait_for('reaction_add', timeout=15.0, check=check)
 
             except asyncio.TimeoutError:
-                embed = discord.Embed(title="Timeout",
-                                      description="Du warst leider zu langsam!",
-                                      color=0x1acdee)
-                embed.set_author(name="Zemo Bot",
-                                 icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+                embed = discord.Embed(title="Timeout", description="Du warst leider zu langsam!", color=0x1acdee)
+                embed.set_author(name="Zemo Bot", icon_url=self.bot.icon_url)
                 bot_sent_messages.append(await member.send(embed=embed))
 
             else:
                 if reaction.emoji == '👍':
                     invite = True
                     embed = discord.Embed(title="Einladung",
-                                          description="Einladung erfolgreich angenommen.\n"
-                                                      "Das Spiel startet in kürze.",
+                                          description="Einladung erfolgreich angenommen.\nDas Spiel startet in kürze.",
                                           color=0x00f030)
 
-                    embed.set_author(name="Zemo Bot",
-                                     icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+                    embed.set_author(name="Zemo Bot", icon_url=self.bot.icon_url)
                     bot_sent_messages.append(await member.send(embed=embed))
 
                 if reaction.emoji == '👎':
@@ -82,8 +76,7 @@ class Mafia(commands.Cog):
                                           description="Einladung erfolgreich abgelehnt!\n",
                                           color=0xf00000)
 
-                    embed.set_author(name="Zemo Bot",
-                                     icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+                    embed.set_author(name="Zemo Bot", icon_url=self.bot.icon_url)
                     bot_sent_messages.append(await member.send(embed=embed))
 
             if invite:
@@ -98,8 +91,7 @@ class Mafia(commands.Cog):
                                   description=f"Spiel: {game_id} konnte nicht gestartet werden, da zu wenige Spieler vorhanden sind.",
                                   color=0xf00000)
 
-            embed.set_author(name="Zemo Bot",
-                             icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+            embed.set_author(name="Zemo Bot", icon_url=self.bot.icon_url)
 
             return bot_sent_messages.append(await ctx.send(embed=embed))
 
@@ -237,8 +229,7 @@ class Mafia(commands.Cog):
                               description="Ihr habt nun 5 Minuten Zeit bis zur ersten Abstimmung.\nViel Glück!\n\n",
                               color=0x1acdee)
 
-        embed.set_author(name="Zemo Bot",
-                         icon_url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
+        embed.set_author(name="Zemo Bot", icon_url=self.bot.icon_url)
 
         embed.add_field(name="Mitspieler:", value="\n" + ' '.join([x.mention for x in accepted_user]), inline=True)
 

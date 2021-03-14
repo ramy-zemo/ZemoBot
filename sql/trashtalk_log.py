@@ -1,4 +1,4 @@
-from general import conn_main, cur_main, decode_data, InvalidGuild
+from sql.general import conn_main, cur_main, decode_data, InvalidGuild
 
 
 def get_user_trashtalk(guild_id: int, user_id: int) -> list:
