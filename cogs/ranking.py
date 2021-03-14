@@ -165,8 +165,8 @@ class Ranking(commands.Cog):
 
     async def get_rank(self, ctx, user_id):
         ordered_list = get_server_ranks(ctx.guild.id)[::-1]
-        x = [count + 1 for count, x in enumerate(ordered_list) if ordered_list[count][1] == user_id]
-        return x[0] if x else "Bot"
+        user_place = [count + 1 for count, x in enumerate(ordered_list) if ordered_list[count][0] == user_id]
+        return user_place[0] if user_place else "Bot"
 
     async def xp_lvl(self, xp):
         level_person = 0
