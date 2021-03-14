@@ -6,7 +6,7 @@ from itertools import cycle
 from discord.ext.commands import CommandNotFound, MissingPermissions
 from discord.ext.commands.errors import MemberNotFound, RoleNotFound, NotOwner, CommandInvokeError
 from sql.message import log_message
-from sql.commands import get_all_guild_commands
+from sql.commands import get_all_guild_commands_and_category
 from sql.disabled_commands import check_command_status_for_guild
 from sql.sql_config import get_server, get_welcome_role, get_prefix, get_welcome_message, setup_config
 from sql.sql_config import activate_guild, deactivate_guild, get_main_channel
@@ -125,7 +125,7 @@ class Listeners(commands.Cog):
             if check_command_status_for_guild(ctx.guild.id, ctx.content.replace(self.bot.command_prefix, "")):
                 await ctx.add_reaction("🔁")
                 await self.bot.process_commands(ctx)
-                if str(ctx.content) != self.bot.command_prefix + "stats" and str(ctx.content).replace(self.bot.command_prefix, "").split()[0] in get_all_guild_commands(ctx.guild.id):
+                if str(ctx.content) != self.bot.command_prefix + "stats" and str(ctx.content).replace(self.bot.command_prefix, "").split()[0] in get_all_guild_commands_and_category(ctx.guild.id):
                     await self.ranking.add_xp(ctx, ctx.author, 25, ctx.guild.id)
 
             elif ctx.author.id in self.bot.admin_ids and ctx.content.replace(self.bot.command_prefix, "").split()[0] in get_all_admin_commands():

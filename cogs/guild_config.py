@@ -4,7 +4,7 @@ from discord import Role, Embed
 from discord.ext import commands
 from sql.sql_config import change_auto_role, change_prefix, change_welcome_message
 from sql.disabled_commands import disable_command, enable_command
-from sql.commands import get_all_guild_commands
+from sql.commands import get_all_guild_commands_and_category
 
 
 class GuildConfig(commands.Cog):
@@ -32,7 +32,7 @@ class GuildConfig(commands.Cog):
     @commands.is_owner()
     @commands.command()
     async def enable_command(self, ctx, command):
-        if command in get_all_guild_commands(ctx.guild.id):
+        if command in get_all_guild_commands_and_category(ctx.guild.id):
             enable_command(ctx.guild.id, command)
             embed = Embed(color=0x1acdee,
                           description=f"Command {command} erfolgreich für den Server {ctx.guild} aktiviert.")
@@ -50,7 +50,7 @@ class GuildConfig(commands.Cog):
     @commands.is_owner()
     @commands.command()
     async def disable_command(self, ctx, command):
-        if command in get_all_guild_commands(ctx.guild.id):
+        if command in get_all_guild_commands_and_category(ctx.guild.id):
             disable_command(ctx.guild.id, command)
             enable_command(ctx.guild.id, command)
             embed = Embed(color=0x1acdee,
