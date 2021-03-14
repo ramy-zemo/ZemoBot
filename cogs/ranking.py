@@ -100,12 +100,12 @@ class Ranking(commands.Cog):
                 await ctx.send(file=discord.File(fp=output, filename="image.png"))
 
         if not member:
-            level = await self.get_lvl(ctx, ctx.author)
-            rank = await self.get_rank(ctx, ctx.author)
+            level = await self.get_lvl(ctx, ctx.author.id)
+            rank = await self.get_rank(ctx, ctx.author.id)
             await create_level_image(ctx, ctx.author, ctx.author.avatar_url, level, rank)
         else:
-            level = await self.get_lvl(ctx, member)
-            rank = await self.get_rank(ctx, member)
+            level = await self.get_lvl(ctx, member.id)
+            rank = await self.get_rank(ctx, member.id)
             await create_level_image(ctx, member, member.avatar_url, level, rank)
 
     async def lvl_xp(self, lvl):
@@ -129,8 +129,8 @@ class Ranking(commands.Cog):
             i += increment
             j += 1
 
-    async def set_xp(self, ctx, user: discord.Member, amout):
-        update_user_xp(ctx.guild.id, user, amout)
+    async def set_xp(self, ctx, user: discord.Member, amount):
+        update_user_xp(ctx.guild.id, user, amount)
 
     async def add_xp(self, ctx, user, xp, guild_id):
         if isinstance(user, str):
@@ -160,12 +160,12 @@ class Ranking(commands.Cog):
             channel = await get_main_channel(ctx)
             await channel.send(f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
 
-    async def get_lvl(self, ctx, user):
-        return await self.xp_lvl(get_xp_from_user(ctx.guild.id, user.id))
+    async def get_lvl(self, ctx, user_id):
+        return await self.xp_lvl(get_xp_from_user(ctx.guild.id, user_id))
 
-    async def get_rank(self, ctx, user):
+    async def get_rank(self, ctx, user_id):
         ordered_list = get_server_ranks(ctx.guild.id)[::-1]
-        x = [count + 1 for count, x in enumerate(ordered_list) if ordered_list[count][1] == user]
+        x = [count + 1 for count, x in enumerate(ordered_list) if ordered_list[count][1] == user_id]
         return x[0] if x else "Bot"
 
     async def xp_lvl(self, xp):
