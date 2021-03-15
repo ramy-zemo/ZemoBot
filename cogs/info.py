@@ -42,13 +42,13 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
-    async def help(self, ctx, *args):
+    async def help(self, ctx, category=""):
         prefix = get_prefix(ctx.guild.id)
         disabled_commands = get_all_disabled_commands_from_guild(ctx.guild.id)
 
         plugins = get_all_guild_categories(ctx.guild.id)
 
-        if not args:
+        if not category:
             embed = discord.Embed(color=0x1acdee)
             embed.set_author(name="Zemo Bot")
             embed.set_thumbnail(url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
@@ -56,9 +56,7 @@ class Info(commands.Cog):
                 embed.add_field(name=plugin.capitalize(), value=f"`{prefix}help {plugin}` ", inline=True)
             await ctx.send(embed=embed)
 
-        elif len(args) == 1 and args[0].lower() in plugins:
-            category = args[0].lower()
-
+        elif category.lower() in plugins:
             command_list = get_all_guild_commands_from_category(ctx.guild.id, category)
             command_dict = {(command + " " + parameter if parameter else command): description for
                             command, parameter, description in command_list}

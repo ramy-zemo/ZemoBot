@@ -122,7 +122,7 @@ class Listeners(commands.Cog):
 
         ctx.content = ctx.content.replace(prefix, self.bot.command_prefix)
         if str(ctx.content).startswith(self.bot.command_prefix):
-            if check_command_status_for_guild(ctx.guild.id, ctx.content.replace(self.bot.command_prefix, "")):
+            if check_command_status_for_guild(ctx.guild.id, ctx.content.replace(self.bot.command_prefix, "").split()[0]):
                 await ctx.add_reaction("🔁")
                 await self.bot.process_commands(ctx)
                 if str(ctx.content) != self.bot.command_prefix + "stats" and str(ctx.content).replace(self.bot.command_prefix, "").split()[0] in get_all_guild_commands_and_category(ctx.guild.id):

@@ -99,7 +99,7 @@ cur_main.execute("""CREATE TABLE IF NOT EXISTS `ADMIN_COMMANDS` (
 `PARAMETERS` TEXT,
 `DESCRIPTION` TEXT);
 """)
-
+d
 conn_main.commit()
 
 # COMMAND_CATEGORIES
@@ -140,8 +140,7 @@ commands = [(2, "trashtalk", "(*mention)", "Spam users with terms defined on you
             (6, "faceit_finder", "(steam_url)", "Find a FaceIt account using the Steam Profile URL."),
             (7, "set_auto_role", "(*mention_role)",
              "Determine the role that each new member will automatically receive."),
-            (6, "google", "(mention) (*text)",
-             "Creates a Google it Yourself link and shortens it when the Shortener API is available."),
+            (6, "google", "(mention) (*text)", "Creates a Google it Yourself link and shortens it when the Shortener API is available."),
             (7, "set_prefix", "(*prefix)", "Determine the bot prefix on your server."),
             (7, "enable_command", "(*command)", "Enable the use of a specific command on your server."),
             (7, "disable_command", "(*command)", "Disable the use of a specific command on your server."),
@@ -154,6 +153,7 @@ commands = [(2, "trashtalk", "(*mention)", "Spam users with terms defined on you
             (7, "set_welcome_message", "(*message)",
              "Set a welcome message for new members. Available parameters in the message: {member} {inviter}"),
             (7, "help", "(category)", "Get a list of available commands."),
+            ()
             ]
 
 admin_commands = [("show_channels", "", "Print all available channels on your Guild."),
