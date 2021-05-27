@@ -1,7 +1,4 @@
 from discord.ext import commands
-# from discord_local.ext.commands.bot import process_commands
-from sql.commands import create_command, delete_command
-from sql.admin_commands import create_admin_command, delete_admin_command
 
 
 class Admin(commands.Cog):
@@ -10,19 +7,26 @@ class Admin(commands.Cog):
 
     @commands.command()
     async def add_command(self, ctx, category, command, parameters, description):
-        create_command(category, command, parameters, description)
+        self.bot.ApiClient.request(self.bot.ApiClient.create_command,
+                                   params={"category": category,
+                                           "command": command,
+                                           "parameters": parameters,
+                                           "description": description})
 
     @commands.command()
     async def add_admin_command(self, ctx, command, parameters, description):
-        create_admin_command(command, parameters, description)
+        self.bot.ApiClient.request(self.bot.ApiClient.create_admin_command,
+                                   params={"command": command,
+                                           "parameters": parameters,
+                                           "description": description})
 
     @commands.command()
     async def delete_command(self, ctx, command):
-        delete_command(command)
+        self.bot.ApiClient.request(self.bot.ApiClient.delete_command, params={"command": command})
 
     @commands.command()
     async def delete_admin_command(self, ctx, command):
-        delete_admin_command(command)
+        self.bot.ApiClient.request(self.bot.ApiClient.delete_admin_command, params={"command": command})
 
 
 def setup(bot):

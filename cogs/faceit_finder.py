@@ -5,7 +5,7 @@ from discord import Embed
 from bs4 import BeautifulSoup
 
 
-class Faceit_finder(commands.Cog):
+class FaceitFinder(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -16,9 +16,7 @@ class Faceit_finder(commands.Cog):
                 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36',
             }
 
-            data = {
-                'name': url
-            }
+            data = {'name': url}
 
             response = requests.post('https://faceitfinder.com/profile/', headers=headers, data=data)
 
@@ -29,12 +27,9 @@ class Faceit_finder(commands.Cog):
             response_html_soup = BeautifulSoup(response_html.content, 'html.parser')
             url = response_html_soup.find_all("a", href=True)
 
-            faceit_url = \
-            [x["href"] for x in url if "https://www.faceit.com/" in str(x["href"]) and "csgo" not in str(x["href"])][0]
+            faceit_url = [x["href"] for x in url if "https://www.faceit.com/" in str(x["href"]) and "csgo" not in str(x["href"])][0]
             faceit_description = response_html_soup.find_all("meta")[::-1][0]["content"]
-            skill_image_url = "https://faceitfinder.com" + \
-                              [x["src"] for x in response_html_soup.find_all("img") if "skill_level" in str(x["src"])][
-                                  0]
+            skill_image_url = "https://faceitfinder.com" + [x["src"] for x in response_html_soup.find_all("img") if "skill_level" in str(x["src"])][0]
 
             embed = Embed(title="Faceit Finder",
                           description=faceit_description,
@@ -60,4 +55,4 @@ class Faceit_finder(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Faceit_finder(bot))
+    bot.add_cog(FaceitFinder(bot))

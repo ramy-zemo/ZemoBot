@@ -1,8 +1,6 @@
 from discord.ext import commands
 from discord import Member
 from datetime import date
-from sql.trashtalk_log import get_user_trashtalk, log_trashtalk, reset_trashtalk
-from sql.trashtalk import get_trashtalk, add_trashtalk
 
 
 class Trashtalk(commands.Cog):
@@ -12,29 +10,44 @@ class Trashtalk(commands.Cog):
     @commands.command()
     async def trashtalk(self, ctx, member: Member):
         datum = str(date.today())
-        result = get_user_trashtalk(ctx.guild.id, ctx.message.author.id)
+        result = self.bot.ApiClient.request(self.bot.ApiClient.get_user_trashtalk,
+                                            params={"guild_id": ctx.guild.id,
+                                                    "user_id": ctx.message.author.id})
         daten = [x[0] for x in result if x[0] == datum]
 
-        if len(daten) < 10:
-            messages = get_trashtalk(ctx.guild.id)
-            try:
-                for msg in messages:
-                    await member.send(msg)
-            except:
-                return await ctx.send(f"Trashtalk an {member.mention} fehlgeschlagen.")
+        if len(daten) < 3:
+            messages = self.bot.ApiClient.request(self.bot.ApiClient.get_trashtalk, params={"guild_id": ctx.guild.id})
+            if messages:
+                try:
+                    for msg in messages:
+                        await member.send(msg)
+                except:
+                    return await ctx.send(f"Trashtalk an {member.mention} fehlgeschlagen.")
 
-            log_trashtalk(ctx.guild.id, datum, ctx.message.author.id, member.id)
+            else:
+                return await ctx.send(f"Für den Server {ctx.guild} sind aktuell keine Trashtalk Nachrichten vorhanden.")
+
+            self.bot.ApiClient.request(self.bot.ApiClient.log_trashtalk,
+                                       params={"guild_id": ctx.guild.id,
+                                               "datum": datum,
+                                               "from_user_id": ctx.message.author.id,
+                                               "to_user_id": member.id})
         else:
             await ctx.send(f"{ctx.message.author.mention} du hast dein Trash Limit für heute erreicht.")
 
     @commands.command()
     async def trashtalk_add(self, ctx, *args):
-        add_trashtalk(ctx.guild.id, str(date.today()), ctx.message.author.id, " ".join(args))
+        self.bot.ApiClient.request(self.bot.ApiClient.add_trashtalk,
+                                   params={"guild_id": ctx.guild.id,
+                                           "added_on": str(date.today()),
+                                           "added_by_user_id": ctx.message.author.id,
+                                           "message": " ".join(args)})
+
         await ctx.send("Nachricht erfolgreich hinzugefügt!")
 
     @commands.command()
     async def trashtalk_list(self, ctx):
-        messages = get_trashtalk(ctx.guild.id)
+        messages = self.bot.ApiClient.request(self.bot.ApiClient.get_trashtalk, params={"guild_id": ctx.guild.id})
 
         if messages:
             await ctx.message.author.send("```\n" + '\n'.join(messages) + "\n```")
@@ -45,9 +58,13 @@ class Trashtalk(commands.Cog):
     async def trashtalk_stats(self, ctx, member: Member = 0, *args):
         datum = str(date.today())
         if not member:
-            result = get_user_trashtalk(ctx.guild.id, ctx.message.author.id)
+            result = self.bot.ApiClient.request(self.bot.ApiClient.get_user_trashtalk,
+                                                params={"guild_id": ctx.guild.id,
+                                                        "user_id": ctx.message.author.id})
         else:
-            result = get_user_trashtalk(ctx.guild.id, member.id)
+            result = self.bot.ApiClient.request(self.bot.ApiClient.get_user_trashtalk,
+                                                params={"guild_id": ctx.guild.id,
+                                                        "user_id": member.id})
 
         today = [x[1] for x in result if x[1] == datum]
 
@@ -59,7 +76,8 @@ class Trashtalk(commands.Cog):
     @commands.command()
     async def trashtalk_reset(self, ctx, *args):
         try:
-            reset_trashtalk(ctx.guild.id, ctx.message.author.id)
+            self.bot.ApiClient.request(self.bot.ApiClient.reset_user_trashtalk,
+                                       params={"guild_id": ctx.guild.id, "user_id": ctx.message.author.id})
             await ctx.send(f"Trashtalk für {ctx.message.author.mention} erfolgreich zurückgesetzt.")
         except:
             await ctx.send(f"Nutzer {ctx.message.author.mention} nicht gefunden.")

@@ -1,13 +1,11 @@
 import requests
-import json
 import discord
 
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from etc.ask import ask_for_thumbs
-from sql.sql_config import get_main_channel, update_twitch_username, get_twitch_username, get_all_twitch_data
 from config import TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET
-
+from etc.sql_config import get_main_channel
 
 load_dotenv()
 
@@ -26,7 +24,7 @@ class Twitch(commands.Cog):
 
     @tasks.loop(seconds=5.0)
     async def twitch_loop(self):
-        to_check = get_all_twitch_data()
+        to_check = self.bot.ApiClient.request(self.bot.ApiClient.get_all_twitch_data)
 
         for guild_data in to_check:
             guild_id = guild_data[0]
@@ -48,17 +46,18 @@ class Twitch(commands.Cog):
     @commands.is_owner()
     @commands.command()
     async def setup_twitch(self, ctx, username):
-        twitch_in_db = get_twitch_username(ctx.guild.id)
+        twitch_in_db = self.bot.ApiClient.request(self.bot.ApiClient.get_twitch_username,
+                                                  params={"guild_id": ctx.guild.id})
 
         if twitch_in_db:
-            x = await ask_for_thumbs(self.bot, ctx, "Twitch bereits verknüpft", f"Der Server {ctx.guild} ist bereits mit dem Twitch Konto `{twitch_in_db}` verbunden.\nMöchtest du ein neues verbinden?")
+            connect_new_twitch_username = await ask_for_thumbs(self.bot, ctx, "Twitch bereits verknüpft", f"Der Server {ctx.guild} ist bereits mit dem Twitch Konto `{twitch_in_db}` verbunden.\nMöchtest du ein neues verbinden?")
 
-            if not x:
+            if not connect_new_twitch_username:
                 return
 
         self.username = username
-
-        update_twitch_username(ctx.guild.id, self.username)
+        self.bot.ApiClient.request(self.bot.ApiClient.update_twitch_username,
+                                   params={"guild_id": ctx.guild.id, "twitch_username": self.username})
 
         if await self.get_data():
             await ctx.send(f'Das Twitch Konto {self.username} wurde erfolgreich mit dem Server {ctx.guild} verbunden.')
@@ -93,7 +92,7 @@ class Twitch(commands.Cog):
         embed.set_thumbnail(url=data["thumbnail_url"])
 
         embed.set_author(name="Zemo Bot", icon_url=self.bot.icon_url)
-        channel = await get_main_channel(self.bot.get_guild(guild_id))
+        channel = await get_main_channel(self.bot.ApiClient, self.bot.get_guild(guild_id))
         await channel.send(embed=embed)
 
 

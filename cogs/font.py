@@ -34,13 +34,13 @@ class Font(commands.Cog):
     @commands.command()
     async def font(self, ctx, keyword=None, font=None,):
         if not keyword:
-            return await invalid_argument(ctx, "font")
+            return await invalid_argument(self, ctx, "font")
 
         if not font:
             font = choice(self.font_list)
 
-        request = requests.get(
-            f"http://www.network-science.de/ascii/ascii.php?TEXT={keyword}&x=30&y=11&FONT={font}&RICH=no&FORM=left&STRE=no&WIDT=80")
+        url = "http://www.network-science.de/ascii/ascii.php"
+        request = requests.get(url + f"?TEXT={keyword}&x=30&y=11&FONT={font}&RICH=no&FORM=left&STRE=no&WIDT=80")
 
         soup = BeautifulSoup(request.content, "html.parser")
 

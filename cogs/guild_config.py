@@ -2,9 +2,6 @@ import re
 
 from discord import Role, Embed
 from discord.ext import commands
-from sql.sql_config import change_auto_role, change_prefix, change_welcome_message
-from sql.disabled_commands import disable_command, enable_command
-from sql.commands import get_all_guild_commands_and_category
 
 
 class GuildConfig(commands.Cog):
@@ -14,8 +11,11 @@ class GuildConfig(commands.Cog):
     @commands.is_owner()
     @commands.command()
     async def set_auto_role(self, ctx, role: Role):
-        change_auto_role(ctx.guild.id, role.id)
-        embed = Embed(color=0x1acdee, description=f"Die Willkommensrolle für {ctx.guild} wurde erfolgreich zu {role} geändert.")
+        self.bot.ApiClient.request(self.bot.ApiClient.change_auto_role,
+                                   params={"guild_id": ctx.guild.id, "role_id": role.id})
+
+        embed = Embed(color=0x1acdee,
+                      description=f"Die Willkommensrolle für {ctx.guild} wurde erfolgreich zu {role} geändert.")
         embed.set_author(name="Zemo Bot")
         embed.set_thumbnail(url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
         await ctx.send(embed=embed)
@@ -23,8 +23,11 @@ class GuildConfig(commands.Cog):
     @commands.is_owner()
     @commands.command()
     async def set_prefix(self, ctx, prefix):
-        change_prefix(ctx.guild.id, prefix)
-        embed = Embed(color=0x1acdee, description=f"Der Befehlsprefix für {ctx.guild} wurde erfolgreich zu {prefix} geändert.")
+        self.bot.ApiClient.request(self.bot.ApiClient.change_prefix,
+                                   params={"guild_id": ctx.guild.id, "prefix": prefix})
+
+        embed = Embed(color=0x1acdee,
+                      description=f"Der Befehlsprefix für {ctx.guild} wurde erfolgreich zu {prefix} geändert.")
         embed.set_author(name="Zemo Bot")
         embed.set_thumbnail(url="https://www.zemodesign.at/wp-content/uploads/2020/05/Favicon-BL-BG.png")
         await ctx.send(embed=embed)
@@ -32,8 +35,12 @@ class GuildConfig(commands.Cog):
     @commands.is_owner()
     @commands.command()
     async def enable_command(self, ctx, command):
-        if command in get_all_guild_commands_and_category(ctx.guild.id):
-            enable_command(ctx.guild.id, command)
+        all_guild_commands = self.bot.ApiClient.request(self.bot.ApiClient.get_all_guild_commands_and_category,
+                                                        params={"guild_id": ctx.guild.id})
+
+        if command in all_guild_commands:
+            self.bot.ApiClient.request(self.bot.ApiClient.enable_command,
+                                       params={"guild_id": ctx.guild.id, "command": command})
             embed = Embed(color=0x1acdee,
                           description=f"Command {command} erfolgreich für den Server {ctx.guild} aktiviert.")
             embed.set_author(name="Zemo Bot")
@@ -50,9 +57,12 @@ class GuildConfig(commands.Cog):
     @commands.is_owner()
     @commands.command()
     async def disable_command(self, ctx, command):
-        if command in get_all_guild_commands_and_category(ctx.guild.id):
-            disable_command(ctx.guild.id, command)
-            enable_command(ctx.guild.id, command)
+        all_guild_commands = self.bot.ApiClient.request(self.bot.ApiClient.get_all_guild_commands_and_category,
+                                                        params={"guild_id": ctx.guild.id})
+
+        if command in all_guild_commands:
+            self.bot.ApiClient.request(self.bot.ApiClient.disable_command,
+                                       params={"guild_id": ctx.guild.id, "command": command})
             embed = Embed(color=0x1acdee,
                           description=f"Command {command} erfolgreich für den Server {ctx.guild} deaktiviert.")
             embed.set_author(name="Zemo Bot")
@@ -74,7 +84,8 @@ class GuildConfig(commands.Cog):
         available_parameters = ["member", "inviter"]
 
         if all([True if param in available_parameters else False for param in parameters_in_string]):
-            change_welcome_message(ctx.guild.id, message)
+            self.bot.ApiClient.request(self.bot.ApiClient.change_welcome_message,
+                                       params={"guild_id": ctx.guild.id, "welcome_msg": message})
             embed = Embed(color=0x00ff00,
                           description="Willkommensnachricht erfolgreich geändert.")
             embed.set_author(name="Zemo Bot")

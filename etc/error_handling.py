@@ -1,9 +1,8 @@
 from discord import Embed
-from sql.sql_config import get_prefix
 from config import ICON_URL
 
 
-async def invalid_argument(ctx, command):
+async def invalid_argument(self, ctx, command):
     commands = {"trashtalk_stats": "(member)",
                 "trashtalk_reset": "",
                 "trashtalk_list": "",
@@ -34,7 +33,7 @@ async def invalid_argument(ctx, command):
                 "google": "(member) (text)",
                 "set_welcome_message": "(*message) Available parameters in message: {member} {inviter}"}
 
-    prefix = get_prefix(ctx.guild.id)
+    prefix = self.bot.ApiClient.request(self.bot.ApiClient.get_prefix, params={"guild_id": ctx.guild.id})
 
     embed = Embed(title="Ungültige Parameter",
                   description=f"Die Werte die du an den Command `{prefix}{command}` übergeben hast sind ungültig.",

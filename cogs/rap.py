@@ -1,5 +1,4 @@
 import requests
-import json
 import datetime
 
 from discord.ext import commands, tasks

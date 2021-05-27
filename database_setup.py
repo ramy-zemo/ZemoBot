@@ -79,7 +79,7 @@ cur_main.execute("""CREATE TABLE IF NOT EXISTS `COMMAND_CATEGORIES`(
 
 cur_main.execute("""CREATE TABLE IF NOT EXISTS `COMMANDS`(
 `ID`          INT PRIMARY KEY AUTO_INCREMENT,
-`CATEGORY_ID`    INT,
+`CATEGORY_ID`    INT NOT NULL,
 `COMMAND`     TEXT,
 `PARAMETERS`  TEXT,
 `DESCRIPTION` TEXT,
@@ -98,6 +98,12 @@ cur_main.execute("""CREATE TABLE IF NOT EXISTS `ADMIN_COMMANDS` (
 `COMMAND` TEXT,
 `PARAMETERS` TEXT,
 `DESCRIPTION` TEXT);
+""")
+
+cur_main.execute("""CREATE TABLE IF NOT EXISTS `COMMAND_ALIASES`(
+`COMMAND_ID` INT not null,
+`ALIAS` TEXT,
+CONSTRAINT `COMMAND_ALIASES_COMMANDS` FOREIGN KEY (COMMAND_ID) REFERENCES COMMANDS (ID));
 """)
 
 conn_main.commit()
@@ -154,17 +160,23 @@ commands = [(2, "trashtalk", "(*mention)", "Spam users with terms defined on you
             (7, "set_welcome_message", "(*message)",
              "Set a welcome message for new members. Available parameters in the message: {member} {inviter}"),
             (7, "help", "(category)", "Get a list of available commands."),
+            (5, "ripple", "", "Get current Ripple rate."),
+            (5, "bitcoin", "", "Get current Bitcoin rate."),
+            (5, "ethereum", "", "Get current Ethereum rate.")
             ]
 
 admin_commands = [("show_channels", "", "Print all available channels on your Guild."),
                   ("show_roles", "", "Print all available roles on your Guild."),
                   ("set_xp", "(mention) (xp)", "Set the Xp of a user"),
-                  ("partner", "", "")]
+                  ("partner", "", ""),
+                  ("add_command", "(*category) (*command) (*parameters) (*description)", "Add command to ZemoBot."),
+                  ("add_admin_command", "(*category) (*command) (*parameters) (*description)",
+                   "Add Admin command to ZemoBot."),
+                  ("delete_command", "(*command)", "Remove command from ZemoBot."),
+                  ("delete_admin_command", "(*command)", "Remove Admin command from ZemoBot.")
+                  ]
 
 cur_main.executemany("INSERT INTO COMMANDS (CATEGORY_ID, COMMAND, PARAMETERS, DESCRIPTION) VALUES (%s, %s, %s, %s)", commands)
 cur_main.executemany("INSERT INTO ADMIN_COMMANDS (COMMAND, PARAMETERS, DESCRIPTION) VALUES (%s, %s, %s)", admin_commands)
-
-# Zemo Guild
-cur_main.execute("INSERT INTO CONFIG (ACTIVE, GUILD_ID, LANGUAGE, PREFIX, MESSAGE_CHANNEL_ID, WELCOME_CHANNEL_ID) VALUES (%s, %s, %s, %s, %s, %s)", (1, 481248489238429727, "german", "$", 817228906306076723, 817228906306076723))
 
 conn_main.commit()

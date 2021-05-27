@@ -35,7 +35,7 @@ class Mod(commands.Cog):
         seconds_to_kick = int(args[0])
 
         if seconds_to_kick < 30:
-            return await invalid_argument(ctx, "auszeit")
+            return await invalid_argument(self, ctx, "auszeit")
 
         banned_role = await ctx.message.guild.create_role(name="banned")
         await banned_role.edit(colour=0xff0000)
@@ -122,8 +122,8 @@ class Mod(commands.Cog):
 
     @commands.command()
     async def invite_bot(self, ctx):
-        await ctx.meessage.author.send("https://discord.com/oauth2/authorize?client_id=776629369447252018&scope=bot&permissions=2147483639")
-        await ctx.meessage.author.send("Danke, dass du den Bot nutzen möchtest.")
+        await ctx.author.send("https://discord.com/oauth2/authorize?client_id=776629369447252018&scope=bot&permissions=2147483639")
+        await ctx.author.send("Danke, dass du den Bot nutzen möchtest.")
 
 
 def setup(bot):

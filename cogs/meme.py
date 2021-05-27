@@ -325,7 +325,7 @@ class Meme(commands.Cog):
                 string = self.old_memes[str(ctx.message.author)]
 
             except:
-                return await invalid_argument(ctx, command="gen_meme")
+                return await invalid_argument(self, ctx, command="gen_meme")
 
         meme = random.choice(self.available_memes)
 
