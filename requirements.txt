@@ -10,7 +10,7 @@ discord.py==1.6.0
 idna==2.10
 multidict==5.1.0
 mysql-connector-python~=8.0.22
-Pillow~=8.0.1
+Pillow>=8.1.2
 protobuf==3.15.3
 psutil==5.8.0
 python-dotenv==0.15.0
@@ -18,7 +18,7 @@ requests~=2.25.0
 six==1.15.0
 soupsieve==2.2
 typing-extensions==3.7.4.3
-urllib3==1.26.3
+urllib3
 yarl==1.6.3
 discord~=1.0.1
 bs4~=0.0.1
