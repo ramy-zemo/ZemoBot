@@ -1,0 +1,3 @@
+[submodule "ZemoBotAPIClient"]
+	path = ZemoBotAPIClient
+	url = https://github.com/ramy-zemo/ZemoBotAPIClient
