@@ -4,8 +4,7 @@ import discord
 from io import BytesIO
 from PIL import Image, ImageFont, ImageDraw, ImageOps
 from discord.ext import commands
-from sql.sql_config import get_main_channel
-from sql.level import get_server_ranks, get_xp_from_user, insert_user_xp, update_user_xp
+from etc.sql_config import get_main_channel
 
 
 class Ranking(commands.Cog):
@@ -15,7 +14,8 @@ class Ranking(commands.Cog):
     @commands.command()
     async def ranking(self, ctx):
         try:
-            server_ranks = get_server_ranks(ctx.guild.id)
+            server_ranks = self.bot.ApiClient.request(self.bot.ApiClient.get_server_ranks,
+                                                      params={"guild_id": ctx.guild.id})
 
             data = [(server_ranks[1], await self.xp_lvl(server_ranks[2])) for server_ranks in server_ranks[::-1]]
 
@@ -52,7 +52,8 @@ class Ranking(commands.Cog):
 
             xp_current_lvl = await self.lvl_xp(level)
             xp_next_lvl = await self.lvl_xp(level + 1)
-            xp_current = get_xp_from_user(ctx.guild.id, name.id)
+            xp_current = self.bot.ApiClient.request(self.bot.ApiClient.get_xp_from_user,
+                                                    params={"guild_id": ctx.guild.id, "user_id": name.id})
 
             step = xp_next_lvl - xp_current_lvl
             state = xp_current - xp_current_lvl
@@ -81,7 +82,7 @@ class Ranking(commands.Cog):
             # Draw Name
             draw = ImageDraw.Draw(img)
             name_level_size = 130 if len(str(name)) <= 19 else 130 - (len(str(name)) - 19) * 5
-            draw.text((680, 175), f"Rank: #{rank} Level: {level}", color, font=ImageFont.truetype('fonts/micross.ttf', name_level_size))
+            draw.text((680, 175), f"Rank #{rank} Level {level}", color, font=ImageFont.truetype('fonts/micross.ttf', name_level_size))
             draw.text((680, 330), f"{name}", color, font=ImageFont.truetype('fonts/micross.ttf', name_level_size))
 
             # Draw Lvl
@@ -130,7 +131,11 @@ class Ranking(commands.Cog):
             j += 1
 
     async def set_xp(self, ctx, user: discord.Member, amount):
-        update_user_xp(ctx.guild.id, user, amount)
+        self.bot.ApiClient.request(self.bot.ApiClient.add_user_xp,
+                                   params={"guild_id": ctx.guild.id,
+                                           "user_id": user.id,
+                                           "xp": amount,
+                                           "override_current_xp": True})
 
     async def add_xp(self, ctx, user, xp, guild_id):
         if isinstance(user, str):
@@ -142,33 +147,39 @@ class Ranking(commands.Cog):
             member = user
 
         user = user
-        user_xp = get_xp_from_user(guild_id, user.id)
-
+        user_xp = self.bot.ApiClient.request(self.bot.ApiClient.get_xp_from_user,
+                                             params={"guild_id": guild_id, "user_id": user.id})
         if user_xp:
             old_level = await self.xp_lvl(user_xp)
             new_level = await self.xp_lvl(user_xp + int(xp))
 
-            insert_user_xp(guild_id, user.id, xp)
-
+            self.bot.ApiClient.request(self.bot.ApiClient.add_user_xp,
+                                       params={"guild_id": guild_id, "user_id": user.id, "xp": xp})
         else:
             old_level = 0
             new_level = await self.xp_lvl(int(xp))
 
-            insert_user_xp(guild_id, user.id, xp)
+            self.bot.ApiClient.request(self.bot.ApiClient.add_user_xp,
+                                       params={"guild_id": guild_id, "user_id": user.id, "xp": xp})
 
         if old_level != new_level:
-            channel = await get_main_channel(ctx)
+            channel = await get_main_channel(self.bot.ApiClient, ctx)
             await channel.send(f"Gratuliere {member.mention}, du bist zu Level {new_level} aufgestiegen!  :partying_face:  :partying_face: ")
 
     async def get_lvl(self, ctx, user_id):
-        return await self.xp_lvl(get_xp_from_user(ctx.guild.id, user_id))
+        user_xp = self.bot.ApiClient.request(self.bot.ApiClient.get_xp_from_user,
+                                             params={"guild_id": ctx.guild.id, "user_id": user_id})
+        return await self.xp_lvl(user_xp)
 
     async def get_rank(self, ctx, user_id):
-        ordered_list = get_server_ranks(ctx.guild.id)[::-1]
-        user_place = [count + 1 for count, x in enumerate(ordered_list) if ordered_list[count][0] == user_id]
+        ordered_list = self.bot.ApiClient.request(self.bot.ApiClient.get_server_ranks, params={"guild_id": ctx.guild.id})
+        user_place = [count + 1 for count, x in enumerate(ordered_list) if ordered_list[count][1] == user_id]
         return user_place[0] if user_place else "Bot"
 
     async def xp_lvl(self, xp):
+        if not xp:
+            return 0
+
         level_person = 0
         increment = 100
         level = 0

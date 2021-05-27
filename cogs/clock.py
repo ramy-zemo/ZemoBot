@@ -1,9 +1,6 @@
-import requests
 import asyncio
 
 from discord.ext import commands
-from discord import Embed
-from bs4 import BeautifulSoup
 
 
 class Clock(commands.Cog):

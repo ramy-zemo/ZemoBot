@@ -1,17 +1,10 @@
 import datetime
+
 import discord
 import psutil
 
 from discord.ext import commands
 from etc.error_handling import invalid_argument
-from sql.disabled_commands import get_all_disabled_commands_from_guild
-from sql.message import get_user_messages
-from sql.voice import get_user_voice_time
-from sql.trashtalk_log import get_user_trashtalk
-from sql.invites import get_user_invites
-from sql.sql_config import get_prefix
-from sql.commands import get_all_guild_commands_from_category
-from sql.command_categories import get_all_guild_categories
 
 
 class Info(commands.Cog):
@@ -25,28 +18,31 @@ class Info(commands.Cog):
         else:
             user = member
 
-        messages = len(get_user_messages(user.id))
-        minutes = get_user_voice_time(user.id)
-        trashtalk = len(get_user_trashtalk(ctx.guild.id, user.id))
+        messages = self.bot.ApiClient.request(self.bot.ApiClient.get_user_messages, params={"user_id": user.id})
+        minutes = self.bot.ApiClient.request(self.bot.ApiClient.get_user_voice_time, params={"user_id": user.id})
+        trashtalk = self.bot.ApiClient.request(self.bot.ApiClient.get_user_trashtalk,
+                                               params={"guild_id": ctx.guild.id, "user_id": user.id})
 
         embed = discord.Embed(title="Info", description=f"{user} Nutzerinformationen:", color=0x1acdee)
-        embed.add_field(name="Nachrichten", value=f"Du hast bisher {messages} Nachrichten versendet.", inline=False)
+        embed.add_field(name="Nachrichten", value=f"Du hast bisher {len(messages)} Nachrichten versendet.",
+                        inline=False)
         embed.add_field(name="Invites",
-                        value=f"""Du hast bisher {await self.invites(ctx, user, "No Print")} Invites versendet.""",
+                        value=f"""Du hast bisher {len(await self.invites(ctx, user, "No Print"))} Invites versendet.""",
                         inline=False)
         embed.add_field(name="Minuten", value=f"Du warst {minutes} Minuten mit einem Sprachchannel verbunden.",
                         inline=False)
-        embed.add_field(name="Trashtalk", value=f"""Du hast bereits {trashtalk} mal Trashtalk versendet.""",
+        embed.add_field(name="Trashtalk", value=f"""Du hast bereits {len(trashtalk)} mal Trashtalk versendet.""",
                         inline=False)
         embed.set_author(name="Zemo Bot", icon_url=self.bot.icon_url)
         await ctx.send(embed=embed)
 
     @commands.command()
     async def help(self, ctx, category=""):
-        prefix = get_prefix(ctx.guild.id)
-        disabled_commands = get_all_disabled_commands_from_guild(ctx.guild.id)
-
-        plugins = get_all_guild_categories(ctx.guild.id)
+        prefix = self.bot.ApiClient.request(self.bot.ApiClient.get_prefix, params={"guild_id": ctx.guild.id})
+        disabled_commands = self.bot.ApiClient.request(self.bot.ApiClient.get_all_disabled_commands_from_guild,
+                                                       params={"guild_id": ctx.guild.id})
+        plugins = self.bot.ApiClient.request(self.bot.ApiClient.get_all_guild_categories,
+                                             params={"guild_id": ctx.guild.id})
 
         if not category:
             embed = discord.Embed(color=0x1acdee)
@@ -57,7 +53,8 @@ class Info(commands.Cog):
             await ctx.send(embed=embed)
 
         elif category.lower() in plugins:
-            command_list = get_all_guild_commands_from_category(ctx.guild.id, category)
+            command_list = self.bot.ApiClient.request(self.bot.ApiClient.get_all_guild_commands_from_category,
+                                                      params={"guild_id": ctx.guild.id, "category": category})
             command_dict = {(command + " " + parameter if parameter else command): description for
                             command, parameter, description in command_list}
 
@@ -72,14 +69,18 @@ class Info(commands.Cog):
             await ctx.send(embed=embed)
 
         else:
-            return await invalid_argument(ctx, "help")
+            return await invalid_argument(self, ctx, "help")
 
     @commands.command()
     async def invites(self, ctx, member="", *args):
         if member:
-            invites = await get_user_invites(ctx.guild.id, member.id)
+            invites = self.bot.ApiClient.request(self.bot.ApiClient.get_user_invites,
+                                                 params={"guild_id": ctx.guild.id,
+                                                         "user_id": member.id})
         else:
-            invites = await get_user_invites(ctx.guild.id, ctx.message.author.id)
+            invites = self.bot.ApiClient.request(self.bot.ApiClient.get_user_invites,
+                                                 params={"guild_id": ctx.guild.id,
+                                                         "user_id": ctx.message.author.id})
 
         if args:
             return invites
@@ -109,6 +110,10 @@ class Info(commands.Cog):
     @commands.command()
     async def ping(self, ctx):
         await ctx.send(f'Pong!  :ping_pong:  In {round(self.bot.latency * 100, 2)} ms')
+
+    @commands.command()
+    async def error(self, ctx):
+        raise Exception
 
 
 def setup(bot):

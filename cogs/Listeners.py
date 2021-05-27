@@ -4,18 +4,13 @@ from datetime import date
 from cogs.ranking import Ranking
 from itertools import cycle
 from discord.ext.commands import CommandNotFound, MissingPermissions
-from discord.ext.commands.errors import MemberNotFound, RoleNotFound, NotOwner, CommandInvokeError
-from sql.message import log_message
-from sql.commands import get_all_guild_commands_and_category
-from sql.disabled_commands import check_command_status_for_guild
-from sql.sql_config import get_server, get_welcome_role, get_prefix, get_welcome_message, setup_config
-from sql.sql_config import activate_guild, deactivate_guild, get_main_channel
-from sql.voice import add_user_voice_time
-from sql.invites import get_invites_to_user, log_invite
-from sql.admin_commands import get_all_admin_commands
+from discord.ext.commands.errors import MemberNotFound, RoleNotFound, NotOwner
+
 from etc.error_handling import invalid_argument
 from discord.ext import tasks, commands
 from time import perf_counter
+
+from etc.sql_config import get_welcome_role, get_main_channel
 
 
 class Listeners(commands.Cog):
@@ -40,23 +35,27 @@ class Listeners(commands.Cog):
 
                 await self.ranking.add_xp(member, member, round(round(time * -1) * 0.05), member.guild.id)
                 minutes = int(round(time * - 1) / 60)
-                add_user_voice_time(member.guild.id, member.id, minutes)
 
+                self.bot.ApiClient.request(self.bot.ApiClient.add_user_voice_time,
+                                           params={"guild_id": member.guild.id,
+                                                   "user_id": member.id, "minutes": minutes})
             except KeyError:
                 pass
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
-        main_channel = await get_main_channel(guild)
+        main_channel = await get_main_channel(self.bot.ApiClient, guild)
 
-        if get_server(guild.id):
-            activate_guild(guild.id)
+        if self.bot.ApiClient.request(self.bot.ApiClient.check_server_status, params={"guild_id": guild.id}):
+            self.bot.ApiClient.request(self.bot.ApiClient.activate_guild, params={"guild_id": guild.id})
         else:
-            setup_config(guild.id, main_channel.id, main_channel.id)
+            self.bot.ApiClient.request(self.bot.ApiClient.setup_config, params={"guild_id": guild.id,
+                                                                                "main_channel_id": main_channel.id,
+                                                                                "welcome_channel_id": main_channel.id})
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
-        deactivate_guild(guild.id)
+        self.bot.ApiClient.request(self.bot.ApiClient.deactivate_guild, params={"guild_id": guild.id})
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -79,24 +78,33 @@ class Listeners(commands.Cog):
         if role:
             await ctx.add_roles(role)
 
-        channel = await get_main_channel(ctx.guild)
+        channel = await get_main_channel(self.bot.ApiClient, ctx.guild)
 
         invites_before_join = self.invites[ctx.guild.id]
         invites_after_join = await ctx.guild.invites()
 
         for invite in invites_before_join:
             if invite.uses < self.find_invite_by_code(invites_after_join, invite.code).uses:
-                welcome_message = get_welcome_message(ctx.guild.id)
+                welcome_message = self.bot.ApiClient.request(self.bot.ApiClient.get_welcome_message,
+                                                             params={"guild_id": ctx.guild.id})
                 default_welcome_message = f'Selam {ctx.mention}, willkommen in der Familie!\nHast du Ärger, gehst du Cafe Al Zemo, gehst du zu Ramo!\nEingeladen von: {invite.inviter.mention}'
 
                 if welcome_message:
                     await channel.send(welcome_message.format(member=ctx.mention, inviter=invite.inviter.mention))
                 else:
                     await channel.send(default_welcome_message)
-                self.invites[ctx.guild.id] = invites_after_join
 
-                if len(get_invites_to_user(ctx.guild.id, ctx.id)) == 0:
-                    log_invite(ctx.guild.id, datum, invite.inviter.id, ctx.id)
+                self.invites[ctx.guild.id] = invites_after_join
+                invites_to_user = self.bot.ApiClient.request(self.bot.ApiClient.get_invites_to_user,
+                                                             params={"guild_id": ctx.guild.id, "user_id": ctx.id})
+
+                if len(invites_to_user) == 0:
+                    self.bot.ApiClient.request(self.bot.ApiClient.log_invite,
+                                               params={"guild_id": ctx.guild.id,
+                                                       "date": datum,
+                                                       "from_user_id": invite.inviter.id,
+                                                       "to_user_id": ctx.id})
+
                     if str(invite.inviter) != str(self.bot.user):
                         await self.ranking.add_xp(ctx, invite.inviter.id, 200, ctx.guild.id)
 
@@ -117,27 +125,42 @@ class Listeners(commands.Cog):
         if isinstance(ctx.channel, discord.DMChannel):
             return await ctx.channel.send("Aktuell sind Commands nicht per DM möglich.")
 
-        prefix = get_prefix(ctx.guild.id)
-        log_message(ctx.guild.id, str(date.today()), ctx.author.id, ctx.content)
+        prefix = self.bot.ApiClient.request(self.bot.ApiClient.get_prefix, params={"guild_id": ctx.guild.id})
+        self.bot.ApiClient.request(self.bot.ApiClient.log_message,
+                                   params={"guild_id": ctx.guild.id,
+                                           "date": str(date.today()),
+                                           "user_id": ctx.author.id,
+                                           "message": ctx.content})
 
         ctx.content = ctx.content.replace(prefix, self.bot.command_prefix)
         if str(ctx.content).startswith(self.bot.command_prefix):
-            if check_command_status_for_guild(ctx.guild.id, ctx.content.replace(self.bot.command_prefix, "").split()[0]):
+            command = ctx.content.replace(self.bot.command_prefix, "").split()[0]
+            command_is_valid = self.bot.ApiClient.request(self.bot.ApiClient.check_command_status_for_guild,
+                                                          params={"guild_id": ctx.guild.id, "command": command})
+            all_admin_commands = self.bot.ApiClient.request(self.bot.ApiClient.get_all_admin_commands)
+
+            if command_is_valid:
                 await ctx.add_reaction("🔁")
                 await self.bot.process_commands(ctx)
-                if str(ctx.content) != self.bot.command_prefix + "stats" and str(ctx.content).replace(self.bot.command_prefix, "").split()[0] in get_all_guild_commands_and_category(ctx.guild.id):
+                guild_commands_and_category = self.bot.ApiClient.request(self.bot.ApiClient.get_all_guild_commands_and_category,
+                                                                         params={"guild_id": ctx.guild.id})
+
+                if str(ctx.content) != self.bot.command_prefix + "stats" and str(ctx.content).replace(self.bot.command_prefix, "").split()[0] in guild_commands_and_category:
                     await self.ranking.add_xp(ctx, ctx.author, 25, ctx.guild.id)
 
-            elif ctx.author.id in self.bot.admin_ids and ctx.content.replace(self.bot.command_prefix, "").split()[0] in get_all_admin_commands():
+            elif ctx.author.id in self.bot.admin_ids and ctx.content.replace(self.bot.command_prefix, "").split()[0] in all_admin_commands:
                 await ctx.add_reaction("🔁")
                 await self.bot.process_commands(ctx)
+
+            else:
+                return await ctx.send(":question: Unbekannter Befehl :question:")
 
         else:
             await self.ranking.add_xp(ctx, ctx.author, 5, ctx.guild.id)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
-        prefix = get_prefix(payload.guild_id)
+        prefix = self.bot.ApiClient.request(self.bot.ApiClient.get_prefix, params={"guild_id": payload.guild_id})
         if str(payload.member) == str(self.bot.user):
             return
 
@@ -158,6 +181,8 @@ class Listeners(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
+        self.bot.logger.error(str(error))
+
         if isinstance(error, CommandNotFound):
             return await ctx.send(":question: Unbekannter Befehl :question:")
 
@@ -165,7 +190,7 @@ class Listeners(commands.Cog):
             return await ctx.send(":hammer: Du bist leider nicht berechtigt diesen Command zu nutzen. :hammer:")
 
         elif isinstance(error, MemberNotFound) or isinstance(error, RoleNotFound):
-            return await invalid_argument(ctx, ctx.message.content.split()[0].replace(self.bot.command_prefix, ""))
+            return await invalid_argument(self, ctx, ctx.message.content.split()[0].replace(self.bot.command_prefix, ""))
 
         # elif isinstance(error, CommandInvokeError):
             # print(error)

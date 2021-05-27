@@ -20,7 +20,7 @@ class Fun(commands.Cog):
         elif len(args) == 1:
             await ctx.send(ctx.guild.get_member(int(str(args[0]).strip("<>!@"))).avatar_url)
         else:
-            return await invalid_argument(ctx, "avatar")
+            return await invalid_argument(self, ctx, "avatar")
 
     @commands.command()
     async def google(self, ctx, member: discord.Member = "", *args):
