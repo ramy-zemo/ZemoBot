@@ -74,13 +74,13 @@ class Trashtalk(commands.Cog):
             await ctx.send(f"All time: {len(result)}, Today: {len(today)}")
 
     @commands.command()
-    async def trashtalk_reset(self, ctx, *args):
+    async def trashtalk_reset(self, ctx):
         try:
             self.bot.ApiClient.request(self.bot.ApiClient.reset_user_trashtalk,
                                        params={"guild_id": ctx.guild.id, "user_id": ctx.message.author.id})
             await ctx.send(f"Trashtalk für {ctx.message.author.mention} erfolgreich zurückgesetzt.")
         except:
-            await ctx.send(f"Nutzer {ctx.message.author.mention} nicht gefunden.")
+            await ctx.send(f"Trashtalk reset ist fehlgeschlagen.")
 
 
 def setup(bot):

@@ -8,16 +8,15 @@ class InvalidGuild(Exception):
     pass
 
 
-conn_main = mysql.connector.connect(
-    host=DB_IP,
-    user=DB_USER,
-    password=DB_PASSWORD,
-    database=DB_DATABASE
-)
-cur_main = conn_main.cursor()
-
-
 async def get_main_channel(API_CLIENT, ctx) -> discord.TextChannel:
+    conn_main = mysql.connector.connect(
+        host=DB_IP,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_DATABASE
+    )
+    cur_main = conn_main.cursor()
+
     try:
         guild = ctx.guild
     except AttributeError:
@@ -54,6 +53,14 @@ async def get_main_channel(API_CLIENT, ctx) -> discord.TextChannel:
 
 
 async def get_welcome_channel(API_CLIENT, ctx) -> discord.TextChannel:
+    conn_main = mysql.connector.connect(
+        host=DB_IP,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_DATABASE
+    )
+    cur_main = conn_main.cursor()
+
     try:
         guild = ctx.guild
     except AttributeError:
@@ -97,6 +104,14 @@ async def get_welcome_channel(API_CLIENT, ctx) -> discord.TextChannel:
 
 
 def get_welcome_role(guild: discord.guild):
+    conn_main = mysql.connector.connect(
+        host=DB_IP,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_DATABASE
+    )
+    cur_main = conn_main.cursor()
+
     sql = "SELECT WELCOME_ROLE_ID FROM CONFIG WHERE GUILD_ID=%s"
     val = (guild.id,)
 

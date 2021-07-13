@@ -14,6 +14,7 @@ class Twitch(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.username = ""
+        self.token = ""
         self.done_notifications = {}
         self.twitch_loop.start()
         self.get_twitch_token()
@@ -62,7 +63,7 @@ class Twitch(commands.Cog):
         if await self.get_data():
             await ctx.send(f'Das Twitch Konto {self.username} wurde erfolgreich mit dem Server {ctx.guild} verbunden.')
         else:
-            return await ctx.send('Ungültiger Twitch Nutzername.\n')
+            return await ctx.send('Ungültiger Twitch Nutzername.')
 
     async def get_data(self):
         headers = {"client-id": TWITCH_CLIENT_ID, "Authorization": f"Bearer {self.token}"}

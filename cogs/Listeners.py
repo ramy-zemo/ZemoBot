@@ -119,12 +119,14 @@ class Listeners(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, ctx):
-        if ctx.author == self.bot.user:
+        if ctx.author.bot:
             return
 
+        # Check if Channel is DMChannel (Currently not supported)
         if isinstance(ctx.channel, discord.DMChannel):
             return await ctx.channel.send("Aktuell sind Commands nicht per DM möglich.")
 
+        # Get Server Prefix
         prefix = self.bot.ApiClient.request(self.bot.ApiClient.get_prefix, params={"guild_id": ctx.guild.id})
         self.bot.ApiClient.request(self.bot.ApiClient.log_message,
                                    params={"guild_id": ctx.guild.id,
@@ -132,14 +134,37 @@ class Listeners(commands.Cog):
                                            "user_id": ctx.author.id,
                                            "message": ctx.content})
 
-        ctx.content = ctx.content.replace(prefix, self.bot.command_prefix)
+        # Check if Command uses Server Prefix
+        if ctx.content.startswith(prefix):
+            ctx.content = ctx.content.replace(prefix, self.bot.command_prefix)
+
+        else:
+            message_data = ctx.content.split()
+            # Check if command uses Bot Mention Prefix and Replace Mention with real Prefix
+            if str(self.bot.user.id) in message_data[0]:
+                ctx.content = self.bot.command_prefix + ' '.join(message_data[1:])
+
+        # Check if message is command
         if str(ctx.content).startswith(self.bot.command_prefix):
+            # Check if message is only Prefix and if so send helping message
+            if ctx.content.strip() == self.bot.command_prefix:
+                embed = discord.Embed(title="Aktueller Prefix:",
+                                      description=f"Der aktuelle Prefix für den Server: {ctx.guild} ist: {prefix}\n"
+                                                  f"Für weitere Hilfe nutze {prefix}help",
+                                      color=0x1acdee)
+
+                return await ctx.channel.send(embed=embed)
+
+            # Get command without Prefix and Ask API for command validation
             command = ctx.content.replace(self.bot.command_prefix, "").split()[0]
+
             command_is_valid = self.bot.ApiClient.request(self.bot.ApiClient.check_command_status_for_guild,
                                                           params={"guild_id": ctx.guild.id, "command": command})
             all_admin_commands = self.bot.ApiClient.request(self.bot.ApiClient.get_all_admin_commands)
 
+            # Check if command is regular command or admin command, else it is an invalid command.
             if command_is_valid:
+                self.bot.guild_languages[ctx.guild.id] = self.bot.get_guild_language(self, ctx.guild.id)
                 await ctx.add_reaction("🔁")
                 await self.bot.process_commands(ctx)
                 guild_commands_and_category = self.bot.ApiClient.request(self.bot.ApiClient.get_all_guild_commands_and_category,
@@ -147,15 +172,15 @@ class Listeners(commands.Cog):
 
                 if str(ctx.content) != self.bot.command_prefix + "stats" and str(ctx.content).replace(self.bot.command_prefix, "").split()[0] in guild_commands_and_category:
                     await self.ranking.add_xp(ctx, ctx.author, 25, ctx.guild.id)
+            elif ctx.author.id in self.bot.admin_ids and command in all_admin_commands:
+                self.bot.guild_languages[ctx.guild.id] = self.bot.get_guild_language(self, ctx.guild.id)
 
-            elif ctx.author.id in self.bot.admin_ids and ctx.content.replace(self.bot.command_prefix, "").split()[0] in all_admin_commands:
                 await ctx.add_reaction("🔁")
                 await self.bot.process_commands(ctx)
 
             else:
-                return await ctx.send(":question: Unbekannter Befehl :question:")
+                return await ctx.channel.send(":question: Unbekannter Befehl :question:")
 
-        else:
             await self.ranking.add_xp(ctx, ctx.author, 5, ctx.guild.id)
 
     @commands.Cog.listener()

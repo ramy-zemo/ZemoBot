@@ -34,7 +34,7 @@ async def ask(author, ask_type, question, text_channel, bot, options=0, max_answ
     class InvalidInt(Exception):
         pass
 
-    class TooMuchReaction(Exception):
+    class TooManyReaction(Exception):
         pass
 
     class TooLongReaction(Exception):
@@ -117,7 +117,7 @@ async def ask(author, ask_type, question, text_channel, bot, options=0, max_answ
             check_methods = {"reaction_add": reaction_add, "message": check_message}
             reaction = await bot.wait_for(ask_type, check=check_methods[ask_type])
 
-        except TooMuchReaction:
+        except TooManyReaction:
             embed = discord.Embed(title="Zu viele Optionen gewählt",
                                   description=f"Du hast zu viele Optionen gewählt. Wähle maximal {max_answers}",
                                   color=0x1acdee)

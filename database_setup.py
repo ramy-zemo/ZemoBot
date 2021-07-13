@@ -1,29 +1,39 @@
-import mysql.connector
 from dotenv import load_dotenv
-
-from config import DB_IP, DB_USER, DB_PASSWORD, DB_DATABASE
+import mysql.connector
 
 load_dotenv()
+
+DB_IP = "ni215803-1.web10.nitrado.hosting"
+DB_USER = "ni215803_1sql1"
+DB_PASSWORD = "3b73aafc"
+DB_DATABASE = "ni215803_1sql1"
 
 conn_main = mysql.connector.connect(
     host=DB_IP,
     user=DB_USER,
     password=DB_PASSWORD,
-    database=DB_DATABASE
+    database=DB_DATABASE,
+    auth_plugin='mysql_native_password'
 )
 cur_main = conn_main.cursor()
+
+cur_main.execute("""CREATE TABLE IF NOT EXISTS `LANGUAGES`(
+`ID`       INT PRIMARY KEY AUTO_INCREMENT,
+`LANGUAGE` TEXT);
+""")
 
 cur_main.execute("""CREATE TABLE IF NOT EXISTS `CONFIG`(
 `ID`                 INT PRIMARY KEY AUTO_INCREMENT,
 `ACTIVE`             boolean,
 `GUILD_ID`           BIGINT,
-`LANGUAGE`            TEXT,
+`LANGUAGE`            INT,
 `PREFIX`             TEXT,
 `MESSAGE_CHANNEL_ID` BIGINT,
 `WELCOME_CHANNEL_ID` BIGINT,
 `WELCOME_MESSAGE`    TEXT,
 `WELCOME_ROLE_ID`    BIGINT,
-`TWITCH_USERNAME`    TEXT);
+`TWITCH_USERNAME`    TEXT,
+CONSTRAINT `CONFIG_LANGUAGE_LANGUAGES` FOREIGN KEY (LANGUAGE) REFERENCES LANGUAGES (ID));
 """)
 
 cur_main.execute("""CREATE TABLE IF NOT EXISTS `INVITES`(
@@ -176,7 +186,19 @@ admin_commands = [("show_channels", "", "Print all available channels on your Gu
                   ("delete_admin_command", "(*command)", "Remove Admin command from ZemoBot.")
                   ]
 
-cur_main.executemany("INSERT INTO COMMANDS (CATEGORY_ID, COMMAND, PARAMETERS, DESCRIPTION) VALUES (%s, %s, %s, %s)", commands)
-cur_main.executemany("INSERT INTO ADMIN_COMMANDS (COMMAND, PARAMETERS, DESCRIPTION) VALUES (%s, %s, %s)", admin_commands)
+languages = [("german",),
+             ("english",),
+             ("russian",)]
+
+command_aliases = [(14, "watch2gether")]
+
+cur_main.executemany("INSERT INTO COMMANDS (CATEGORY_ID, COMMAND, PARAMETERS, DESCRIPTION) VALUES (%s, %s, %s, %s)",
+                     commands)
+cur_main.executemany("INSERT INTO ADMIN_COMMANDS (COMMAND, PARAMETERS, DESCRIPTION) VALUES (%s, %s, %s)",
+                     admin_commands)
+
+cur_main.executemany("INSERT INTO LANGUAGES (LANGUAGE) VALUES (%s)", languages)
+
+cur_main.executemany("INSERT INTO COMMAND_ALIASES (command_id, alias) VALUES (%s, %s)", command_aliases)
 
 conn_main.commit()

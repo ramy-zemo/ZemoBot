@@ -77,7 +77,7 @@ class Mod(commands.Cog):
         embed.add_field(name="Deine Auszeit", value="Digga wie gehts auf der Stillen Treppe?", inline=False)
         embed.set_footer(text="Piss dich digga")
         await auszeit_channel.send(embed=embed)
-        await auszeit_channel.send("Digga willkommen auf der Stillen Treppe." + users_to_timeout.mention)
+        await auszeit_channel.send(f"Digga willkommen auf der Stillen Treppe. {users_to_timeout.mention}")
 
         await asyncio.sleep(seconds_to_kick)
 
@@ -96,9 +96,9 @@ class Mod(commands.Cog):
         try:
             await ctx.guild.kick(member)
         except discord.errors.Forbidden:
-            return await ctx.send("Ich habe leider nicht die notwendige Berechtigung. " + ctx.author.mention)
+            return await ctx.send(f"Ich habe leider nicht die notwendige Berechtigung. {ctx.author.mention}")
 
-        await ctx.send(ctx.message.author.mention + f" Habebe ist erledigt. {member} wurde gekickt.")
+        await ctx.send(f"{ctx.message.author.mention} Habebe ist erledigt. {member} wurde gekickt.")
 
     @has_permissions(ban_members=True)
     @commands.command()
@@ -106,8 +106,9 @@ class Mod(commands.Cog):
         try:
             await ctx.guild.ban(member)
         except discord.errors.Forbidden:
-            return await ctx.send("Ich habe leider nicht die notwendige Berechtigung. " + ctx.author.mention)
-        await ctx.send(ctx.message.author.mention + f" Habebe ist erledigt. {member} wurde gebannt.")
+            return await ctx.send(f"Ich habe leider nicht die notwendige Berechtigung. {ctx.author.mention}")
+
+        await ctx.send(f"{ctx.message.author.mention} Habebe ist erledigt. {member} wurde gebannt.")
 
     @has_permissions(ban_members=True)
     @commands.command()
@@ -115,7 +116,7 @@ class Mod(commands.Cog):
         for ban_user in await ctx.guild.bans():
             if str(ban_user.user.name).lower() == user.lower():
                 await ctx.guild.unban(ban_user.user)
-                await ctx.send(ctx.message.author.mention + f" Habebe ist erledigt. {user} wurde entbannt.")
+                await ctx.send(f"{ctx.message.author.mention} Habebe ist erledigt. {user} wurde entbannt.")
                 break
         else:
             await ctx.send("Nutzer nicht gefunden.")

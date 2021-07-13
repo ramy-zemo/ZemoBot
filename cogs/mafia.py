@@ -73,7 +73,7 @@ class Mafia(commands.Cog):
 
                 if reaction.emoji == '👎':
                     embed = discord.Embed(title="Einladung",
-                                          description="Einladung erfolgreich abgelehnt!\n",
+                                          description="Einladung erfolgreich abgelehnt!",
                                           color=0xf00000)
 
                     embed.set_author(name="Zemo Bot", icon_url=self.bot.icon_url)
@@ -87,7 +87,7 @@ class Mafia(commands.Cog):
 
         # End Game, not enough Users
         if len(accepted_user) < 3:
-            embed = discord.Embed(title="Spiel konnte nicht gestartet werden",
+            embed = discord.Embed(title="Spiel konnte nicht gestartet werden:",
                                   description=f"Spiel: {game_id} konnte nicht gestartet werden, da zu wenige Spieler vorhanden sind.",
                                   color=0xf00000)
 
@@ -214,7 +214,7 @@ class Mafia(commands.Cog):
                 break
             except discord.errors.HTTPException:
                 await ctx.send("Alle mitspieler müssen mit einem Sprachkanal verbunden sein.\n"
-                                             "Versuche in 15 Sekunden erneut.")
+                                "Versuche in 15 Sekunden erneut.")
                 await asyncio.sleep(15)
 
         # Notify users

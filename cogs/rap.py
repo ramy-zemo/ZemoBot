@@ -32,6 +32,7 @@ class Rap(commands.Cog):
             get_item = f"https://deinupdate-api.azurewebsites.net/api/v2/news/{id}"
             x = requests.get(get_item, headers={"user-agent": "okhttp/4.8.1"})
             items = x.json()["content"]
+            print(items)
             item_single = [items[items.index(x) + 1] for count, x in enumerate(items) if items[count]['value'] == 'SINGLES'][0]
 
             channels = await self.gds()

@@ -356,6 +356,7 @@ class Meme(commands.Cog):
             except:
                 meme = await ctx.send(file=discord.File(fp=output, filename=ctx.message.content + ".png"),
                                       content=f"by: {ctx.message.author.mention}")
+        await ctx.message.delete()
 
 
 def setup(bot):
