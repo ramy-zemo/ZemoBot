@@ -22,3 +22,4 @@ urllib3
 yarl==1.6.3
 discord~=1.0.1
 bs4~=0.0.1
+Pyjwt

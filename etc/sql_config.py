@@ -13,7 +13,8 @@ async def get_main_channel(API_CLIENT, ctx) -> discord.TextChannel:
         host=DB_IP,
         user=DB_USER,
         password=DB_PASSWORD,
-        database=DB_DATABASE
+        database=DB_DATABASE,
+        auth_plugin='mysql_native_password'
     )
     cur_main = conn_main.cursor()
 

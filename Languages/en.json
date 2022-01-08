@@ -161,5 +161,8 @@
   "RANKING_COMMAND": "List of the top 5 server ranks.",
   "SETUP_TWITCH_COMMAND": "Connect a Twitch username to the server.",
   "SET_WELCOME_MESSAGE_COMMAND": "Set a welcome message for new members. Available parameters in the message: {member} {inviter}",
-  "HELP_COMMAND": "Get a list of available commands."
+  "HELP_COMMAND": "Get a list of available commands.",
+  "RIPPLE_COMMAND": "Get the current Ripple exchange rate.",
+  "BITCOIN_COMMAND": "Get the current Bitcoin exchange rate.",
+  "ETHEREUM_COMMAND": "Get the current Ethereum exchange rate."
 }

@@ -160,6 +160,7 @@ class Listeners(commands.Cog):
 
             command_is_valid = self.bot.ApiClient.request(self.bot.ApiClient.check_command_status_for_guild,
                                                           params={"guild_id": ctx.guild.id, "command": command})
+
             all_admin_commands = self.bot.ApiClient.request(self.bot.ApiClient.get_all_admin_commands)
 
             # Check if command is regular command or admin command, else it is an invalid command.

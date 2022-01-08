@@ -50,7 +50,8 @@ def language(discord_bot, lang, keyword, **kwargs):
 
 
 def get_guild_language(self, guild_id):
-    return self.bot.ApiClient.request(self.bot.ApiClient.get_language, params={"guild_id": str(guild_id)})
+    lang = self.bot.ApiClient.request(self.bot.ApiClient.get_language, params={"guild_id": str(guild_id)})
+    return lang if lang else "en"
 
 
 guild_languages = {}
@@ -58,4 +59,5 @@ guild_languages = {}
 bot.guild_languages = guild_languages
 bot.get_guild_language = get_guild_language
 bot.language = language
+
 bot.run(DISCORD_TOKEN)

@@ -73,7 +73,7 @@ class Info(commands.Cog):
         elif category.lower() in plugins:
             command_list = self.bot.ApiClient.request(self.bot.ApiClient.get_all_guild_commands_from_category,
                                                       params={"guild_id": ctx.guild.id, "category": category})
-            print(command_list)
+
             command_dict = {command + " " + parameter if parameter else command: description
                             for command, parameter, description in command_list}
 
